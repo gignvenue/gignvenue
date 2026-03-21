@@ -3053,8 +3053,8 @@ function renderEarnings() {
 
   // GigNVenue-facilitated earnings
   const gnvCompleted = RESERVATIONS.filter(r => !r.hostGenerated && r.status === 'completed');
-  const gnvAllTime   = gnvCompleted.reduce((s, r) => s + r.total * 0.92, 0);
-  const gnvThisYear  = gnvCompleted.filter(r => r.checkin.startsWith(yr)).reduce((s, r) => s + r.total * 0.92, 0);
+  const gnvAllTime   = gnvCompleted.reduce((s, r) => s + r.total, 0);
+  const gnvThisYear  = gnvCompleted.filter(r => r.checkin.startsWith(yr)).reduce((s, r) => s + r.total, 0);
 
   // Self-managed (manually logged) earnings
   const { allTime: manualAllTime, thisYear: manualThisYear } = getAllLoggedEarnings();
@@ -3150,7 +3150,7 @@ function renderEarnings() {
           <td>${r.property}</td>
           <td>${r.guest}${r.bandName ? ` <span style="color:var(--text-muted);font-size:12px">/ ${r.bandName}</span>` : ''}</td>
           <td>${isCancelled ? '<span style="color:var(--text-muted)">—</span>' : `$${r.total.toLocaleString()}`}</td>
-          <td>${isCancelled ? '<span style="color:var(--text-muted)">—</span>' : `$${Math.round(r.total * 0.92).toLocaleString()}`}</td>
+          <td>${isCancelled ? '<span style="color:var(--text-muted)">—</span>' : `$${Math.round(r.total * 0.20).toLocaleString()}`}</td>
           <td><span class="status-badge ${isCancelled ? 'status-cancelled' : 'status-completed'}">${isCancelled ? 'Cancelled' : 'Released'}</span></td>
         </tr>`;
       }).join('')
