@@ -688,7 +688,7 @@ function renderRequests(filter) {
 
   const tbody = document.getElementById('requestsTableBody');
   if (!active.length && !archived.length) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:48px;color:var(--text-muted)">
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:48px;color:var(--text-muted)">
       No ${filter === 'all' ? '' : filter} requests. <a href="index.html" style="color:var(--red)">Browse venues →</a></td></tr>`;
     return;
   }
@@ -711,6 +711,7 @@ function renderRequests(filter) {
       <td>${r.eventType}</td>
       <td>${v?.capacity ? v.capacity.toLocaleString() : '—'}</td>
       <td>${r.attendance ? Number(r.attendance).toLocaleString() : '—'}</td>
+      <td style="font-weight:600;color:var(--text)">${v?.price ? '$' + v.price.toLocaleString() : '—'}</td>
       <td>
         <span class="req-badge req-${dispStatus}">${passed ? 'Date passed' : capitalize(r.status)}</span>
         ${!passed && r.status === 'approved' && r.paymentStatus === 'unpaid' ? `<span class="req-badge req-payment-due">Payment due</span>` : ''}
@@ -745,7 +746,7 @@ function renderRequests(filter) {
   if (archived.length) {
     html += `
       <tr class="archived-toggle-row">
-        <td colspan="8">
+        <td colspan="9">
           <button class="archived-toggle-btn" id="archivedToggleBtn" onclick="toggleArchivedRows()">
             ▸ Archived (${archived.length})
           </button>
