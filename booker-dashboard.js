@@ -23,6 +23,7 @@ let profile = BookerAuth.currentProfile();
 // All venues (mirrors main site listings for the calendar)
 const _CP_30_7   = 'Cancellations more than 30 days before the event date are eligible for a full deposit refund. Cancellations within 30 days but more than 7 days before the event date will forfeit 50% of the deposit. Cancellations within 7 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.';
 const _CP_21_7   = 'Cancellations more than 21 days before the event date are eligible for a full deposit refund. Cancellations within 21 days but more than 7 days before the event date will forfeit 50% of the deposit. Cancellations within 7 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.';
+const _CP_60_14  = 'Cancellations more than 60 days before the event date are eligible for a full deposit refund. Cancellations within 60 days but more than 14 days before the event date will forfeit 50% of the deposit. Cancellations within 14 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.';
 
 const ALL_VENUES = [
   { id:'l1',  title:'The Neon Stage',              location:'Hollywood, California',      img:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=400&q=70', price:2100,  capacity:500,  lat:34.0928,  lng:-118.3287, cancellationPolicy: _CP_30_7  },
