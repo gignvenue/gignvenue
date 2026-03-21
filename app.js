@@ -122,6 +122,7 @@ const LISTINGS = [
       green_room:   'Private dressing suite with private bathroom and hospitality',
     },
     featuredAmenities: ['pro_sound', 'stage_lights', 'green_room'],
+    cancellationPolicy: 'Cancellations more than 30 days before the event date are eligible for a full deposit refund. Cancellations within 30 days but more than 7 days before the event date will forfeit 50% of the deposit. Cancellations within 7 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
     host: { name:'Sarah Johnson', years:5, superhost:true, img:'https://randomuser.me/api/portraits/women/44.jpg' },
     description: 'Iconic Hollywood venue with state-of-the-art sound and lights. A boutique 500-capacity club with impeccable acoustics, professional stage, full backline, and a dedicated green room that keeps artists comfortable.',
     highlights: [
@@ -149,6 +150,7 @@ const LISTINGS = [
       'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80',
     ],
     amenities: ['pro_sound','piano','bar','seated','accessibility'],
+    cancellationPolicy: 'Cancellations more than 21 days before the event date are eligible for a full deposit refund. Cancellations within 21 days but more than 7 days before the event date will forfeit 50% of the deposit. Cancellations within 7 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
     host: { name:'James K.', years:5, superhost:false, img:'https://api.dicebear.com/7.x/initials/svg?seed=James%20K&backgroundColor=3B82F6&textColor=ffffff' },
     description: 'Intimate jazz club with incredible acoustics and cozy vibes. A beloved Brooklyn institution offering a 200-capacity room with impeccable sound, a baby grand piano, and a warm atmosphere that makes every act sound their best.',
     highlights: [
@@ -177,6 +179,7 @@ const LISTINGS = [
       'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80',
     ],
     amenities: ['pro_sound','outdoor','rooftop','bar','vip_area','security'],
+    cancellationPolicy: 'Cancellations more than 30 days before the event date are eligible for a full deposit refund. Cancellations within 30 days but more than 7 days before the event date will forfeit 50% of the deposit. Cancellations within 7 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
     host: { name:'Maria L.', years:3, superhost:false, img:'https://api.dicebear.com/7.x/initials/svg?seed=Maria%20L&backgroundColor=8B5CF6&textColor=ffffff' },
     description: 'Open-air rooftop with stunning skyline views and premium sound. A boutique 120-cap rooftop above Midtown Manhattan — perfect for intimate concerts, album launches, and private events with NYC\'s skyline as the backdrop.',
     highlights: [
@@ -206,6 +209,7 @@ const LISTINGS = [
       'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&q=80',
     ],
     amenities: ['pro_sound','stage_lights','bar','vip_area','outdoor','rooftop','seated','standing','catering','private_bar','wifi','accessibility'],
+    cancellationPolicy: 'Cancellations more than 30 days before the event date are eligible for a full deposit refund. Cancellations within 30 days but more than 7 days before the event date will forfeit 50% of the deposit. Cancellations within 7 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
     host: { name:'Skyline Spaces', years:3, superhost:false, img:'https://randomuser.me/api/portraits/women/62.jpg' },
     description: 'Perched 40 stories above Manhattan with the full skyline as your backdrop. Intimate 250-cap rooftop with a retractable cover, professional sound, and full bar service. Perfect for album launches, private showcases, and brand events.',
     highlights: [
@@ -235,6 +239,7 @@ const LISTINGS = [
       'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=800&q=80',
     ],
     amenities: ['piano','pro_sound','stage','monitors','bar','seated','green_room','recording','catering','rider_honored','wifi','accessibility'],
+    cancellationPolicy: 'Cancellations more than 21 days before the event date are eligible for a full deposit refund. Cancellations within 21 days but more than 7 days before the event date will forfeit 50% of the deposit. Cancellations within 7 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
     host: { name:'Harlan J.', years:12, superhost:true, img:'https://randomuser.me/api/portraits/men/28.jpg' },
     description: 'A Bourbon Street institution with 70 years of jazz history. Steinway grand piano, vintage Neve console for direct recording, and an atmosphere that has hosted legends from Louis Armstrong to Wynton Marsalis. Every show feels like history.',
     highlights: [
@@ -264,6 +269,7 @@ const LISTINGS = [
       'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&q=80',
     ],
     amenities: ['pro_sound','stage','backline','stage_lights','led_wall','fog_machine','bar','vip_area','outdoor','standing','parking','load_in','box_office','security'],
+    cancellationPolicy: 'Cancellations more than 60 days before the event date are eligible for a full deposit refund. Cancellations within 60 days but more than 14 days before the event date will forfeit 50% of the deposit. Cancellations within 14 days of the event date forfeit the deposit in full. Due to the scale of production and infrastructure required, no exceptions can be made. The GigNVenue booking fee is non-refundable in all cases.',
     host: { name:'Desert Events Co.', years:7, superhost:true, img:'https://randomuser.me/api/portraits/men/53.jpg' },
     description: 'A purpose-built outdoor festival ground in the Coachella Valley. 5,000-cap main stage with full Clair Brothers PA, LED horizon wall, and desert sunset views that are unlike anything else on earth.',
     highlights: [
@@ -293,6 +299,7 @@ const LISTINGS = [
       'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&q=80',
     ],
     amenities: ['pro_sound','stage','stage_lights','laser_show','led_wall','bar','vip_area','green_room','standing','seated','coat_check','security','wifi','accessibility','box_office'],
+    cancellationPolicy: 'Cancellations more than 30 days before the event date are eligible for a full deposit refund. Cancellations within 30 days but more than 7 days before the event date will forfeit 50% of the deposit. Cancellations within 7 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
     host: { name:'Lakeshore Music Group', years:8, superhost:true, img:'https://randomuser.me/api/portraits/women/11.jpg' },
     description: 'A former Uptown church converted into Chicago\'s most storied multi-room music complex. The main hall\'s soaring arched ceilings and original stonework create an acoustic environment that artists request by name — raw, resonant, and unlike anything else in the Midwest.',
     highlights: [
@@ -322,6 +329,7 @@ const LISTINGS = [
       'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80',
     ],
     amenities: ['pro_sound','stage','monitors','piano','stage_lights','projection','bar','seated','green_room','recording','coat_check','accessibility','box_office','load_in'],
+    cancellationPolicy: 'Due to the historic and high-demand nature of this venue, cancellations more than 60 days before the event date are eligible for a full deposit refund. Cancellations within 60 days but more than 14 days before the event will forfeit 50% of the deposit. Cancellations within 14 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
     host: { name:'Ryman Heritage', years:15, superhost:true, img:'https://randomuser.me/api/portraits/men/77.jpg' },
     description: 'The "Mother Church of Country Music" and one of the most recognizable stages on earth. Stunning 1892 architecture, pristine acoustics built over 130 years, and a history of performances that reads like a who\'s-who of American music.',
     highlights: [
@@ -351,6 +359,7 @@ const LISTINGS = [
       'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80',
     ],
     amenities: ['pro_sound','stage','backline','monitors','stage_lights','led_wall','followspot','laser_show','fog_machine','bar','vip_area','green_room','standing','seated','coat_check','security','box_office','load_in','parking','accessibility'],
+    cancellationPolicy: 'Given the unique nature of this venue and the production commitments involved, cancellations more than 60 days before the event date are eligible for a full deposit refund. Cancellations within 60 days but more than 14 days before the event will forfeit 50% of the deposit. Cancellations within 14 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
     host: { name:'Denver Arts & Venues', years:9, superhost:true, img:'https://randomuser.me/api/portraits/women/33.jpg' },
     description: 'The greatest outdoor concert venue on earth — a naturally formed 9,525-capacity amphitheater carved into the Colorado Rockies. Towering 300-million-year-old red sandstone formations flank the stage, creating acoustics and visuals that no architect could design.',
     highlights: [
@@ -380,6 +389,7 @@ const LISTINGS = [
       'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=800&q=80',
     ],
     amenities: ['pro_sound','stage','monitors','backline','drums','bar','standing','green_room','wifi'],
+    cancellationPolicy: 'Cancellations more than 21 days before the event date are eligible for a full deposit refund. Cancellations within 21 days but more than 7 days before the event date will forfeit 50% of the deposit. Cancellations within 7 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
     host: { name:'Sixth Street Collective', years:5, superhost:false, img:'https://randomuser.me/api/portraits/men/26.jpg' },
     description: 'The legendary dive bar where careers are launched. No frills — just a perfect-sounding room, a tight stage, and an audience that actually listens. Elbow room for 120, but it feels like you\'re playing for thousands.',
     highlights: [
@@ -409,6 +419,7 @@ const LISTINGS = [
       'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=800&q=80',
     ],
     amenities: ['pro_sound','stage','monitors','piano','stage_lights','followspot','projection','bar','seated','green_room','recording','coat_check','accessibility','box_office','load_in','security'],
+    cancellationPolicy: 'Due to the historic significance and demand for this venue, cancellations more than 60 days before the event date are eligible for a full deposit refund. Cancellations within 60 days but more than 14 days before the event will forfeit 50% of the deposit. Cancellations within 14 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
     host: { name:'Atlanta Landmarks', years:14, superhost:true, img:'https://randomuser.me/api/portraits/women/55.jpg' },
     description: 'Atlanta\'s crown jewel and one of the most breathtaking concert halls in America. The Fox Theatre\'s 1929 Moorish-Egyptian interior — with its starlit ceiling, ornate arches, and 4,678-pipe Möller organ — makes every performance feel like a once-in-a-career moment.',
     highlights: [
@@ -438,6 +449,7 @@ const LISTINGS = [
       'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80',
     ],
     amenities: ['pro_sound','stage','stage_lights','led_wall','bar','vip_area','green_room','standing','coat_check','security','wifi','accessibility'],
+    cancellationPolicy: 'Cancellations more than 30 days before the event date are eligible for a full deposit refund. Cancellations within 30 days but more than 7 days before the event date will forfeit 50% of the deposit. Cancellations within 7 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
     host: { name:'Bay Area Shows', years:6, superhost:true, img:'https://randomuser.me/api/portraits/men/62.jpg' },
     description: 'A spiritual successor to Bill Graham\'s legendary venue. Exposed brick, psychedelic poster art covering every wall, and a floor plan that puts every single person within 80 feet of the stage. San Francisco music royalty.',
     highlights: [
@@ -467,6 +479,7 @@ const LISTINGS = [
       'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80',
     ],
     amenities: ['pro_sound','stage','backline','monitors','stage_lights','led_wall','followspot','laser_show','fog_machine','bar','vip_area','green_room','standing','seated','coat_check','security','box_office','load_in','parking','accessibility','wifi'],
+    cancellationPolicy: 'Due to the scale of production commitments at this venue, cancellations more than 60 days before the event date are eligible for a full deposit refund. Cancellations within 60 days but more than 14 days before the event will forfeit 50% of the deposit. Cancellations within 14 days of the event date forfeit the deposit in full. No exceptions. The GigNVenue booking fee is non-refundable in all cases.',
     host: { name:'Houston Live Events', years:11, superhost:true, img:'https://randomuser.me/api/portraits/men/41.jpg' },
     description: 'Houston\'s premier indoor arena — 16,000 seats of pure spectacle. A fully rigged production house with a 360° LED ceiling, 48-point rigging grid, and a stage that has welcomed everyone from stadium rock acts to sold-out residencies. If you\'re ready to play at this scale, this is your room.',
     highlights: [
