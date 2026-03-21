@@ -381,6 +381,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Live-update when a request is submitted in another tab / the main site
   window.addEventListener('storage', e => {
     if (e.key === 'bb_site_requests') ingestAndRefresh();
+    if (e.key === 'bb_saved_venues') {
+      // Heart toggled on browse page (possibly in another tab) — sync immediately
+      try { SAVED_VENUES = JSON.parse(e.newValue || '[]'); } catch(err) {}
+      renderSavedVenues();
+      updateBadges();
+    }
   });
 
   // Handle deep-link from public venue profile: ?msg=VenueName
@@ -1317,6 +1323,8 @@ function nextCalMonth() { calMonth++; if (calMonth>11) { calMonth=0;  calYear++;
 // ─── SAVED VENUES ─────────────────────────────────────────────────────────────
 
 function renderSavedVenues() {
+  // Always re-read from localStorage so changes from the browse page are reflected
+  try { SAVED_VENUES = JSON.parse(localStorage.getItem('bb_saved_venues') || '[]'); } catch(e) {}
   const grid = document.getElementById('savedGrid');
   const saved = SAVED_VENUES;
   if (!saved.length) {
