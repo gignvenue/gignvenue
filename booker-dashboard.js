@@ -1175,7 +1175,8 @@ function calDayClick(iso) {
   document.getElementById('calReqPanelTitle').textContent = `📅 ${label} — ${venue?.title || ''}`;
 
   if (mine) {
-    navigate(null, 'requests');
+    const myReq = ALL_REQUESTS.find(r => r.bookerId === user.id && r.venueId === calSelectedVenueId && r.date === iso && r.status !== 'cancelled');
+    goToRequestsTab(myReq?.status || 'all');
     return;
   }
 
