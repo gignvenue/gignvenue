@@ -2072,6 +2072,21 @@ function openListing(id) {
     pricingEl.innerHTML = '';
   }
 
+  // Venue-specific cancellation policy
+  const cancelEl = document.getElementById('listingModalCancellation');
+  if (cancelEl) {
+    if (l.cancellationPolicy) {
+      cancelEl.innerHTML = `
+        <div class="listing-modal-divider"></div>
+        <div class="listing-modal-cancel-policy" id="venueCancelPolicySection">
+          <h3>Cancellation policy</h3>
+          <p>${l.cancellationPolicy.replace(/\n/g, '<br>')}</p>
+        </div>`;
+    } else {
+      cancelEl.innerHTML = '';
+    }
+  }
+
   // All amenities the venue has
   const allAmenityItems = Object.values(AMENITIES).flat();
   const venueAmenities = l.amenities.map(id => allAmenityItems.find(a => a.id===id)).filter(Boolean);
@@ -2191,7 +2206,7 @@ function openListing(id) {
 
     <label class="vrf-cancel-check">
       <input type="checkbox" id="vrfCancelCheck" onchange="document.getElementById('venueReqBtn').disabled=!this.checked"/>
-      <span>I have reviewed the <a href="terms.html#cancellation" target="_blank" onclick="event.stopPropagation()">cancellation policy</a></span>
+      <span>I have reviewed the ${l.cancellationPolicy ? `<a href="#venueCancelPolicySection" onclick="event.stopPropagation()">venue's cancellation policy</a> and ` : ''}<a href="terms.html#cancellation" target="_blank" onclick="event.stopPropagation()">GigNVenue's cancellation terms</a></span>
     </label>
     <button class="booking-reserve-btn" id="venueReqBtn" onclick="submitVenueRequest()" disabled>Request to book</button>
     ${(()=>{ try { return JSON.parse(localStorage.getItem('vf_booker_session')||'null'); } catch(e){} return null; })()

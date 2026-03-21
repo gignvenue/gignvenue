@@ -1829,7 +1829,8 @@ function editListing(id) {
   document.getElementById('elmRoomRentalFields').style.display = rrEnabled ? '' : 'none';
   document.getElementById('elmRoomRentalPrice').value = l.roomRentalPrice || '';
   document.getElementById('elmRoomRentalDesc').value  = l.roomRentalDesc  || '';
-  document.getElementById('elmBookingDesc').value     = l.bookingDesc     || '';
+  document.getElementById('elmBookingDesc').value         = l.bookingDesc         || '';
+  document.getElementById('elmCancellationPolicy').value = l.cancellationPolicy   || '';
 
   document.getElementById('elmAmenitySearch').value = '';
   renderElmAmenities('');
@@ -1971,8 +1972,9 @@ function saveEditedListing() {
   l.roomRentalEnabled = document.getElementById('elmRoomRentalEnabled').checked;
   l.roomRentalPrice   = parseInt(document.getElementById('elmRoomRentalPrice').value) || 0;
   l.roomRentalDesc    = document.getElementById('elmRoomRentalDesc').value.trim();
-  l.bookingDesc       = document.getElementById('elmBookingDesc').value.trim();
-  l.amenities         = [...elmAmenities];
+  l.bookingDesc           = document.getElementById('elmBookingDesc').value.trim();
+  l.cancellationPolicy    = document.getElementById('elmCancellationPolicy').value.trim();
+  l.amenities             = [...elmAmenities];
   l.amenityDescs      = Object.fromEntries(
     Object.entries(elmAmenityDescs).filter(([k, v]) => elmAmenities.has(k) && v.trim())
   );
@@ -2240,6 +2242,7 @@ function submitNewListing() {
     roomRentalPrice:    parseInt(document.getElementById('nlRoomRentalPrice').value) || 0,
     roomRentalDesc:     document.getElementById('nlRoomRentalDesc').value.trim(),
     bookingDesc:        document.getElementById('nlBookingDesc').value.trim(),
+    cancellationPolicy: document.getElementById('nlCancellationPolicy').value.trim(),
     amenities:          [...nlmAmenities],
     amenityDescs:       Object.fromEntries(Object.entries(nlmAmenityDescs).filter(([k, v]) => nlmAmenities.has(k) && v.trim())),
     amenityDescsAll:    Object.fromEntries(Object.entries(nlmAmenityDescs).filter(([, v]) => v.trim())),
