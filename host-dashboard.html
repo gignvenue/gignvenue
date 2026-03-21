@@ -149,10 +149,13 @@
       <div class="card" style="margin-top:24px">
         <div class="card-title-row">
           <h2 class="card-title">Earnings this year</h2>
-          <select class="p-field" style="margin:0;border:1px solid var(--border);background:var(--bg-elevated);color:var(--text-sec);border-radius:6px;padding:4px 10px;font-size:13px" onchange="updateChart(this.value)">
-            <option value="2026">2026</option>
-            <option value="2025">2025</option>
-          </select>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span id="earningsYtdBadge"></span>
+            <select class="p-field" style="margin:0;border:1px solid var(--border);background:var(--bg-elevated);color:var(--text-sec);border-radius:6px;padding:4px 10px;font-size:13px" onchange="updateChart(this.value)" id="earningsYearSelect">
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+            </select>
+          </div>
         </div>
         <canvas id="earningsChart" height="80"></canvas>
       </div>

@@ -559,35 +559,106 @@ function renderActionItems() {
   `).join('');
 }
 
-function renderEarningsChart(canvasId) {
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const vals = [6300,9000,1800,0,0,0,0,0,0,0,0,0]; // Jan–Mar 2026 actuals
-  const max = Math.max(...vals.filter(v=>v>0)) || 1;
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-  const wrap = document.createElement('div');
-  wrap.className = 'chart-bars';
-  months.forEach((m,i) => {
-    const pct = vals[i] ? (vals[i]/max)*100 : 4;
-    const future = vals[i] === 0;
-    const bw = document.createElement('div');
-    bw.className = 'chart-bar-wrap';
-    bw.innerHTML = `
-      <div class="chart-bar" style="height:${pct}%;background:${future?'rgba(255,255,255,0.05)':'rgba(255,45,120,0.25)'}"
-           title="${future?'No data':'$'+vals[i].toLocaleString()}"></div>
-      <div class="chart-bar-label">${m}</div>`;
-    bw.querySelector('.chart-bar').addEventListener('mouseenter', function(){
-      if(!future) this.style.background='#FF2D78';
+const CHART_PALETTE = ['#FF2D78','#3B82F6','#10B981','#F59E0B','#8B5CF6','#EC4899','#06B6D4'];
+
+function buildEarningsData(year) {
+  const yr = year.toString();
+  // monthly[venueId] = [0..11] totals
+  const monthly = {};
+  HOST_LISTINGS.forEach(l => { monthly[l.id] = new Array(12).fill(0); });
+
+  // Self-managed logged earnings
+  Object.entries(MANUAL_CAL_ENTRIES).forEach(([venueId, dates]) => {
+    if (!monthly[venueId]) return;
+    Object.entries(dates).forEach(([iso, entry]) => {
+      if (iso.startsWith(yr) && entry.earnings) {
+        monthly[venueId][parseInt(iso.split('-')[1]) - 1] += entry.earnings;
+      }
     });
-    bw.querySelector('.chart-bar').addEventListener('mouseleave', function(){
-      if(!future) this.style.background='rgba(255,45,120,0.25)';
-    });
-    wrap.appendChild(bw);
   });
-  canvas.parentNode.replaceChild(wrap, canvas);
+
+  // GigNVenue completed reservations
+  RESERVATIONS.filter(r => !r.hostGenerated && r.status === 'completed' && r.checkin.startsWith(yr))
+    .forEach(r => {
+      const l = HOST_LISTINGS.find(x => x.title === r.property);
+      if (l && monthly[l.id]) monthly[l.id][parseInt(r.checkin.split('-')[1]) - 1] += r.total;
+    });
+
+  return monthly;
 }
 
-function updateChart() { /* placeholder */ }
+function renderEarningsChart(canvasId, year) {
+  year = year || new Date().getFullYear();
+  const months   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const today    = new Date();
+  const curMonth = year === today.getFullYear() ? today.getMonth() : 11;
+
+  const monthly  = buildEarningsData(year);
+  const colors   = {};
+  HOST_LISTINGS.forEach((l, i) => { colors[l.id] = CHART_PALETTE[i % CHART_PALETTE.length]; });
+
+  const monthTotals = months.map((_, i) =>
+    HOST_LISTINGS.reduce((s, l) => s + (monthly[l.id]?.[i] || 0), 0));
+  const max   = Math.max(...monthTotals) || 1;
+  const ytd   = monthTotals.reduce((a, b) => a + b, 0);
+  const hasData = ytd > 0;
+
+  // Stacked bars
+  const barsHtml = months.map((m, i) => {
+    const total    = monthTotals[i];
+    const isFuture = i > curMonth;
+    const barPct   = total ? Math.max((total / max) * 88, 6) : (isFuture ? 0 : 3);
+
+    const segments = HOST_LISTINGS
+      .filter(l => monthly[l.id]?.[i])
+      .map(l => {
+        const amt    = monthly[l.id][i];
+        const segPct = (amt / total) * 100;
+        return `<div style="height:${segPct}%;background:${colors[l.id]};min-height:3px" title="${l.title}: $${amt.toLocaleString()}"></div>`;
+      }).join('');
+
+    const tooltip = total
+      ? `${m} ${year}: $${total.toLocaleString()}` + HOST_LISTINGS.filter(l => monthly[l.id]?.[i]).map(l => `\n  ${l.title}: $${monthly[l.id][i].toLocaleString()}`).join('')
+      : `${m}: No data`;
+
+    return `<div class="chart-bar-wrap" title="${tooltip}">
+      <div class="chart-bar" style="height:${barPct}%;display:flex;flex-direction:column-reverse;overflow:hidden;background:${(!total && !isFuture) ? 'rgba(255,255,255,0.04)' : (isFuture ? 'rgba(255,255,255,0.03)' : 'transparent')}">
+        ${segments}
+      </div>
+      <div class="chart-bar-label" style="${i === curMonth && !isFuture ? 'color:var(--text);font-weight:700' : ''}">${m}</div>
+    </div>`;
+  }).join('');
+
+  // Legend (only if multiple venues have data this year)
+  const activeVenues = HOST_LISTINGS.filter(l => monthly[l.id].some(v => v > 0));
+  const legendHtml = activeVenues.length > 1
+    ? `<div class="earnings-chart-legend">
+        ${activeVenues.map(l => `
+          <span class="ecl-item">
+            <span class="ecl-swatch" style="background:${colors[l.id]}"></span>
+            ${l.title}
+          </span>`).join('')}
+       </div>`
+    : '';
+
+  const ytdText = hasData ? '$' + ytd.toLocaleString() : 'No data yet';
+
+  // Replace target (canvas on first render, div on re-render)
+  const target = document.getElementById(canvasId) || document.getElementById('earningsChartWrap');
+  if (!target) return;
+  const wrap = document.createElement('div');
+  wrap.id = 'earningsChartWrap';
+  wrap.innerHTML = `<div class="chart-bars">${barsHtml}</div>${legendHtml}`;
+  target.parentNode.replaceChild(wrap, target);
+
+  // Update YTD in card header
+  const existingBadge = document.getElementById('earningsYtdBadge');
+  if (existingBadge) { existingBadge.textContent = ytdText; existingBadge.className = 'earnings-ytd-badge'; }
+}
+
+function updateChart(year) {
+  renderEarningsChart('earningsChartWrap', parseInt(year));
+}
 
 // ─── RESERVATIONS ─────────────────────────────────────────────────────────────
 
