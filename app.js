@@ -677,11 +677,18 @@ function mergeHostListings() {
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 
+// Normalize venue IDs — the booker dashboard uses 'l1'-style strings; app.js uses numbers
+function normalizeVenueId(id) {
+  if (typeof id === 'string' && /^l\d+$/.test(id)) return parseInt(id.slice(1));
+  const n = parseInt(id);
+  return isNaN(n) ? id : n;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Restore saved venues so hearts render correctly on load
   try {
     JSON.parse(localStorage.getItem('bb_saved_venues') || '[]')
-      .forEach(v => appState.wishlist.add(v.id));
+      .forEach(v => appState.wishlist.add(normalizeVenueId(v.id)));
   } catch(e) {}
 
   mergeHostListings();
@@ -696,8 +703,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Deep-link: ?venue=l1 or ?venue=1 opens that listing's profile immediately
     const vParam = new URLSearchParams(location.search).get('venue');
     if (vParam) {
-      const numId = parseInt(vParam);
-      const id = !isNaN(numId) ? numId : (Object.entries(HOST_ID_MAP).find(([k]) => k === vParam)?.[1] ?? vParam);
+      const id = normalizeVenueId(vParam) || (Object.entries(HOST_ID_MAP).find(([k]) => k === vParam)?.[1] ?? vParam);
       openListing(id);
     }
   }, 600);
