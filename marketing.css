@@ -437,7 +437,7 @@ img { display: block; max-width: 100%; }
 .footer-inner { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
 .footer-top {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 32px;
   padding-bottom: 32px;
 }
