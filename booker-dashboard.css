@@ -33,6 +33,25 @@
 /* Archive */
 .req-archive-btn { color: var(--text-muted) !important; }
 .req-archive-btn:hover { color: var(--text) !important; }
+
+/* Waitlist */
+.req-waitlist-btn { color: var(--text-muted) !important; }
+.req-waitlist-btn:hover { color: #10B981 !important; }
+.req-waitlist-btn.wl-active { color: #10B981 !important; text-decoration: none !important; cursor: default; }
+
+/* Rebook */
+.req-rebook-btn { color: var(--red) !important; text-decoration: none !important; display: inline-block; }
+.req-rebook-btn:hover { text-decoration: underline !important; }
+
+/* Saved searches */
+.saved-searches-section { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border); }
+.saved-searches-heading { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+.saved-search-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border-light); }
+.saved-search-row:last-child { border-bottom: none; }
+.saved-search-label { font-size: 13px; color: var(--red); text-decoration: none; flex: 1; }
+.saved-search-label:hover { text-decoration: underline; }
+.saved-search-delete { background: none; border: none; color: var(--text-muted); font-size: 12px; cursor: pointer; padding: 2px 4px; line-height: 1; }
+.saved-search-delete:hover { color: var(--red); }
 .archived-toggle-row td {
   padding: 10px 16px;
   background: var(--bg-elevated);
