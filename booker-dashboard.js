@@ -1668,6 +1668,30 @@ function haversine(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+// Fetch real road route from OSRM — returns distance_miles, duration_minutes, and road geometry
+async function osrmRoute(stops) {
+  if (!stops || stops.length < 2) return null;
+  const validStops = stops.filter(s => s.lat && s.lng);
+  if (validStops.length < 2) return null;
+  const coords = validStops.map(s => `${s.lng},${s.lat}`).join(';');
+  try {
+    const res = await fetch(
+      `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`,
+      { headers: { 'User-Agent': 'GigNVenue/1.0' } }
+    );
+    const data = await res.json();
+    if (data.code === 'Ok' && data.routes && data.routes[0]) {
+      const route = data.routes[0];
+      return {
+        distance_miles: Math.round(route.distance * 0.000621371),
+        duration_minutes: Math.round(route.duration / 60),
+        geometry: route.geometry
+      };
+    }
+  } catch(e) {}
+  return null;
+}
+
 async function geocodeCity(city) {
   const key = city.toLowerCase().trim();
   if (_geocodeCache[key]) return _geocodeCache[key];
@@ -1709,21 +1733,25 @@ function optimizeRoute(stops) {
   return result;
 }
 
-function showRouteOptimizationBanner(original, optimized, origDist, optDist) {
+function showRouteOptimizationBanner(original, optimized, origDist, optDist, origMins, optMins) {
   _optimizedStops = optimized;
-  const savings = origDist - optDist;
+  const mileSavings = origDist - optDist;
+  const timeSavings = (origMins && optMins) ? origMins - optMins : null;
   const banner = document.getElementById('tourRouteBanner');
   const savingsEl = document.getElementById('tourRouteSavings');
   const origEl = document.getElementById('tourRouteOrig');
   const optEl = document.getElementById('tourRouteOpt');
   if (!banner) return;
-  if (savingsEl) savingsEl.textContent = savings;
+  if (savingsEl) {
+    const timeStr = timeSavings > 0 ? ` / ~${timeSavings >= 60 ? Math.round(timeSavings/60) + ' hrs' : timeSavings + ' min'}` : '';
+    savingsEl.textContent = `${mileSavings} miles${timeStr}`;
+  }
   if (origEl) origEl.textContent = original.map(s => s.city.split(',')[0]).join(' → ');
   if (optEl) optEl.textContent = optimized.map(s => s.city.split(',')[0]).join(' → ');
   banner.style.display = '';
 }
 
-function acceptOptimizedRoute() {
+async function acceptOptimizedRoute() {
   if (!_optimizedStops) return;
   // Reassign dates in original chronological order to the new city sequence
   const sortedDates = TOUR_STOPS.map(s => s.date).sort();
@@ -1794,7 +1822,7 @@ function initTourMap() {
   }).addTo(_tourMap);
 }
 
-function updateTourMap(stops, venueGroups) {
+function updateTourMap(stops, venueGroups, routeGeometry) {
   if (!window.L) return;
   const wrap = document.getElementById('tourMapWrap');
   if (!wrap) return;
@@ -1810,12 +1838,19 @@ function updateTourMap(stops, venueGroups) {
   _tourMapLayers.forEach(l => l.remove());
   _tourMapLayers = [];
 
-  // Route polyline
+  // Route line — real road geometry from OSRM if available, straight line fallback
   if (geocoded.length > 1) {
-    const line = L.polyline(geocoded.map(s => [s.lat, s.lng]), {
-      color: '#FF385C', weight: 2, opacity: 0.7, dashArray: '6 8'
-    }).addTo(_tourMap);
-    _tourMapLayers.push(line);
+    if (routeGeometry) {
+      const line = L.geoJSON(routeGeometry, {
+        style: { color: '#FF385C', weight: 3, opacity: 0.85 }
+      }).addTo(_tourMap);
+      _tourMapLayers.push(line);
+    } else {
+      const line = L.polyline(geocoded.map(s => [s.lat, s.lng]), {
+        color: '#FF385C', weight: 2, opacity: 0.7, dashArray: '6 8'
+      }).addTo(_tourMap);
+      _tourMapLayers.push(line);
+    }
   }
 
   // Numbered stop markers
@@ -1883,14 +1918,31 @@ async function searchTourVenues() {
     await new Promise(r => setTimeout(r, 350));
   }
 
-  // Route optimization — only if 3+ geocoded stops
+  // Route optimization + real road distances via OSRM
   const geocoded = validStops.filter(s => s.lat && s.lng);
-  if (geocoded.length >= 3) {
-    const origDist = routeDistance(geocoded);
-    const optimized = optimizeRoute(geocoded);
-    const optDist   = routeDistance(optimized);
-    if (origDist > 0 && optDist < origDist * 0.9 && (origDist - optDist) >= 50) {
-      showRouteOptimizationBanner(geocoded, optimized, origDist, optDist);
+  let _routeGeometry = null;
+
+  if (geocoded.length >= 2) {
+    // Use haversine for optimization algorithm (avoids N² OSRM calls)
+    const optimized = geocoded.length >= 3 ? optimizeRoute(geocoded) : geocoded;
+
+    // Fetch real road distances for both routes in parallel
+    const [origRoute, optRoute] = await Promise.all([
+      osrmRoute(geocoded),
+      geocoded.length >= 3 ? osrmRoute(optimized) : Promise.resolve(null)
+    ]);
+
+    // Use real road distances for banner if available, fall back to haversine
+    const origDist = origRoute ? origRoute.distance_miles : routeDistance(geocoded);
+    const optDist  = optRoute  ? optRoute.distance_miles  : (geocoded.length >= 3 ? routeDistance(optimized) : origDist);
+    const origMins = origRoute ? origRoute.duration_minutes : null;
+    const optMins  = optRoute  ? optRoute.duration_minutes  : null;
+
+    // Store geometry of the better route for the map
+    _routeGeometry = (optRoute && optDist < origDist) ? optRoute.geometry : (origRoute ? origRoute.geometry : null);
+
+    if (geocoded.length >= 3 && origDist > 0 && optDist < origDist * 0.9 && (origDist - optDist) >= 50) {
+      showRouteOptimizationBanner(geocoded, optimized, origDist, optDist, origMins, optMins);
     }
   }
 
@@ -1957,7 +2009,7 @@ async function searchTourVenues() {
   resultsBody.innerHTML = html;
   resultsSection.style.display = '';
   updateTourDetailsPanel();
-  updateTourMap(validStops, _tourVenueGroups);
+  updateTourMap(validStops, _tourVenueGroups, _routeGeometry);
   if (hint) hint.textContent = TOUR_STOPS.length < 10 ? 'Add at least one city and date to search.' : 'Maximum 10 stops reached.';
 }
 
