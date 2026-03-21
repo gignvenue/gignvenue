@@ -2014,15 +2014,15 @@ function updateModalBookingTotal() {
   const l = appState.selectedListing;
   if (!l) return;
   const deposit    = Math.round(l.price * 0.20);
-  const bookingFee = Math.round(l.price * 0.08);
+  const bookingFee = Math.round(l.price * 0.05);
   const el = document.getElementById('modalBookingBreakdown');
   if (!el) return;
   el.innerHTML = `
     <div class="booking-fee-row"><span>Venue fee</span><span>$${l.price.toLocaleString()} / night</span></div>
-    <div class="booking-fee-row"><span>Deposit <span class="fee-note">(20% · due on approval)</span></span><span>$${deposit.toLocaleString()}</span></div>
-    <div class="booking-fee-row"><span>Booking fee <span class="fee-note">(8% · non-refundable)</span></span><span>$${bookingFee.toLocaleString()}</span></div>
+    <div class="booking-fee-row"><span>Deposit <span class="fee-note">(20% · held; released post-show)</span></span><span>$${deposit.toLocaleString()}</span></div>
+    <div class="booking-fee-row"><span>Artist booking fee <span class="fee-note">(5% · non-refundable)</span></span><span>$${bookingFee.toLocaleString()}</span></div>
     <div class="booking-fee-total"><span>Due on approval</span><span>$${(deposit + bookingFee).toLocaleString()}</span></div>
-    <p style="font-size:11px;color:var(--text-muted);margin:8px 0 0;line-height:1.4">No payment required to submit a request.</p>`;
+    <p style="font-size:11px;color:var(--text-muted);margin:8px 0 0;line-height:1.4">No payment required to submit a request. Venue pays a separate 5% fee from their deposit release.</p>`;
 }
 
 // ─── LISTING DETAIL MODAL ────────────────────────────────────────────────────
@@ -2170,7 +2170,7 @@ function openListing(id) {
   modalCal.date  = filterDates[0] ? toIso(filterDates[0]) : null;
 
   const deposit    = Math.round(l.price * 0.20);
-  const bookingFee = Math.round(l.price * 0.08);
+  const bookingFee = Math.round(l.price * 0.05);
   const initDateLabel = modalCal.date
     ? fmtIso(modalCal.date, { month:'short', day:'numeric', year:'numeric' })
     : 'Select a date';
@@ -2275,11 +2275,11 @@ function openListing(id) {
         : `<button class="msg-venue-btn msg-venue-btn-disabled" disabled title="Log in to send messages"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Log in to message venue</button>`}
     <div id="modalBookingBreakdown">
       <div class="booking-fee-row"><span>Venue fee</span><span>${formatPrice(l.price)} / night</span></div>
-      <div class="booking-fee-row"><span>Deposit <span class="fee-note">(due on approval)</span></span><span>${formatPrice(deposit)}</span></div>
-      <div class="booking-fee-row"><span>Booking fee <span class="fee-note">(non-refundable)</span></span><span>$${bookingFee.toLocaleString()}</span></div>
+      <div class="booking-fee-row"><span>Deposit <span class="fee-note">(20% · held; released post-show)</span></span><span>${formatPrice(deposit)}</span></div>
+      <div class="booking-fee-row"><span>Artist booking fee <span class="fee-note">(5% · non-refundable)</span></span><span>$${bookingFee.toLocaleString()}</span></div>
       <div class="booking-fee-total"><span>Due on approval</span><span>$${(deposit + bookingFee).toLocaleString()}</span></div>
     </div>
-    <p class="booking-no-charge">Deposit &amp; booking fee collected via Stripe upon venue's approval of booking request</p>`;
+    <p class="booking-no-charge">No payment required to submit a request. Venue pays a separate 5% fee from their deposit release.</p>`;
 
   renderModalCal();
 

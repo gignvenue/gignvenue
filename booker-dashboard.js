@@ -730,7 +730,7 @@ function renderRequests(filter) {
         <span class="req-badge req-${dispStatus}">${passed ? 'Date passed' : capitalize(r.status)}</span>
         ${!passed && r.status === 'approved' && r.paymentStatus === 'unpaid' ? `<span class="req-badge req-payment-due">Payment due</span>` : ''}
         ${r.status === 'cancelled' && r.cancelledBy ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px">by ${r.cancelledBy}</div>` : ''}
-        ${v && !passed && r.status !== 'cancelled' ? (() => { const dep=Math.round(v.price*0.20); const fee=Math.round(v.price*0.08); return `<div style="font-size:11px;color:var(--text-muted);margin-top:5px">Deposit $${dep.toLocaleString()} · Fee $${fee.toLocaleString()} · <strong style="color:var(--text)">Total $${(dep+fee).toLocaleString()}</strong></div>`; })() : ''}
+        ${v && !passed && r.status !== 'cancelled' ? (() => { const dep=Math.round(v.price*0.20); const fee=Math.round(v.price*0.05); return `<div style="font-size:11px;color:var(--text-muted);margin-top:5px">Deposit $${dep.toLocaleString()} · Fee $${fee.toLocaleString()} · <strong style="color:var(--text)">Total $${(dep+fee).toLocaleString()}</strong></div>`; })() : ''}
       </td>
       <td style="font-size:12px;color:var(--text-muted)">${r.sent ? fmtDate(r.sent) : '—'}</td>
       <td>
@@ -822,7 +822,7 @@ function openPaymentModal(id) {
   _pmCurrentReqId = id;
 
   const deposit    = Math.round(v.price * 0.20);
-  const bookingFee = Math.round(v.price * 0.08);
+  const bookingFee = Math.round(v.price * 0.05);
   const total      = deposit + bookingFee;
 
   document.getElementById('pmVenueImg').src    = v.img;
@@ -1266,13 +1266,13 @@ function calDayClick(iso) {
   const feeBreakdown = document.getElementById('calFeeBreakdown');
   if (feeBreakdown && venue?.price) {
     const deposit    = Math.round(venue.price * 0.20);
-    const bookingFee = Math.round(venue.price * 0.08);
+    const bookingFee = Math.round(venue.price * 0.05);
     feeBreakdown.innerHTML = `
       <div class="booking-fee-row"><span>Venue fee</span><span>$${venue.price.toLocaleString()} / night</span></div>
-      <div class="booking-fee-row"><span>Deposit <span class="fee-note">(20% · due on approval)</span></span><span>$${deposit.toLocaleString()}</span></div>
-      <div class="booking-fee-row"><span>Booking fee <span class="fee-note">(8% · non-refundable)</span></span><span>$${bookingFee.toLocaleString()}</span></div>
+      <div class="booking-fee-row"><span>Deposit <span class="fee-note">(20% · held; released post-show)</span></span><span>$${deposit.toLocaleString()}</span></div>
+      <div class="booking-fee-row"><span>Artist booking fee <span class="fee-note">(5% · non-refundable)</span></span><span>$${bookingFee.toLocaleString()}</span></div>
       <div class="booking-fee-total"><span>Due on approval</span><span>$${(deposit + bookingFee).toLocaleString()}</span></div>
-      <p class="booking-no-charge">No payment required to submit a request.</p>`;
+      <p class="booking-no-charge">No payment required to submit a request. Venue pays a separate 5% fee from their deposit release.</p>`;
     feeBreakdown.style.display = '';
   } else if (feeBreakdown) {
     feeBreakdown.style.display = 'none';
@@ -1657,7 +1657,7 @@ function openBookerAgreement(id) {
   if (!r || !v) return;
 
   const deposit    = Math.round(v.price * 0.20);
-  const bookingFee = Math.round(v.price * 0.08);
+  const bookingFee = Math.round(v.price * 0.05);
   const remaining  = v.price - deposit;
   const artistName = profile.artistName || (user.firstName + ' ' + user.lastName);
   const dateStr    = new Date(r.date + 'T00:00:00').toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
@@ -1724,10 +1724,10 @@ function openBookerAgreement(id) {
       <thead><tr><th>Item</th><th>Amount</th><th>Notes</th></tr></thead>
       <tbody>
         <tr><td>Nightly rate</td><td>$${v.price.toLocaleString()}</td><td>Agreed venue fee</td></tr>
-        <tr><td>Deposit (20%)</td><td>$${deposit.toLocaleString()}</td><td>Held by GigNVenue; released within 24 hrs of show completion</td></tr>
-        <tr><td>Booking fee (8%)</td><td>$${bookingFee.toLocaleString()}</td><td>GigNVenue platform fee — non-refundable</td></tr>
+        <tr><td>Deposit (20%)</td><td>$${deposit.toLocaleString()}</td><td>Held by GigNVenue; released to venue (minus 5% venue fee) within 24 hrs of show completion</td></tr>
+        <tr><td>Artist booking fee (5%)</td><td>$${bookingFee.toLocaleString()}</td><td>GigNVenue platform fee — non-refundable</td></tr>
         <tr><td>Remaining balance</td><td>$${remaining.toLocaleString()}</td><td>Settled directly with venue in terms agreed between venue and artist</td></tr>
-        <tr class="total-row"><td>Paid at confirmation</td><td>$${(deposit + bookingFee).toLocaleString()}</td><td>Deposit + booking fee</td></tr>
+        <tr class="total-row"><td>Paid at confirmation</td><td>$${(deposit + bookingFee).toLocaleString()}</td><td>Deposit + artist booking fee</td></tr>
       </tbody>
     </table>
   </div>
@@ -1736,7 +1736,7 @@ function openBookerAgreement(id) {
     <div class="section-title">Terms &amp; conditions</div>
     <div class="clause"><span class="clause-num">1.</span> The Performer agrees to appear at the Venue on the date and time specified and to perform for the agreed duration.</div>
     <div class="clause"><span class="clause-num">2.</span> The Venue agrees to provide the agreed space, technical facilities, and any amenities confirmed via the GigNVenue platform.</div>
-    <div class="clause"><span class="clause-num">3.</span> The deposit of 20% of the nightly rate is held in escrow by GigNVenue and released to the Venue within 24 hours of the Venue confirming that the show has played off successfully.</div>
+    <div class="clause"><span class="clause-num">3.</span> The deposit of 20% of the nightly rate is held in escrow by GigNVenue and released to the Venue within 24 hours of the Venue confirming that the show has played off successfully, net of the Venue's 5% booking fee retained by GigNVenue at that time.</div>
     <div class="clause"><span class="clause-num">4.</span> Cancellation by the Performer within 14 days of the event date will result in forfeiture of the deposit. Cancellation by the Venue will result in a full refund of all amounts paid by the Performer.</div>
     <div class="clause"><span class="clause-num">5.</span> Both parties agree to conduct themselves professionally and in good faith, and to resolve any disputes first through GigNVenue's resolution process before pursuing external legal remedies.</div>
     <div class="clause"><span class="clause-num">6.</span> This agreement is facilitated by GigNVenue and is governed by the laws of the State of California. GigNVenue acts as platform intermediary and assumes no liability for acts or omissions of either party.</div>

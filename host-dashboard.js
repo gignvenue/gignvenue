@@ -948,12 +948,23 @@ function resRow(r, isPending, rank, isFirst, isLast, conflict, showDragHandle, i
       <td>$${r.total.toLocaleString()}</td>
       <td>
         ${r.status === 'confirmed' && !r.hostGenerated ? `<div style="font-size:11px;margin-bottom:4px">${r.paymentStatus === 'paid' ? '<span style="color:#10B981">● Payment received</span>' : '<span style="color:#F59E0B">● Awaiting payment</span>'}</div>` : ''}
-        <select class="res-status-select status-${r.status}" onchange="changeResStatus('${r.id}', this.value)">
-          <option value="pending"    ${r.status==='pending'   ?'selected':''}>Pending</option>
-          <option value="confirmed"  ${r.status==='confirmed' ?'selected':''}>Confirmed</option>
-          <option value="completed"  ${r.status==='completed' ?'selected':''}>Completed</option>
-          <option value="cancelled"  ${r.status==='cancelled' ?'selected':''}>Cancelled</option>
-        </select>
+        ${(()=>{
+          const showDate = new Date(r.checkin + 'T00:00:00');
+          const today = new Date(); today.setHours(0,0,0,0);
+          const isPastDate = showDate < today;
+          if (isPastDate) {
+            return `<select class="res-status-select status-${r.status}" onchange="changeResStatus('${r.id}', this.value)">
+              <option value="completed" ${r.status==='completed'?'selected':''}>Completed</option>
+              <option value="cancelled" ${r.status==='cancelled'?'selected':''}>Cancelled</option>
+            </select>`;
+          }
+          return `<select class="res-status-select status-${r.status}" onchange="changeResStatus('${r.id}', this.value)">
+            <option value="pending"   ${r.status==='pending'  ?'selected':''}>Pending</option>
+            <option value="confirmed" ${r.status==='confirmed'?'selected':''}>Confirmed</option>
+            <option value="completed" ${r.status==='completed'?'selected':''}>Completed</option>
+            <option value="cancelled" ${r.status==='cancelled'?'selected':''}>Cancelled</option>
+          </select>`;
+        })()}
       </td>
       <td>
         <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">
@@ -1035,7 +1046,8 @@ function markPlayedOff(id) {
   updateConfirmedTabBadge();
   renderOverview();
   renderEarnings();
-  showDash(`✓ Show confirmed — $${Math.round(r.total * 0.20).toLocaleString()} deposit released. Funds transfer within 24 hours.`);
+  const _depRelease = Math.round(r.total * 0.15); // 20% deposit minus 5% venue fee
+  showDash(`✓ Show confirmed — $${_depRelease.toLocaleString()} deposit released (deposit minus 5% venue fee). Funds transfer within 24 hours.`);
   // Prompt host to rate the artist
   openHostRatingModal(id);
 }
@@ -1175,7 +1187,7 @@ function viewRes(id) {
   if (!r) return;
 
   const deposit    = Math.round(r.total * 0.20);
-  const bookingFee = Math.round(r.total * 0.08);
+  const bookingFee = Math.round(r.total * 0.05);
   const remaining  = r.total - deposit;
   const isPaid     = r.paymentStatus === 'paid';
 
@@ -1382,7 +1394,7 @@ function openAgreement(id) {
   if (!r) return;
   const listing    = HOST_LISTINGS.find(l => l.title === r.property) || {};
   const deposit    = Math.round(r.total * 0.20);
-  const bookingFee = Math.round(r.total * 0.08);
+  const bookingFee = Math.round(r.total * 0.05);
   const remaining  = r.total - deposit;
   const dateStr    = new Date(r.checkin + 'T00:00:00').toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
   const issuedStr  = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
@@ -1454,10 +1466,11 @@ function openAgreement(id) {
       <thead><tr><th>Item</th><th>Amount</th><th>Notes</th></tr></thead>
       <tbody>
         <tr><td>Nightly rate</td><td>$${r.total.toLocaleString()}</td><td>Agreed venue fee</td></tr>
-        <tr><td>Deposit (20%)</td><td>$${deposit.toLocaleString()}</td><td>Held by GigNVenue; released within 24 hrs of show completion</td></tr>
-        <tr><td>Booking fee (8%)</td><td>$${bookingFee.toLocaleString()}</td><td>GigNVenue platform fee — non-refundable</td></tr>
+        <tr><td>Deposit held (20%)</td><td>$${deposit.toLocaleString()}</td><td>Collected from artist; held by GigNVenue until show completion</td></tr>
+        <tr><td>Artist booking fee (5%)</td><td>$${bookingFee.toLocaleString()}</td><td>Paid by artist at confirmation — GigNVenue platform fee</td></tr>
+        <tr><td>Venue booking fee (5%)</td><td>-$${bookingFee.toLocaleString()}</td><td>Deducted from deposit at release — venue's share of platform fee</td></tr>
         <tr><td>Remaining balance</td><td>$${remaining.toLocaleString()}</td><td>Settled directly with venue in terms agreed between venue and artist</td></tr>
-        <tr class="total-row"><td>Paid at confirmation</td><td>$${(deposit + bookingFee).toLocaleString()}</td><td>Deposit + booking fee</td></tr>
+        <tr class="total-row"><td>Net deposit to venue</td><td>$${Math.round(deposit - bookingFee).toLocaleString()}</td><td>Released within 24 hrs of show confirmation</td></tr>
       </tbody>
     </table>
   </div>
@@ -1466,7 +1479,7 @@ function openAgreement(id) {
     <div class="section-title">Terms &amp; conditions</div>
     <div class="clause"><span class="clause-num">1.</span> The Performer agrees to appear at the Venue on the date and time specified and to perform for the agreed duration.</div>
     <div class="clause"><span class="clause-num">2.</span> The Venue agrees to provide the agreed space, technical facilities, and any amenities confirmed via the GigNVenue platform.</div>
-    <div class="clause"><span class="clause-num">3.</span> The deposit of 20% of the nightly rate is held in escrow by GigNVenue and released to the Venue within 24 hours of the Venue confirming that the show has played off successfully.</div>
+    <div class="clause"><span class="clause-num">3.</span> The deposit of 20% of the nightly rate is held in escrow by GigNVenue and released to the Venue within 24 hours of the Venue confirming that the show has played off successfully, net of the Venue's 5% booking fee retained by GigNVenue at that time.</div>
     <div class="clause"><span class="clause-num">4.</span> Cancellation by the Performer within 14 days of the event date will result in forfeiture of the deposit. Cancellation by the Venue will result in a full refund of all amounts paid by the Performer.</div>
     <div class="clause"><span class="clause-num">5.</span> Both parties agree to conduct themselves professionally and in good faith, and to resolve any disputes first through GigNVenue's resolution process before pursuing external legal remedies.</div>
     <div class="clause"><span class="clause-num">6.</span> This agreement is facilitated by GigNVenue and is governed by the laws of the State of California. GigNVenue acts as platform intermediary and assumes no liability for acts or omissions of either party.</div>
@@ -1765,7 +1778,7 @@ function updateDepositCalc(prefix) {
   const deposit   = Math.round(price * 0.20);
   const remaining = price - deposit;
   el.innerHTML = `
-    <span class="deposit-calc-row">Deposit charged on approval: <strong>$${deposit.toLocaleString()}</strong> <span class="deposit-calc-note">(20% — held by GigNVenue, released to you after the show)</span></span>
+    <span class="deposit-calc-row">Deposit charged on approval: <strong>$${deposit.toLocaleString()}</strong> <span class="deposit-calc-note">(20% — held by GigNVenue; $${Math.round(price * 0.15).toLocaleString()} released to you after the show, after 5% venue fee)</span></span>
     <span class="deposit-calc-row">Remaining balance: <strong>$${remaining.toLocaleString()}</strong> <span class="deposit-calc-note">(settled per your contract terms)</span></span>
     <span class="deposit-calc-row deposit-calc-note" style="margin-top:4px">⏱ Artist has 48 hours after approval to complete their deposit payment — if unpaid, the booking is automatically cancelled.</span>`;
 }
