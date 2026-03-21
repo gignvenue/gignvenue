@@ -18,6 +18,15 @@ BookerAuth.requireAuth('booker-login.html');
 const user = BookerAuth.currentUser();
 let profile = BookerAuth.currentProfile();
 
+function resolveNightlyRate(l, iso) {
+  if (l.dateOverrides?.[iso] !== undefined) return l.dateOverrides[iso];
+  if (l.weekdayRates) {
+    const dow = new Date(iso + 'T00:00:00').getDay();
+    if (l.weekdayRates[dow] !== undefined) return l.weekdayRates[dow];
+  }
+  return l.price;
+}
+
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 
 // All venues (mirrors main site listings for the calendar)
@@ -26,8 +35,8 @@ const _CP_21_7   = 'Cancellations more than 21 days before the event date are el
 const _CP_60_14  = 'Cancellations more than 60 days before the event date are eligible for a full deposit refund. Cancellations within 60 days but more than 14 days before the event date will forfeit 50% of the deposit. Cancellations within 14 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.';
 
 const ALL_VENUES = [
-  { id:'l1',  title:'The Neon Stage',              location:'Hollywood, California',      img:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=400&q=70', price:2100,  capacity:500,  lat:34.0928,  lng:-118.3287, cancellationPolicy: _CP_30_7  },
-  { id:'l2',  title:'Velvet Lounge',               location:'Brooklyn, New York',         img:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=70', price:1300,  capacity:200,  lat:40.7173,  lng:-73.9573,  cancellationPolicy: _CP_21_7  },
+  { id:'l1',  title:'The Neon Stage',              location:'Hollywood, California',      img:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=400&q=70', price:2100,  weekdayRates:{0:1800,1:1800,2:1800,3:1800,4:2100,5:2800,6:2400}, capacity:500,  lat:34.0928,  lng:-118.3287, cancellationPolicy: _CP_30_7  },
+  { id:'l2',  title:'Velvet Lounge',               location:'Brooklyn, New York',         img:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=70', price:1300,  weekdayRates:{0:1200,1:1100,2:1100,3:1100,4:1300,5:1800,6:1600}, capacity:200,  lat:40.7173,  lng:-73.9573,  cancellationPolicy: _CP_21_7  },
   { id:'l3',  title:'Rooftop Sessions',            location:'Manhattan, New York',        img:'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=400&q=70', price:3500,  capacity:120,  lat:40.7614,  lng:-73.9937,  cancellationPolicy: _CP_30_7  },
   { id:'l4',  title:'The Midnight Rooftop',        location:'Manhattan, New York',        img:'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&q=70', price:3600,  capacity:250,  lat:40.7505,  lng:-73.9934,  cancellationPolicy: _CP_30_7,  rating:4.88 },
   { id:'l5',  title:'Blue Note Underground',       location:'New Orleans, Louisiana',     img:'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&q=70', price:1400,  capacity:180,  lat:29.9511,  lng:-90.0715,  cancellationPolicy: _CP_21_7,  rating:4.95 },
@@ -1269,10 +1278,11 @@ function calDayClick(iso) {
   // Fee breakdown
   const feeBreakdown = document.getElementById('calFeeBreakdown');
   if (feeBreakdown && venue?.price) {
-    const deposit    = Math.round(venue.price * 0.20);
-    const bookingFee = Math.round(venue.price * 0.05);
+    const nightlyRate = resolveNightlyRate(venue, calSelectedDate);
+    const deposit    = Math.round(nightlyRate * 0.20);
+    const bookingFee = Math.round(nightlyRate * 0.05);
     feeBreakdown.innerHTML = `
-      <div class="booking-fee-row"><span>Venue fee</span><span>$${venue.price.toLocaleString()} / night</span></div>
+      <div class="booking-fee-row"><span>Venue fee</span><span>$${nightlyRate.toLocaleString()} / night</span></div>
       <div class="booking-fee-row"><span>Deposit <span class="fee-note">(20% · held; released post-show)</span></span><span>$${deposit.toLocaleString()}</span></div>
       <div class="booking-fee-row"><span>Artist booking fee <span class="fee-note">(5% · non-refundable)</span></span><span>$${bookingFee.toLocaleString()}</span></div>
       <div class="booking-fee-total"><span>Due on approval</span><span>$${(deposit + bookingFee).toLocaleString()}</span></div>

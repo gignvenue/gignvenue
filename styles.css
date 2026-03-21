@@ -1235,3 +1235,4 @@ ul { list-style: none; }
   .main-content { padding: 16px 12px 60px; }
   .listings-grid { grid-template-columns: 1fr 1fr; gap: 14px 10px; }
 }
+.mcp-price { display:block; font-size:9px; color:var(--text-muted); margin-top:1px; line-height:1; }

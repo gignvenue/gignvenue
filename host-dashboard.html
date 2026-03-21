@@ -655,6 +655,18 @@
         <input type="number" id="nlPrice" min="100" value="2000" oninput="updateDepositCalc('nl')"/>
         <div class="deposit-calc" id="nlDepositCalc"></div>
       </div>
+      <div class="p-field" style="margin-top:12px">
+        <label>Per-night rates by day <span style="font-weight:400;color:var(--text-muted);font-size:12px">— optional, overrides base rate per day of week</span></label>
+        <div class="weekday-rates-grid">
+          <div class="wdr-cell"><span>Sun</span><input type="number" id="nlWdr0" min="0" step="50" placeholder="—"/></div>
+          <div class="wdr-cell"><span>Mon</span><input type="number" id="nlWdr1" min="0" step="50" placeholder="—"/></div>
+          <div class="wdr-cell"><span>Tue</span><input type="number" id="nlWdr2" min="0" step="50" placeholder="—"/></div>
+          <div class="wdr-cell"><span>Wed</span><input type="number" id="nlWdr3" min="0" step="50" placeholder="—"/></div>
+          <div class="wdr-cell"><span>Thu</span><input type="number" id="nlWdr4" min="0" step="50" placeholder="—"/></div>
+          <div class="wdr-cell"><span>Fri</span><input type="number" id="nlWdr5" min="0" step="50" placeholder="—"/></div>
+          <div class="wdr-cell"><span>Sat</span><input type="number" id="nlWdr6" min="0" step="50" placeholder="—"/></div>
+        </div>
+      </div>
       <div class="p-field">
         <label>What's included</label>
         <textarea id="nlBookingDesc" rows="2" placeholder="e.g. Full PA system, stage lighting, green room, bar staff, security…"></textarea>
@@ -869,6 +881,18 @@
         <label>Booking rate (USD) *</label>
         <input type="number" id="elmPrice" min="100" oninput="updateDepositCalc('elm')"/>
         <div class="deposit-calc" id="elmDepositCalc"></div>
+      </div>
+      <div class="p-field" style="margin-top:12px">
+        <label>Per-night rates by day <span style="font-weight:400;color:var(--text-muted);font-size:12px">— optional, overrides base rate per day of week</span></label>
+        <div class="weekday-rates-grid">
+          <div class="wdr-cell"><span>Sun</span><input type="number" id="elmWdr0" min="0" step="50" placeholder="—"/></div>
+          <div class="wdr-cell"><span>Mon</span><input type="number" id="elmWdr1" min="0" step="50" placeholder="—"/></div>
+          <div class="wdr-cell"><span>Tue</span><input type="number" id="elmWdr2" min="0" step="50" placeholder="—"/></div>
+          <div class="wdr-cell"><span>Wed</span><input type="number" id="elmWdr3" min="0" step="50" placeholder="—"/></div>
+          <div class="wdr-cell"><span>Thu</span><input type="number" id="elmWdr4" min="0" step="50" placeholder="—"/></div>
+          <div class="wdr-cell"><span>Fri</span><input type="number" id="elmWdr5" min="0" step="50" placeholder="—"/></div>
+          <div class="wdr-cell"><span>Sat</span><input type="number" id="elmWdr6" min="0" step="50" placeholder="—"/></div>
+        </div>
       </div>
       <div class="p-field">
         <label>What's included</label>

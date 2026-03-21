@@ -52,10 +52,47 @@ const RESERVATIONS = [
 ];
 
 const HOST_LISTINGS = [
-  { id:'l1', title:'The Neon Stage',    location:'6801 Hollywood Blvd, Hollywood, CA 90028', img:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=400&q=70', price:2100, active:true,  capacity:500,  type:'clubs',    desc:'Iconic Hollywood venue with state-of-the-art sound and lights. A boutique 500-capacity club with impeccable acoustics, professional stage, full backline, and a dedicated green room.', amenities:['pro_sound','stage','stage_lights','bar','vip_area','green_room'] },
-  { id:'l2', title:'Velvet Lounge',     location:'218 Bedford Ave, Brooklyn, NY 11249',       img:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=70', price:1300, active:true,  capacity:200,  type:'jazz',     desc:'Intimate jazz club with incredible acoustics and cozy vibes. A beloved Brooklyn institution with a 200-capacity room, baby grand piano, and warm atmosphere.', amenities:['pro_sound','piano','bar','seated','accessibility'] },
+  { id:'l1', title:'The Neon Stage',    location:'6801 Hollywood Blvd, Hollywood, CA 90028', img:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=400&q=70', price:2100, weekdayRates:{0:1800,1:1800,2:1800,3:1800,4:2100,5:2800,6:2400}, active:true,  capacity:500,  type:'clubs',    desc:'Iconic Hollywood venue with state-of-the-art sound and lights. A boutique 500-capacity club with impeccable acoustics, professional stage, full backline, and a dedicated green room.', amenities:['pro_sound','stage','stage_lights','bar','vip_area','green_room'] },
+  { id:'l2', title:'Velvet Lounge',     location:'218 Bedford Ave, Brooklyn, NY 11249',       img:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=70', price:1300, weekdayRates:{0:1200,1:1100,2:1100,3:1100,4:1300,5:1800,6:1600}, active:true,  capacity:200,  type:'jazz',     desc:'Intimate jazz club with incredible acoustics and cozy vibes. A beloved Brooklyn institution with a 200-capacity room, baby grand piano, and warm atmosphere.', amenities:['pro_sound','piano','bar','seated','accessibility'] },
   { id:'l3', title:'Rooftop Sessions',  location:'432 W 45th St, New York, NY 10036',          img:'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400&q=70', price:3500, active:false, capacity:120,  type:'rooftops', desc:'Open-air rooftop with stunning skyline views and premium sound. A boutique 120-cap rooftop above Midtown Manhattan — perfect for album launches and private showcases.', amenities:['pro_sound','outdoor','rooftop','bar','vip_area','security'] },
 ];
+
+const DOW_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+function resolveNightlyRate(l, iso) {
+  if (l.dateOverrides?.[iso] !== undefined) return l.dateOverrides[iso];
+  if (l.weekdayRates) {
+    const dow = new Date(iso + 'T00:00:00').getDay();
+    if (l.weekdayRates[dow] !== undefined) return l.weekdayRates[dow];
+  }
+  return l.price;
+}
+
+function applyDatePrice(iso, scope) {
+  const input = document.getElementById('cdpPriceInput');
+  const price = parseInt(input?.value) || 0;
+  if (!price) return;
+  const l = HOST_LISTINGS.find(x => x.id === calVenueId);
+  if (!l) return;
+  if (scope === 'date') {
+    if (!l.dateOverrides) l.dateOverrides = {};
+    l.dateOverrides[iso] = price;
+  } else {
+    if (!l.weekdayRates) l.weekdayRates = {};
+    const dow = new Date(iso + 'T00:00:00').getDay();
+    l.weekdayRates[dow] = price;
+    // Note: existing dateOverrides for this day-of-week are intentionally preserved
+  }
+  saveHostListings();
+  const srcEl = document.getElementById('cdpPriceSource');
+  const applyEl = document.getElementById('cdpPriceApply');
+  const dow = new Date(iso + 'T00:00:00').getDay();
+  if (srcEl) srcEl.textContent = scope === 'date' ? 'override' : `${DOW_NAMES[dow]} rate`;
+  if (applyEl) applyEl.style.display = 'none';
+  showDash(scope === 'date'
+    ? `Rate set to $${price.toLocaleString()} for ${iso}.`
+    : `${DOW_NAMES[dow]} rate updated to $${price.toLocaleString()}.`);
+}
 
 // ─── SEEN-REQUEST TRACKING ────────────────────────────────────────────────────
 
@@ -1948,6 +1985,12 @@ function editListing(id) {
   document.getElementById('elmPrice').value    = l.price;
   document.getElementById('elmDesc').value     = l.desc || '';
 
+  // Populate weekday rates
+  [0,1,2,3,4,5,6].forEach(dow => {
+    const el = document.getElementById(`elmWdr${dow}`);
+    if (el) el.value = l.weekdayRates?.[dow] || '';
+  });
+
   populateAvailFields('elm', l.dates);
   updateDepositCalc('elm');
 
@@ -2092,6 +2135,12 @@ function saveEditedListing() {
   l.title    = name;
   l.location = location;
   l.price    = price;
+  const wr = {};
+  [0,1,2,3,4,5,6].forEach(dow => {
+    const v = parseInt(document.getElementById(`elmWdr${dow}`)?.value);
+    if (v > 0) wr[dow] = v;
+  });
+  l.weekdayRates = Object.keys(wr).length ? wr : undefined;
   l.capacity = capacity;
   l.type     = type;
   l.desc     = desc;
@@ -2369,9 +2418,16 @@ function submitNewListing() {
   const featureImg = nlmImages[nlmFeatureIdx]?.dataUrl
     || 'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=400&q=70';
 
+  const nlWr = {};
+  [0,1,2,3,4,5,6].forEach(dow => {
+    const v = parseInt(document.getElementById(`nlWdr${dow}`)?.value);
+    if (v > 0) nlWr[dow] = v;
+  });
+
   HOST_LISTINGS.push({
     id:'l'+Date.now(), title, location, price, capacity, type,
     img: featureImg, rating:0, reviews:0, active:true, desc,
+    weekdayRates: Object.keys(nlWr).length ? nlWr : undefined,
     dates:              modeToAvail('nl'),
     roomRentalEnabled:  document.getElementById('nlRoomRentalEnabled').checked,
     roomRentalPrice:    parseInt(document.getElementById('nlRoomRentalPrice').value) || 0,
@@ -2625,6 +2681,14 @@ function openCalDayPopup(iso) {
 
   const chk = `<svg class="cdp-check" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>`;
 
+  const venue = HOST_LISTINGS.find(x => x.id === calVenueId);
+  const currentPrice = resolveNightlyRate(venue || {price:0}, iso);
+  const dowIdx = new Date(iso + 'T00:00:00').getDay();
+  const isOverride = venue?.dateOverrides?.[iso] !== undefined;
+  const priceSource = isOverride ? 'override'
+    : (venue?.weekdayRates?.[dowIdx] !== undefined ? `${DOW_NAMES[dowIdx]} rate` : 'venue default');
+  const dayName = DOW_NAMES[dowIdx];
+
   const popup = document.createElement('div');
   popup.id = 'calDayPopup';
   popup.className = 'cal-day-popup';
@@ -2690,6 +2754,22 @@ function openCalDayPopup(iso) {
         </div>
       </div>
       <button class="cdp-save-btn" onclick="cdpSave('${iso}')">Save</button>
+    </div>
+    <div class="cdp-price-section">
+      <div class="cdp-price-row">
+        <span class="cdp-price-label">Nightly rate</span>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+          <span style="font-size:13px;color:var(--text-muted)">$</span>
+          <input type="number" id="cdpPriceInput" value="${currentPrice}" min="0" step="50"
+                 class="cdp-price-input"
+                 oninput="document.getElementById('cdpPriceApply').style.display=parseInt(this.value)!==${currentPrice}?'flex':'none'"/>
+          <span class="cdp-price-source" id="cdpPriceSource">${priceSource}</span>
+        </div>
+        <div id="cdpPriceApply" style="display:none;gap:6px;margin-top:8px">
+          <button class="cdp-price-btn" onclick="applyDatePrice('${iso}','date')">This date</button>
+          <button class="cdp-price-btn cdp-price-btn-day" onclick="applyDatePrice('${iso}','day')">All ${dayName}s</button>
+        </div>
+      </div>
     </div>
     ${isFuture && status === 'available' && !fn ? `
     <div class="cdp-feature-section">

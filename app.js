@@ -103,6 +103,7 @@ const LISTINGS = [
     subtitle: 'Hosted by Sarah M.',
     dates: 'Available now',
     price: 2100,
+    weekdayRates: {0:1800,1:1800,2:1800,3:1800,4:2100,5:2800,6:2400},
     priceUnit: 'night',
     capacity: 500,
     badge: null,
@@ -138,6 +139,7 @@ const LISTINGS = [
     subtitle: 'Hosted by James K.',
     dates: 'Available now',
     price: 1300,
+    weekdayRates: {0:1200,1:1100,2:1100,3:1100,4:1300,5:1800,6:1600},
     priceUnit: 'night',
     capacity: 200,
     badge: null,
@@ -661,6 +663,8 @@ function mergeHostListings() {
           listing.roomRentalPrice   = hl.roomRentalPrice   || 0;
           listing.roomRentalDesc    = hl.roomRentalDesc    || '';
           listing.bookingDesc       = hl.bookingDesc       || '';
+          listing.weekdayRates  = hl.weekdayRates  || null;
+          listing.dateOverrides = hl.dateOverrides || null;
         }
       } else {
         if (!LISTINGS.find(l => l.id === hl.id)) {
@@ -686,6 +690,15 @@ function mergeHostListings() {
       }
     });
   } catch(e) {}
+}
+
+function resolveNightlyRate(l, iso) {
+  if (l.dateOverrides?.[iso] !== undefined) return l.dateOverrides[iso];
+  if (l.weekdayRates) {
+    const dow = new Date(iso + 'T00:00:00').getDay();
+    if (l.weekdayRates[dow] !== undefined) return l.weekdayRates[dow];
+  }
+  return l.price;
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
@@ -1795,6 +1808,9 @@ function renderModalCal() {
     const myReqStatus = !isPast ? myReqMap.get(iso) : undefined; // 'approved'|'pending'|'declined'|undefined
     const hasMyReq    = myReqStatus !== undefined;
 
+    const nightlyPrice = (!disabled && !hasMyReq && appState.selectedListing?.weekdayRates)
+      ? resolveNightlyRate(appState.selectedListing, iso) : null;
+
     let cls = 'mcp-day';
     if (disabled && !hasMyReq)      cls += ' mcp-disabled';
     else if (status === 'pending' && !hasMyReq) cls += ' mcp-pending';
@@ -1813,6 +1829,7 @@ function renderModalCal() {
                 : isUnavailable          ? ' title="Unavailable"' : '';
     html += `<div class="${cls}"${title}${clickAttr}>
       <span class="mcp-num">${d}</span>
+      ${nightlyPrice ? `<span class="mcp-price">$${nightlyPrice >= 1000 ? Math.round(nightlyPrice/100)/10 + 'k' : nightlyPrice}</span>` : ''}
       ${isUnavailable && !hasMyReq && actName ? `<span class="mcp-badge mcp-badge-booked mcp-badge-act" title="${actName}">${actName}</span>` : ''}
       ${isUnavailable && !hasMyReq && !actName ? '<span class="mcp-badge mcp-badge-booked">Unavailable</span>' : ''}
       ${status === 'pending' && !disabled && !hasMyReq ? '<span class="mcp-badge mcp-badge-pending">Pending</span>' : ''}
@@ -2028,12 +2045,13 @@ function updateModalDateDisplay() {
 function updateModalBookingTotal() {
   const l = appState.selectedListing;
   if (!l) return;
-  const deposit    = Math.round(l.price * 0.20);
-  const bookingFee = Math.round(l.price * 0.05);
+  const nightlyRate = modalCal.date ? resolveNightlyRate(l, modalCal.date) : l.price;
+  const deposit    = Math.round(nightlyRate * 0.20);
+  const bookingFee = Math.round(nightlyRate * 0.05);
   const el = document.getElementById('modalBookingBreakdown');
   if (!el) return;
   el.innerHTML = `
-    <div class="booking-fee-row"><span>Venue fee</span><span>$${l.price.toLocaleString()} / night</span></div>
+    <div class="booking-fee-row"><span>Venue fee</span><span>$${nightlyRate.toLocaleString()} / night</span></div>
     <div class="booking-fee-row"><span>Deposit <span class="fee-note">(20% · held; released post-show)</span></span><span>$${deposit.toLocaleString()}</span></div>
     <div class="booking-fee-row"><span>Artist booking fee <span class="fee-note">(5% · non-refundable)</span></span><span>$${bookingFee.toLocaleString()}</span></div>
     <div class="booking-fee-total"><span>Due on approval</span><span>$${(deposit + bookingFee).toLocaleString()}</span></div>
