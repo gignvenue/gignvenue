@@ -581,7 +581,7 @@ function buildEarningsData(year) {
   RESERVATIONS.filter(r => !r.hostGenerated && r.status === 'completed' && r.checkin.startsWith(yr))
     .forEach(r => {
       const l = HOST_LISTINGS.find(x => x.title === r.property);
-      if (l && monthly[l.id]) monthly[l.id][parseInt(r.checkin.split('-')[1]) - 1] += r.total;
+      if (l && monthly[l.id]) monthly[l.id][parseInt(r.checkin.split('-')[1]) - 1] += Math.round(r.total * 0.95);
     });
 
   return monthly;
