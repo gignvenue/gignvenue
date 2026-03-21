@@ -261,21 +261,21 @@ const ALL_REQUESTS = [
 
 // My messages with venue hosts
 const MY_MESSAGES = [
-  { id:'cm1', from:'Velvet Lounge', fromImg:'https://api.dicebear.com/7.x/initials/svg?seed=VelvetLounge&backgroundColor=FF385C&textColor=ffffff', venue:'Velvet Lounge', lastMsg:'Your request for Apr 15 looks great!', time:'Today', unread:true,
+  { id:'cm1', from:'Velvet Lounge', fromImg:'https://api.dicebear.com/7.x/initials/svg?seed=VelvetLounge&backgroundColor=FF385C&textColor=ffffff', venue:'Velvet Lounge', venueId:'l2', lastMsg:'Your request for Apr 15 looks great!', time:'Today', unread:true,
     thread:[
       { mine:false, text:'Hi! We received your booking request for April 15th.', time:'9:12 AM' },
       { mine:false, text:'Your request for Apr 15 looks great! We love hosting indie acts. Can you send over your tech rider?', time:'9:14 AM' },
       { mine:true,  text:"Hi Sarah! Amazing, thank you! I'll send the rider over shortly 🎸", time:'9:30 AM' },
     ]
   },
-  { id:'cm2', from:'Blue Note Underground', fromImg:'https://api.dicebear.com/7.x/initials/svg?seed=BlueNoteUnderground&backgroundColor=3B82F6&textColor=ffffff', venue:'Blue Note Underground', lastMsg:'Confirmed! Apr 22 & 23 are yours 🎶', time:'Yesterday', unread:true,
+  { id:'cm2', from:'Blue Note Underground', fromImg:'https://api.dicebear.com/7.x/initials/svg?seed=BlueNoteUnderground&backgroundColor=3B82F6&textColor=ffffff', venue:'Blue Note Underground', venueId:'l5', lastMsg:'Confirmed! Apr 22 & 23 are yours 🎶', time:'Yesterday', unread:true,
     thread:[
       { mine:true,  text:'Hi James, so excited about the album launch at Blue Note. Do you have any decoration restrictions?', time:'Yesterday' },
       { mine:false, text:'Hey Alex! Welcome aboard. Confirmed — Apr 22 & 23 are yours 🎶', time:'Yesterday' },
       { mine:false, text:"No decoration restrictions at all. We'll have the space fully ready for you.", time:'Yesterday' },
     ]
   },
-  { id:'cm3', from:'The Neon Stage', fromImg:'https://api.dicebear.com/7.x/initials/svg?seed=TheNeonStage&backgroundColor=8B5CF6&textColor=ffffff', venue:'The Neon Stage', lastMsg:'Unfortunately we have to decline for May 10.', time:'Feb 20', unread:false,
+  { id:'cm3', from:'The Neon Stage', fromImg:'https://api.dicebear.com/7.x/initials/svg?seed=TheNeonStage&backgroundColor=8B5CF6&textColor=ffffff', venue:'The Neon Stage', venueId:'l1', lastMsg:'Unfortunately we have to decline for May 10.', time:'Feb 20', unread:false,
     thread:[
       { mine:true,  text:'Hi Maria, we would love to headline at The Neon on May 10th. Our show draws about 500+.', time:'Feb 20' },
       { mine:false, text:"Hi Alex! Thanks for reaching out. Unfortunately we have to decline for May 10 — we already have a booked act that night. Hope we can make it work another time!", time:'Feb 20' },
@@ -847,13 +847,17 @@ function cancelRequest(id) {
 // ─── MESSAGES ─────────────────────────────────────────────────────────────────
 
 function renderMessages() {
-  document.getElementById('msgThreadList').innerHTML = MY_MESSAGES.map(m => `
+  document.getElementById('msgThreadList').innerHTML = MY_MESSAGES.map(m => {
+    const vLink = m.venueId ? `index.html?venue=${m.venueId}` : 'index.html';
+    return `
     <div class="msg-thread${m.unread?' msg-thread-unread':''}" id="thread-${m.id}" onclick="openThread('${m.id}')">
-      <img src="${m.fromImg}" alt="${m.venue}" class="msg-thread-avatar" onerror="this.style.background='#1C1C1C'"/>
+      <a href="${vLink}" onclick="event.stopPropagation()" style="flex-shrink:0">
+        <img src="${m.fromImg}" alt="${m.venue}" class="msg-thread-avatar" onerror="this.style.background='#1C1C1C'"/>
+      </a>
       <div class="msg-thread-body">
         <div class="msg-thread-top">
           <div class="msg-thread-name-wrap">
-            <span class="msg-thread-name">${m.venue}</span>
+            <a href="${vLink}" onclick="event.stopPropagation()" class="msg-thread-name" style="color:inherit;text-decoration:none">${m.venue}</a>
             ${m.preRequest ? '<span class="msg-prerequest-badge">Pre-request</span>' : ''}
           </div>
           <span class="msg-thread-time">${m.time}</span>
@@ -861,7 +865,8 @@ function renderMessages() {
         <div class="msg-thread-preview">${m.lastMsg || 'Start the conversation'}</div>
       </div>
       ${m.unread ? '<span class="msg-unread-dot"></span>' : ''}
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function openThread(id) {
@@ -875,7 +880,7 @@ function openThread(id) {
   threadEl.querySelector('.msg-unread-dot')?.remove();
   threadEl.classList.remove('msg-thread-unread');
 
-  const _venueProfileLink = `href="index.html" title="Browse ${m.venue} on GigNVenue"`;
+  const _venueProfileLink = `href="${m.venueId ? `index.html?venue=${m.venueId}` : 'index.html'}" title="Browse ${m.venue} on GigNVenue"`;
   document.getElementById('msgChat').innerHTML = `
     <div class="msg-chat-header">
       <a ${_venueProfileLink} style="display:inline-block;flex-shrink:0">
