@@ -847,17 +847,13 @@ function cancelRequest(id) {
 // ─── MESSAGES ─────────────────────────────────────────────────────────────────
 
 function renderMessages() {
-  document.getElementById('msgThreadList').innerHTML = MY_MESSAGES.map(m => {
-    const vLink = m.venueId ? `index.html?venue=${m.venueId}` : 'index.html';
-    return `
+  document.getElementById('msgThreadList').innerHTML = MY_MESSAGES.map(m => `
     <div class="msg-thread${m.unread?' msg-thread-unread':''}" id="thread-${m.id}" onclick="openThread('${m.id}')">
-      <a href="${vLink}" onclick="event.stopPropagation()" style="flex-shrink:0">
-        <img src="${m.fromImg}" alt="${m.venue}" class="msg-thread-avatar" onerror="this.style.background='#1C1C1C'"/>
-      </a>
+      <img src="${m.fromImg}" alt="${m.venue}" class="msg-thread-avatar" onerror="this.style.background='#1C1C1C'"/>
       <div class="msg-thread-body">
         <div class="msg-thread-top">
           <div class="msg-thread-name-wrap">
-            <a href="${vLink}" onclick="event.stopPropagation()" class="msg-thread-name" style="color:inherit;text-decoration:none">${m.venue}</a>
+            <span class="msg-thread-name">${m.venue}</span>
             ${m.preRequest ? '<span class="msg-prerequest-badge">Pre-request</span>' : ''}
           </div>
           <span class="msg-thread-time">${m.time}</span>
@@ -865,8 +861,7 @@ function renderMessages() {
         <div class="msg-thread-preview">${m.lastMsg || 'Start the conversation'}</div>
       </div>
       ${m.unread ? '<span class="msg-unread-dot"></span>' : ''}
-    </div>`;
-  }).join('');
+    </div>`).join('');
 }
 
 function openThread(id) {
