@@ -253,6 +253,17 @@
         <h1 class="section-title">Earnings</h1>
         <button class="res-action-btn" onclick="downloadEarningsCSV()" style="margin-left:auto;margin-top:0">⬇ Export CSV</button>
       </div>
+      <div class="earnings-filter-bar">
+        <select id="earningsYearFilter" onchange="setEarningsYear(this.value)">
+          <option value="2026">2026</option>
+          <option value="2025">2025</option>
+        </select>
+        <div class="earnings-source-pills">
+          <button class="earnings-pill active" onclick="setEarningsSource('all',this)">All sources</button>
+          <button class="earnings-pill" onclick="setEarningsSource('gnv',this)">GigNVenue</button>
+          <button class="earnings-pill" onclick="setEarningsSource('self',this)">Self-managed</button>
+        </div>
+      </div>
       <div class="stats-grid" id="earningsStatsGrid"></div>
 
       <div class="card" style="margin-top:24px">

@@ -3515,36 +3515,78 @@ function downloadEarningsCSV() {
   URL.revokeObjectURL(url);
 }
 
+let _earningsYear   = new Date().getFullYear();
+let _earningsSource = 'all';
+
+function setEarningsYear(yr) {
+  _earningsYear = parseInt(yr);
+  renderEarnings();
+}
+
+function setEarningsSource(src, btn) {
+  _earningsSource = src;
+  document.querySelectorAll('.earnings-pill').forEach(p => p.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderEarnings();
+}
+
 function renderEarnings() {
-  const today = new Date();
-  const yr    = today.getFullYear().toString();
+  const today  = new Date();
+  const yr     = _earningsYear.toString();
+  const src    = _earningsSource;
+
+  // Sync year selector UI
+  const yrSel = document.getElementById('earningsYearFilter');
+  if (yrSel) yrSel.value = yr;
 
   // GigNVenue-facilitated earnings
   const gnvCompleted = RESERVATIONS.filter(r => !r.hostGenerated && r.status === 'completed');
   const gnvAllTime   = gnvCompleted.reduce((s, r) => s + r.total, 0);
   const gnvThisYear  = gnvCompleted.filter(r => r.checkin.startsWith(yr)).reduce((s, r) => s + r.total, 0);
 
-  // Self-managed (manually logged) earnings
-  const { allTime: manualAllTime, thisYear: manualThisYear } = getAllLoggedEarnings();
+  // Self-managed (manually logged) earnings — getAllLoggedEarnings uses current year; recompute for _earningsYear
+  const { allTime: manualAllTime } = getAllLoggedEarnings();
+  let manualThisYear = 0;
+  Object.values(MANUAL_CAL_ENTRIES).forEach(dates => {
+    Object.entries(dates).forEach(([iso, entry]) => {
+      if (iso.startsWith(yr) && entry.earnings) manualThisYear += entry.earnings;
+    });
+  });
 
-  const totalAllTime  = Math.round(gnvAllTime  + manualAllTime);
-  const totalThisYear = Math.round(gnvThisYear + manualThisYear);
+  const totalAllTime  = Math.round(src === 'gnv' ? gnvAllTime  : src === 'self' ? manualAllTime  : gnvAllTime  + manualAllTime);
+  const totalThisYear = Math.round(src === 'gnv' ? gnvThisYear : src === 'self' ? manualThisYear : gnvThisYear + manualThisYear);
 
-  // GigNVenue confirmed bookings with deposit in escrow (upcoming + awaiting confirmation)
-  const todayIso    = today.toISOString().slice(0, 10);
-  const allEscrow   = RESERVATIONS.filter(r => !r.hostGenerated && r.status === 'confirmed');
-  const awaitingConf = allEscrow.filter(r => r.checkin < todayIso);   // show date passed — needs confirmation
-  const upcoming    = allEscrow.filter(r => r.checkin >= todayIso);   // not yet happened
-  const escrowTotal = allEscrow.reduce((sum, r) => sum + r.total * 0.20, 0);
-  const nextUp      = [...upcoming].sort((a,b) => new Date(a.checkin) - new Date(b.checkin))[0];
+  // Month range label for "this year" card
+  const isCurrentYear = _earningsYear === today.getFullYear();
+  const lastMonth = isCurrentYear
+    ? today.toLocaleDateString('en-US', { month: 'short' })
+    : 'Dec';
+  const monthRange = `Jan – ${lastMonth} ${yr}`;
+  const sourceLabel = src === 'gnv' ? 'GigNVenue only' : src === 'self' ? 'Self-managed only' : 'All sources';
+  const allTimeLabel = src === 'gnv' ? 'GigNVenue bookings only' : src === 'self' ? 'Self-managed only' : 'GigNVenue + self-managed';
+
+  // GigNVenue confirmed bookings with deposit in escrow
+  const todayIso     = today.toISOString().slice(0, 10);
+  const allEscrow    = RESERVATIONS.filter(r => !r.hostGenerated && r.status === 'confirmed');
+  const awaitingConf = allEscrow.filter(r => r.checkin < todayIso);
+  const upcoming     = allEscrow.filter(r => r.checkin >= todayIso);
+  const escrowTotal  = allEscrow.reduce((sum, r) => sum + r.total * 0.20, 0);
+  const nextUp       = [...upcoming].sort((a,b) => new Date(a.checkin) - new Date(b.checkin))[0];
+
+  const gnvDimmed = src === 'self';  // escrow/next-release are GigNVenue-only, dim when self-managed filter active
 
   document.getElementById('earningsStatsGrid').innerHTML = [
-    { icon:'💰', label:'Total earned (all time)', value:`$${totalAllTime.toLocaleString()}`,  delta:'GigNVenue + self-managed', deltaClass:'delta-up',      color:'#FF2D78' },
-    { icon:'📅', label:`This year (${yr})`,        value:`$${totalThisYear.toLocaleString()}`, delta:'Jan – Mar · all sources',  deltaClass:'delta-up',      color:'#3B82F6' },
-    { icon:'🏦', label:'Deposits in escrow',        value:`$${Math.round(escrowTotal).toLocaleString()}`, delta:`${allEscrow.length} show${allEscrow.length!==1?'s':''}${awaitingConf.length ? ` · ${awaitingConf.length} need confirmation` : ''}`, deltaClass: awaitingConf.length ? 'delta-pending' : 'delta-neutral', color:'#10B981' },
-    { icon:'📊', label:'Next deposit release',      value: nextUp ? `$${Math.round(nextUp.total*0.20).toLocaleString()}` : '—', delta: nextUp ? `after ${fmt(nextUp.checkin)}` : 'No upcoming shows', deltaClass:'delta-pending', color:'#F59E0B' },
+    { icon:'💰', label:'Total earned (all time)', value:`$${totalAllTime.toLocaleString()}`,  delta: allTimeLabel, deltaClass:'delta-up', color:'#FF2D78' },
+    { icon:'📅', label:`This year (${yr})`,        value:`$${totalThisYear.toLocaleString()}`, delta:`${monthRange} · ${sourceLabel}`, deltaClass:'delta-up', color:'#3B82F6' },
+    { icon:'🏦', label:'Deposits in escrow',        value: gnvDimmed ? '—' : `$${Math.round(escrowTotal).toLocaleString()}`,
+      delta: gnvDimmed ? 'GigNVenue bookings only' : `${allEscrow.length} show${allEscrow.length!==1?'s':''}${awaitingConf.length ? ` · ${awaitingConf.length} need confirmation` : ''}`,
+      deltaClass: gnvDimmed ? 'delta-neutral' : awaitingConf.length ? 'delta-pending' : 'delta-neutral', color:'#10B981', dim: gnvDimmed },
+    { icon:'📊', label:'Next deposit release',
+      value: gnvDimmed ? '—' : nextUp ? `$${Math.round(nextUp.total*0.20).toLocaleString()}` : '—',
+      delta: gnvDimmed ? 'GigNVenue bookings only' : nextUp ? `after ${fmt(nextUp.checkin)}` : 'No upcoming shows',
+      deltaClass:'delta-pending', color:'#F59E0B', dim: gnvDimmed },
   ].map(s => `
-    <div class="stat-card">
+    <div class="stat-card${s.dim ? ' stat-card--dim' : ''}">
       <div class="stat-card-accent" style="background:${s.color}"></div>
       <div class="stat-card-icon" style="background:${s.color}22">${s.icon}</div>
       <div class="stat-card-value">${s.value}</div>

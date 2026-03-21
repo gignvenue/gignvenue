@@ -243,6 +243,45 @@ img { display: block; }
 .btn-add-listing:hover { opacity: 0.88; box-shadow: var(--glow-red); }
 
 /* ── STATS GRID ── */
+/* ── Earnings filter bar ── */
+.earnings-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.earnings-filter-bar select {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-sec);
+  font-size: 13px;
+  cursor: pointer;
+}
+.earnings-filter-bar select:focus { outline: none; border-color: var(--red); }
+.earnings-source-pills { display: flex; gap: 6px; }
+.earnings-pill {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.earnings-pill:hover { border-color: var(--border-light); color: var(--text-sec); }
+.earnings-pill.active {
+  background: rgba(255,45,120,0.12);
+  border-color: rgba(255,45,120,0.35);
+  color: var(--red);
+}
+
+.stat-card--dim { opacity: 0.45; pointer-events: none; }
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -2074,8 +2113,8 @@ img { display: block; }
 .listing-mgr-card--archived:hover { opacity: 0.8; }
 
 /* ── Chat widget: shift past sidebar so it doesn't cover user/logout ── */
-#gnv-chat-btn   { left: calc(var(--sidebar-w) + 20px); }
-#gnv-chat-panel { left: calc(var(--sidebar-w) + 20px); }
+/* Uses a CSS custom property so the variable wins regardless of stylesheet load order */
+:root { --gnv-chat-left: calc(var(--sidebar-w) + 20px); }
 
 /* ── Earnings chart legend + YTD badge ───────────────────────────────────── */
 .earnings-ytd-badge { font-size: 14px; font-weight: 700; color: var(--text); }
