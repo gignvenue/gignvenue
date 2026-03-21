@@ -193,8 +193,8 @@
         <span class="leg-item"><span class="dem-swatch" style="background:rgba(16,185,129,0.25)"></span> Available</span>
         <span class="leg-item"><span class="dem-swatch" style="background:rgba(245,158,11,0.25)"></span> 1–2 requests</span>
         <span class="leg-item"><span class="dem-swatch" style="background:rgba(239,68,68,0.25)"></span> High demand (3+)</span>
-        <span class="leg-item"><span class="dem-swatch" style="background:rgba(255,56,92,0.4)"></span> Booked / unavailable</span>
-        <span class="leg-item"><span class="dem-swatch" style="border:2px solid #FF385C"></span> Your request</span>
+        <span class="leg-item"><span class="dem-swatch" style="background:rgba(255,45,120,0.4)"></span> Booked / unavailable</span>
+        <span class="leg-item"><span class="dem-swatch" style="border:2px solid #FF2D78"></span> Your request</span>
       </div>
 
       <div class="big-calendar" id="bigCalendar"></div>
@@ -222,7 +222,7 @@
       </div>
 
       <!-- Route optimization banner -->
-      <div id="tourRouteBanner" style="display:none;background:rgba(255,56,92,0.06);border:1px solid rgba(255,56,92,0.2);border-radius:12px;padding:16px 20px;margin-bottom:16px">
+      <div id="tourRouteBanner" style="display:none;background:rgba(255,45,120,0.06);border:1px solid rgba(255,45,120,0.2);border-radius:12px;padding:16px 20px;margin-bottom:16px">
         <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">⚡ Smarter route found — saves ~<span id="tourRouteSavings"></span></div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">
           <div>Your order: <span id="tourRouteOrig" style="color:var(--text-sec)"></span></div>
@@ -402,7 +402,7 @@
               <label>Spotify</label>
               <input id="pfSpotify" type="url" placeholder="https://open.spotify.com/artist/…"/>
               <label class="embed-toggle-label">
-                <input type="checkbox" id="pfSpotifyEmbed" style="accent-color:#FF385C"/>
+                <input type="checkbox" id="pfSpotifyEmbed" style="accent-color:#FF2D78"/>
                 Embed player on profile <span style="font-weight:400;color:var(--text-muted)">(unchecked = link only)</span>
               </label>
             </div>
@@ -410,7 +410,7 @@
               <label>SoundCloud</label>
               <input id="pfSoundcloud" type="url" placeholder="https://soundcloud.com/…"/>
               <label class="embed-toggle-label">
-                <input type="checkbox" id="pfSoundcloudEmbed" style="accent-color:#FF385C"/>
+                <input type="checkbox" id="pfSoundcloudEmbed" style="accent-color:#FF2D78"/>
                 Embed player on profile <span style="font-weight:400;color:var(--text-muted)">(unchecked = link only)</span>
               </label>
             </div>
@@ -590,9 +590,19 @@
       style="border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:13px;background:var(--bg-input);color:var(--text-sec);outline:none;width:100%;cursor:pointer"/>
     <div id="reqRiderFileName" style="font-size:12px;color:var(--text-muted);margin-top:4px"></div>
   </div>
+  <!-- Populated by calDayClick() -->
+  <div id="calCancelPolicyBox" class="vrf-cancel-policy-box" style="display:none">
+    <div class="vrf-cancel-policy-label">Venue cancellation policy</div>
+    <div id="calCancelPolicyText" class="vrf-cancel-policy-text"></div>
+  </div>
+  <div id="calFeeBreakdown" class="cal-fee-breakdown" style="display:none"></div>
+  <label class="vrf-cancel-check" id="calCancelCheckWrap">
+    <input type="checkbox" id="calCancelCheck" onchange="document.getElementById('calReqSubmitBtn').disabled=!this.checked"/>
+    <span>I have read and agree to the <span id="calCancelCheckPolicyRef">venue cancellation policy above and </span><a href="terms.html#cancellation" target="_blank" onclick="event.stopPropagation()">GigNVenue's cancellation terms</a></span>
+  </label>
   <div style="display:flex;gap:10px;margin-top:4px">
     <button class="btn-save secondary" style="flex:1" onclick="closeReqPanel()">Cancel</button>
-    <button class="btn-save" style="flex:2" onclick="submitCalRequest()">🎸 Send request</button>
+    <button class="btn-save" id="calReqSubmitBtn" style="flex:2" onclick="submitCalRequest()" disabled>🎸 Send request</button>
   </div>
 </div>
 

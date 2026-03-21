@@ -8,7 +8,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --red:          #FF385C;
+  --red:          #FF2D78;
   --red-dark:     #e0294d;
   --bg:           #0D0D0D;
   --bg-elevated:  #161616;
@@ -210,8 +210,8 @@ img { display: block; max-width: 100%; }
 .mkt-step-num {
   width: 36px; height: 36px;
   border-radius: 50%;
-  background: rgba(255,56,92,0.12);
-  border: 1px solid rgba(255,56,92,0.3);
+  background: rgba(255,45,120,0.12);
+  border: 1px solid rgba(255,45,120,0.3);
   color: var(--red);
   font-size: 14px;
   font-weight: 800;
@@ -260,8 +260,8 @@ img { display: block; max-width: 100%; }
   position: relative;
 }
 .mkt-price-card.featured {
-  border-color: rgba(255,56,92,0.4);
-  background: rgba(255,56,92,0.04);
+  border-color: rgba(255,45,120,0.4);
+  background: rgba(255,45,120,0.04);
 }
 .mkt-price-card-badge {
   position: absolute;
@@ -353,8 +353,8 @@ img { display: block; max-width: 100%; }
 
 /* ── CALLOUT BANNER ── */
 .mkt-callout {
-  background: linear-gradient(135deg, rgba(255,56,92,0.12) 0%, rgba(255,56,92,0.04) 100%);
-  border: 1px solid rgba(255,56,92,0.2);
+  background: linear-gradient(135deg, rgba(255,45,120,0.12) 0%, rgba(255,45,120,0.04) 100%);
+  border: 1px solid rgba(255,45,120,0.2);
   border-radius: var(--r-lg);
   padding: 48px;
   text-align: center;
@@ -374,7 +374,7 @@ img { display: block; max-width: 100%; }
   text-decoration: none;
   display: block;
 }
-.mkt-help-card:hover { border-color: rgba(255,56,92,0.3); background: rgba(255,56,92,0.04); text-decoration: none; }
+.mkt-help-card:hover { border-color: rgba(255,45,120,0.3); background: rgba(255,45,120,0.04); text-decoration: none; }
 .mkt-help-card-icon { font-size: 28px; margin-bottom: 10px; display: block; }
 .mkt-help-card h3 { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
 .mkt-help-card p { font-size: 13px; color: var(--text-muted); }
@@ -398,7 +398,7 @@ img { display: block; max-width: 100%; }
 }
 .mkt-field input:focus,
 .mkt-field textarea:focus,
-.mkt-field select:focus { border-color: rgba(255,56,92,0.5); }
+.mkt-field select:focus { border-color: rgba(255,45,120,0.5); }
 .mkt-field textarea { min-height: 120px; resize: vertical; }
 .mkt-field select option { background: var(--bg-elevated); }
 .mkt-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
