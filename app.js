@@ -885,10 +885,8 @@ function renderListings(listings, page = 1) {
   const loadMoreWrap = document.getElementById('loadMoreWrap');
   const countEl  = document.getElementById('listingsCount');
   const sortEl   = document.getElementById('sortSelect');
-  const totalActive = LISTINGS.filter(l => l.active !== false).length;
-  const isFiltered  = listings.length < totalActive;
   if (countEl) {
-    countEl.textContent = isFiltered ? (listings.length === 1 ? '1 venue' : `${listings.length} venues`) : '';
+    countEl.textContent = isFilterActive() ? (listings.length === 1 ? '1 venue' : `${listings.length} venues`) : '';
   }
   if (sortEl && sortEl.value !== _sortOrder) sortEl.value = _sortOrder;
 
