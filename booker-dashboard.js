@@ -483,6 +483,10 @@ function navigate(e, section) {
   document.getElementById(`section-${section}`).classList.add('active');
   const link = document.querySelector(`.sidebar-link[data-section="${section}"]`);
   if (link) link.classList.add('active');
+  // Close calendar request panel when navigating away from the calendar
+  if (section !== 'calendar') {
+    document.getElementById('calReqPanel')?.classList.add('hidden');
+  }
   closeSidebar();
   window.scrollTo(0, 0);
   if (!_poppingState && section !== _currentSection) {

@@ -2574,15 +2574,14 @@ function openCalDayPopup(iso) {
 
   document.body.appendChild(popup);
 
-  if (targetCell) {
-    const rect = targetCell.getBoundingClientRect();
-    const pw = 280;
-    let left = rect.left;
-    let top  = rect.bottom + 8;
-    if (left + pw > window.innerWidth - 12) left = rect.right - pw;
-    if (top + 220 > window.innerHeight)     top  = rect.top - 228;
-    popup.style.left = `${Math.max(8, left)}px`;
-    popup.style.top  = `${Math.max(8, top)}px`;
+  // Anchor to lower-right corner of the calendar grid so it never goes off-screen
+  const calGrid = document.getElementById('bigCalendar');
+  if (calGrid) {
+    const rect = calGrid.getBoundingClientRect();
+    popup.style.right  = `${Math.max(8, window.innerWidth - rect.right)}px`;
+    popup.style.bottom = `${Math.max(8, window.innerHeight - rect.bottom)}px`;
+    popup.style.left   = 'auto';
+    popup.style.top    = 'auto';
   }
 
   setTimeout(() => document.addEventListener('click', calPopupOutsideClick), 50);
