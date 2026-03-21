@@ -1727,7 +1727,7 @@ function acceptOptimizedRoute() {
   if (!_optimizedStops) return;
   // Reassign dates in original chronological order to the new city sequence
   const sortedDates = TOUR_STOPS.map(s => s.date).sort();
-  TOUR_STOPS = _optimizedStops.map((s, i) => ({ city: s.city, date: sortedDates[i] || s.date }));
+  TOUR_STOPS = _optimizedStops.map((s, i) => ({ city: s.city, date: sortedDates[i] || s.date, lat: s.lat, lng: s.lng }));
   _optimizedStops = null;
   document.getElementById('tourRouteBanner').style.display = 'none';
   renderTourPlanner();
@@ -1779,6 +1779,81 @@ function removeTourStop(idx) {
   renderTourPlanner();
 }
 
+// ─── TOUR MAP ─────────────────────────────────────────────────────────────────
+
+let _tourMap = null;
+let _tourMapLayers = [];
+
+function initTourMap() {
+  if (_tourMap) return;
+  const el = document.getElementById('tourMap');
+  if (!el || !window.L) return;
+  _tourMap = L.map('tourMap', { zoomControl: true });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap © CARTO', subdomains: 'abcd', maxZoom: 19
+  }).addTo(_tourMap);
+}
+
+function updateTourMap(stops, venueGroups) {
+  if (!window.L) return;
+  const wrap = document.getElementById('tourMapWrap');
+  if (!wrap) return;
+
+  const geocoded = stops.filter(s => s.lat && s.lng);
+  if (!geocoded.length) { wrap.style.display = 'none'; return; }
+
+  wrap.style.display = '';
+  if (!_tourMap) initTourMap();
+  if (!_tourMap) return;
+
+  // Clear previous layers
+  _tourMapLayers.forEach(l => l.remove());
+  _tourMapLayers = [];
+
+  // Route polyline
+  if (geocoded.length > 1) {
+    const line = L.polyline(geocoded.map(s => [s.lat, s.lng]), {
+      color: '#FF385C', weight: 2, opacity: 0.7, dashArray: '6 8'
+    }).addTo(_tourMap);
+    _tourMapLayers.push(line);
+  }
+
+  // Numbered stop markers
+  geocoded.forEach((stop, i) => {
+    const el = document.createElement('div');
+    el.style.cssText = 'background:#FF385C;color:#fff;font-size:12px;font-weight:700;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.6)';
+    el.textContent = i + 1;
+    const marker = L.marker([stop.lat, stop.lng], {
+      icon: L.divIcon({ className: '', html: el, iconSize: [28, 28], iconAnchor: [14, 14] })
+    }).bindTooltip(`<strong>${stop.city}</strong><br>${new Date(stop.date + 'T00:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })}`, { direction: 'top' });
+    marker.addTo(_tourMap);
+    _tourMapLayers.push(marker);
+  });
+
+  // Venue pins near each stop
+  venueGroups.forEach(({ venues }) => {
+    venues.forEach(v => {
+      if (!v.lat || !v.lng) return;
+      const el = document.createElement('div');
+      el.style.cssText = 'background:#1a1a1a;color:#fff;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;border:1px solid rgba(255,56,92,0.5);white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.5)';
+      el.textContent = v.title;
+      const marker = L.marker([v.lat, v.lng], {
+        icon: L.divIcon({ className: '', html: el, iconSize: [null, null] })
+      }).bindTooltip(`<strong>${v.title}</strong><br>${v.location}<br>$${v.price.toLocaleString()}/night · Cap. ${v.capacity.toLocaleString()}`, { direction: 'top' });
+      marker.addTo(_tourMap);
+      _tourMapLayers.push(marker);
+    });
+  });
+
+  // Fit all points in view
+  const allPoints = [
+    ...geocoded.map(s => [s.lat, s.lng]),
+    ...venueGroups.flatMap(({ venues }) => venues.filter(v => v.lat && v.lng).map(v => [v.lat, v.lng]))
+  ];
+  if (allPoints.length) _tourMap.fitBounds(allPoints, { padding: [40, 40] });
+  setTimeout(() => _tourMap && _tourMap.invalidateSize(), 100);
+}
+
 async function searchTourVenues() {
   document.querySelectorAll('.tour-stop-row').forEach((row, i) => {
     const cityEl = row.querySelector('.tour-city-input');
@@ -1827,6 +1902,7 @@ async function searchTourVenues() {
 
   let html = '';
   let anyFound = false;
+  const _tourVenueGroups = [];
 
   validStops.forEach(stop => {
     const conflicted = myBookedDates.has(stop.date);
@@ -1841,6 +1917,7 @@ async function searchTourVenues() {
       const q = stop.city.toLowerCase();
       matches = ALL_VENUES.filter(v => v.location.toLowerCase().includes(q)).map(v => ({ ...v, _dist: null }));
     }
+    _tourVenueGroups.push({ stop, venues: matches });
 
     const dateStr = new Date(stop.date + 'T00:00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
 
@@ -1880,6 +1957,7 @@ async function searchTourVenues() {
   resultsBody.innerHTML = html;
   resultsSection.style.display = '';
   updateTourDetailsPanel();
+  updateTourMap(validStops, _tourVenueGroups);
   if (hint) hint.textContent = TOUR_STOPS.length < 10 ? 'Add at least one city and date to search.' : 'Maximum 10 stops reached.';
 }
 

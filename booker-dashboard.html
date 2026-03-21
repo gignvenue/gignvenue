@@ -8,6 +8,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="host-dashboard.css"/>
   <link rel="stylesheet" href="booker-dashboard.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 
@@ -229,6 +231,11 @@
           <button class="btn-save" style="padding:8px 18px;font-size:13px" onclick="acceptOptimizedRoute()">Use suggested order</button>
           <button class="btn-save secondary" style="padding:8px 18px;font-size:13px" onclick="dismissRouteBanner()">Keep my order</button>
         </div>
+      </div>
+
+      <!-- Tour map — shown after search -->
+      <div id="tourMapWrap" style="display:none;border-radius:14px;overflow:hidden;margin-bottom:20px;border:1px solid var(--border)">
+        <div id="tourMap" style="height:380px;width:100%;background:#111"></div>
       </div>
 
       <div class="tour-results-section" id="tourResultsSection" style="display:none">
