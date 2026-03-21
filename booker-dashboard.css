@@ -265,7 +265,7 @@
 .demand-none    { background: rgba(16,185,129,0.18);  color: #34d399; }
 .demand-low     { background: rgba(245,158,11,0.18);  color: #fbbf24; }
 .demand-high    { background: rgba(239,68,68,0.18);   color: #f87171; }
-.demand-booked  { background: rgba(255,56,92,0.25);   color: #ff6b87; }
+.demand-booked  { background: rgba(255,45,120,0.25);   color: #FF85C0; }
 .demand-mine    { outline: 2px solid var(--red); outline-offset: -2px; }
 
 /* Venue request form inside calendar */
@@ -373,23 +373,23 @@
   background:
     repeating-linear-gradient(
       135deg,
-      rgba(255,56,92,0.07) 0px,
-      rgba(255,56,92,0.07) 2px,
+      rgba(255,45,120,0.07) 0px,
+      rgba(255,45,120,0.07) 2px,
       transparent          2px,
       transparent          10px
     ),
-    rgba(255,56,92,0.10);
+    rgba(255,45,120,0.10);
 }
 .big-cal-cell.cal-cell-booked:hover {
   background:
     repeating-linear-gradient(
       135deg,
-      rgba(255,56,92,0.12) 0px,
-      rgba(255,56,92,0.12) 2px,
+      rgba(255,45,120,0.12) 0px,
+      rgba(255,45,120,0.12) 2px,
       transparent          2px,
       transparent          10px
     ),
-    rgba(255,56,92,0.16);
+    rgba(255,45,120,0.16);
 }
 
 /* Empty state */
@@ -577,3 +577,16 @@
   .cal-req-panel { right: 12px; left: 12px; width: auto; bottom: 16px; }
   .tour-stop-row { grid-template-columns: 1fr; }
 }
+
+/* ── Cal request panel: cancellation policy + fee breakdown ── */
+.vrf-cancel-policy-box { background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; }
+.vrf-cancel-policy-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); margin-bottom: 6px; }
+.vrf-cancel-policy-text { font-size: 12px; color: var(--text-secondary); line-height: 1.55; max-height: 90px; overflow-y: auto; }
+.vrf-cancel-check { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; color: var(--text-secondary); line-height: 1.45; margin-bottom: 14px; cursor: pointer; }
+.vrf-cancel-check input { margin-top: 2px; flex-shrink: 0; accent-color: #10B981; width: 15px; height: 15px; cursor: pointer; }
+.vrf-cancel-check a { color: var(--red); text-decoration: underline; }
+.cal-fee-breakdown { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; }
+.booking-fee-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--text-secondary); padding: 4px 0; }
+.booking-fee-row .fee-note { font-size: 11px; color: var(--text-muted); }
+.booking-fee-total { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; padding: 10px 0 0; margin-top: 6px; border-top: 1px solid var(--border); color: var(--text); }
+.booking-no-charge { text-align: center; font-size: 11px; color: var(--text-muted); margin: 8px 0 0; line-height: 1.4; }

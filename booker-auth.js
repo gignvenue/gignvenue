@@ -78,7 +78,7 @@
       artistName: user.artistName || `${user.firstName} ${user.lastName}`,
       genre:       user.genre        || '',
       bio:         user.bio          || '',
-      avatar:      user.avatar       || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.firstName + ' ' + user.lastName)}&backgroundColor=FF385C&textColor=ffffff`,
+      avatar:      user.avatar       || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.firstName + ' ' + user.lastName)}&backgroundColor=FF2D78&textColor=ffffff`,
       eventTypes:  user.eventTypes   || '',
       actType:     user.actType      || '',
       homeCity:    user.homeCity     || '',
@@ -139,7 +139,7 @@
         userId,
         artistName: artistName || `${firstName} ${lastName}`,
         genre: genre || '',
-        bio: '', avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(firstName + ' ' + lastName)}&backgroundColor=FF385C&textColor=ffffff`,
+        bio: '', avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(firstName + ' ' + lastName)}&backgroundColor=FF2D78&textColor=ffffff`,
       });
       localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
       localStorage.setItem(SESSION_KEY, JSON.stringify({ userId, activeProfileId: profileId, ts: Date.now() }));

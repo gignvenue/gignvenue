@@ -21,20 +21,23 @@ let profile = BookerAuth.currentProfile();
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 
 // All venues (mirrors main site listings for the calendar)
+const _CP_30_7   = 'Cancellations more than 30 days before the event date are eligible for a full deposit refund. Cancellations within 30 days but more than 7 days before the event date will forfeit 50% of the deposit. Cancellations within 7 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.';
+const _CP_21_7   = 'Cancellations more than 21 days before the event date are eligible for a full deposit refund. Cancellations within 21 days but more than 7 days before the event date will forfeit 50% of the deposit. Cancellations within 7 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.';
+
 const ALL_VENUES = [
-  { id:'l1',  title:'The Neon Stage',              location:'Hollywood, California',      img:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=400&q=70', price:2100,  capacity:500,  lat:34.0928,  lng:-118.3287 },
-  { id:'l2',  title:'Velvet Lounge',               location:'Brooklyn, New York',         img:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=70', price:1300,  capacity:200,  lat:40.7173,  lng:-73.9573  },
-  { id:'l3',  title:'Rooftop Sessions',            location:'Manhattan, New York',        img:'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=400&q=70', price:3500,  capacity:120,  lat:40.7614,  lng:-73.9937  },
-  { id:'l4',  title:'The Midnight Rooftop',        location:'Manhattan, New York',        img:'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&q=70', price:3600,  capacity:250,  lat:40.7505,  lng:-73.9934, rating:4.88 },
-  { id:'l5',  title:'Blue Note Underground',       location:'New Orleans, Louisiana',     img:'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&q=70', price:1400,  capacity:180,  lat:29.9511,  lng:-90.0715, rating:4.95 },
-  { id:'l6',  title:'Coachella Stage II Replica',  location:'Indio, California',          img:'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=400&q=70', price:8500,  capacity:5000, lat:33.6823,  lng:-116.2370, rating:4.91 },
-  { id:'l7',  title:'The Chicago Shrine',          location:'Chicago, Illinois',          img:'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=400&q=70', price:3200,  capacity:1500, lat:41.8957,  lng:-87.6298, rating:4.96 },
-  { id:'l8',  title:'The Ryman Stage',             location:'Nashville, Tennessee',       img:'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400&q=70', price:6800,  capacity:2362, lat:36.1612,  lng:-86.7765, rating:4.99 },
-  { id:'l9',  title:'Red Rocks Amphitheatre',      location:'Morrison, Colorado',         img:'https://images.unsplash.com/photo-1565035010268-a3816f98589a?w=400&q=70', price:22000, capacity:9525, lat:39.6655,  lng:-105.2057, rating:4.94 },
-  { id:'l10', title:'The Corner Dive',             location:'Austin, Texas',              img:'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=70', price:800,   capacity:120,  lat:30.2672,  lng:-97.7431, rating:4.82 },
-  { id:'l11', title:'The Fox Theatre',             location:'Atlanta, Georgia',           img:'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400&q=70', price:18000, capacity:2679, lat:33.7725,  lng:-84.3857, rating:5.0  },
-  { id:'l12', title:'Fillmore West Revival',       location:'San Francisco, California',  img:'https://images.unsplash.com/photo-1598387993441-a364f854cde0?w=400&q=70', price:3800,  capacity:1150, lat:37.7841,  lng:-122.4330, rating:4.90 },
-  { id:'l13', title:'The Summit Arena',            location:'Houston, Texas',             img:'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&q=70', price:28000, capacity:16000, lat:29.7490,  lng:-95.3677, rating:4.87 },
+  { id:'l1',  title:'The Neon Stage',              location:'Hollywood, California',      img:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=400&q=70', price:2100,  capacity:500,  lat:34.0928,  lng:-118.3287, cancellationPolicy: _CP_30_7  },
+  { id:'l2',  title:'Velvet Lounge',               location:'Brooklyn, New York',         img:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=70', price:1300,  capacity:200,  lat:40.7173,  lng:-73.9573,  cancellationPolicy: _CP_21_7  },
+  { id:'l3',  title:'Rooftop Sessions',            location:'Manhattan, New York',        img:'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=400&q=70', price:3500,  capacity:120,  lat:40.7614,  lng:-73.9937,  cancellationPolicy: _CP_30_7  },
+  { id:'l4',  title:'The Midnight Rooftop',        location:'Manhattan, New York',        img:'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&q=70', price:3600,  capacity:250,  lat:40.7505,  lng:-73.9934,  cancellationPolicy: _CP_30_7,  rating:4.88 },
+  { id:'l5',  title:'Blue Note Underground',       location:'New Orleans, Louisiana',     img:'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&q=70', price:1400,  capacity:180,  lat:29.9511,  lng:-90.0715,  cancellationPolicy: _CP_21_7,  rating:4.95 },
+  { id:'l6',  title:'Coachella Stage II Replica',  location:'Indio, California',          img:'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=400&q=70', price:8500,  capacity:5000, lat:33.6823,  lng:-116.2370, cancellationPolicy: 'Cancellations more than 60 days before the event date are eligible for a full deposit refund. Cancellations within 60 days but more than 14 days before the event date will forfeit 50% of the deposit. Cancellations within 14 days of the event date forfeit the deposit in full. Due to the scale of production and infrastructure required, no exceptions can be made. The GigNVenue booking fee is non-refundable in all cases.', rating:4.91 },
+  { id:'l7',  title:'The Chicago Shrine',          location:'Chicago, Illinois',          img:'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=400&q=70', price:3200,  capacity:1500, lat:41.8957,  lng:-87.6298,  cancellationPolicy: _CP_30_7,  rating:4.96 },
+  { id:'l8',  title:'The Ryman Stage',             location:'Nashville, Tennessee',       img:'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400&q=70', price:6800,  capacity:2362, lat:36.1612,  lng:-86.7765,  cancellationPolicy: 'Due to the historic and high-demand nature of this venue, cancellations more than 60 days before the event date are eligible for a full deposit refund. Cancellations within 60 days but more than 14 days before the event will forfeit 50% of the deposit. Cancellations within 14 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.', rating:4.99 },
+  { id:'l9',  title:'Red Rocks Amphitheatre',      location:'Morrison, Colorado',         img:'https://images.unsplash.com/photo-1565035010268-a3816f98589a?w=400&q=70', price:22000, capacity:9525, lat:39.6655,  lng:-105.2057, cancellationPolicy: 'Given the unique nature of this venue and the production commitments involved, cancellations more than 60 days before the event date are eligible for a full deposit refund. Cancellations within 60 days but more than 14 days before the event will forfeit 50% of the deposit. Cancellations within 14 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.', rating:4.94 },
+  { id:'l10', title:'The Corner Dive',             location:'Austin, Texas',              img:'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=70', price:800,   capacity:120,  lat:30.2672,  lng:-97.7431,  cancellationPolicy: _CP_21_7,  rating:4.82 },
+  { id:'l11', title:'The Fox Theatre',             location:'Atlanta, Georgia',           img:'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400&q=70', price:18000, capacity:2679, lat:33.7725,  lng:-84.3857,  cancellationPolicy: 'Due to the historic significance and demand for this venue, cancellations more than 60 days before the event date are eligible for a full deposit refund. Cancellations within 60 days but more than 14 days before the event will forfeit 50% of the deposit. Cancellations within 14 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.', rating:5.0  },
+  { id:'l12', title:'Fillmore West Revival',       location:'San Francisco, California',  img:'https://images.unsplash.com/photo-1598387993441-a364f854cde0?w=400&q=70', price:3800,  capacity:1150, lat:37.7841,  lng:-122.4330, cancellationPolicy: _CP_30_7,  rating:4.90 },
+  { id:'l13', title:'The Summit Arena',            location:'Houston, Texas',             img:'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&q=70', price:28000, capacity:16000, lat:29.7490,  lng:-95.3677, cancellationPolicy: 'Due to the scale of production commitments at this venue, cancellations more than 60 days before the event date are eligible for a full deposit refund. Cancellations within 60 days but more than 14 days before the event will forfeit 50% of the deposit. Cancellations within 14 days of the event date forfeit the deposit in full. No exceptions. The GigNVenue booking fee is non-refundable in all cases.', rating:4.87 },
 ];
 
 // My saved venues — array of { id, title, location, img, price, capacity, rating }
@@ -281,7 +284,7 @@ const ALL_REQUESTS = [
 
 // My messages with venue hosts
 const MY_MESSAGES = [
-  { id:'cm1', from:'Velvet Lounge', fromImg:'https://api.dicebear.com/7.x/initials/svg?seed=VelvetLounge&backgroundColor=FF385C&textColor=ffffff', venue:'Velvet Lounge', venueId:'l2', lastMsg:'Your request for Apr 15 looks great!', time:'Today', unread:true,
+  { id:'cm1', from:'Velvet Lounge', fromImg:'https://api.dicebear.com/7.x/initials/svg?seed=VelvetLounge&backgroundColor=FF2D78&textColor=ffffff', venue:'Velvet Lounge', venueId:'l2', lastMsg:'Your request for Apr 15 looks great!', time:'Today', unread:true,
     thread:[
       { mine:false, text:'Hi! We received your booking request for April 15th.', time:'9:12 AM' },
       { mine:false, text:'Your request for Apr 15 looks great! We love hosting indie acts. Can you send over your tech rider?', time:'9:14 AM' },
@@ -444,7 +447,7 @@ function populateSidebarUser() {
   const allProfiles = BookerAuth.getProfiles();
   document.getElementById('sidebarUser').innerHTML = `
     <img src="${profile.avatar}" alt="${user.firstName}" class="sidebar-user-avatar"
-         onerror="this.src='https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.firstName + ' ' + user.lastName)}&backgroundColor=FF385C&textColor=ffffff'"/>
+         onerror="this.src='https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.firstName + ' ' + user.lastName)}&backgroundColor=FF2D78&textColor=ffffff'"/>
     <div class="sidebar-user-info">
       <div class="sidebar-user-name">${profile.artistName || user.firstName + ' ' + user.lastName}</div>
       <div class="sidebar-user-email">${user.email}</div>
@@ -457,7 +460,7 @@ function populateSidebarUser() {
 function populateTopbarAvatar() {
   document.getElementById('topbarAvatar').innerHTML =
     `<img src="${profile.avatar}" alt="${user.firstName}" style="width:100%;height:100%;object-fit:cover"
-      onerror="this.style.background='#FF385C'"/>`;
+      onerror="this.style.background='#FF2D78'"/>`;
 }
 
 function updateBadges() {
@@ -546,7 +549,7 @@ function renderOverview() {
   }
 
   document.getElementById('statsGrid').innerHTML = [
-    { icon:'🎟️', label:'Requests sent',    value:activeMyReqs.length, delta:'upcoming',                                             deltaClass:'delta-neutral', color:'#FF385C', section:'requests', filter:'all'      },
+    { icon:'🎟️', label:'Requests sent',    value:activeMyReqs.length, delta:'upcoming',                                             deltaClass:'delta-neutral', color:'#FF2D78', section:'requests', filter:'all'      },
     { icon:'✅', label:'Approved bookings', value:approved,            delta:approved?'▲ confirmed':'none yet',                      deltaClass:approved?'delta-up':'delta-neutral', color:'#10B981', section:'requests', filter:'approved' },
     { icon:'⏳', label:'Pending requests',  value:pending,             delta:pending?'awaiting reply':'all clear',                   deltaClass:pending?'delta-pending':'delta-neutral', color:'#F59E0B', section:'requests', filter:'pending'  },
     { icon:'❤️', label:'Saved venues',      value:SAVED_VENUES.length, delta:'bookmarked',                                           deltaClass:'delta-neutral', color:'#3B82F6', section:'saved',    filter:null       },
@@ -1158,7 +1161,7 @@ function renderCalendar() {
     let demandHtml = '';
     if (booked) {
       bg = '';
-      demandHtml = `<span class="req-count-badge" style="background:rgba(255,56,92,0.3);color:#ff6b87">Unavailable</span>`;
+      demandHtml = `<span class="req-count-badge" style="background:rgba(255,45,120,0.3);color:#FF85C0">Unavailable</span>`;
     } else if (myReq) {
       // Artist has a request on this date — show their status + other count if any
       const st = myReqObj.status;
@@ -1190,7 +1193,7 @@ function renderCalendar() {
       demandHtml = `<span class="req-count-badge" style="background:${color}">${reqCount} request${reqCount>1?'s':''}</span>`;
     }
 
-    const myOutline = myReq ? 'outline:2px solid rgba(255,56,92,0.6);outline-offset:-2px;border-radius:2px' : '';
+    const myOutline = myReq ? 'outline:2px solid rgba(255,45,120,0.6);outline-offset:-2px;border-radius:2px' : '';
     const clickable = !booked && !isPast ? `onclick="calDayClick('${iso}')"` : '';
     const cursor    = (booked || isPast) ? 'cursor:not-allowed' : 'cursor:pointer';
     const pastOpacity = isPast ? 'opacity:0.35;' : '';
@@ -1237,6 +1240,43 @@ function calDayClick(iso) {
     attendanceInput.placeholder = `Up to ${venue.capacity.toLocaleString()}`;
   }
 
+  // Reset agreement checkbox and submit button
+  const calCheck = document.getElementById('calCancelCheck');
+  const calSubmitBtn = document.getElementById('calReqSubmitBtn');
+  if (calCheck) calCheck.checked = false;
+  if (calSubmitBtn) calSubmitBtn.disabled = true;
+
+  // Cancellation policy
+  const policyBox  = document.getElementById('calCancelPolicyBox');
+  const policyText = document.getElementById('calCancelPolicyText');
+  const policyRef  = document.getElementById('calCancelCheckPolicyRef');
+  if (policyBox && policyText) {
+    if (venue?.cancellationPolicy) {
+      policyText.textContent = venue.cancellationPolicy;
+      policyBox.style.display = '';
+      if (policyRef) policyRef.style.display = '';
+    } else {
+      policyBox.style.display = 'none';
+      if (policyRef) policyRef.style.display = 'none';
+    }
+  }
+
+  // Fee breakdown
+  const feeBreakdown = document.getElementById('calFeeBreakdown');
+  if (feeBreakdown && venue?.price) {
+    const deposit    = Math.round(venue.price * 0.20);
+    const bookingFee = Math.round(venue.price * 0.08);
+    feeBreakdown.innerHTML = `
+      <div class="booking-fee-row"><span>Venue fee</span><span>$${venue.price.toLocaleString()} / night</span></div>
+      <div class="booking-fee-row"><span>Deposit <span class="fee-note">(20% · due on approval)</span></span><span>$${deposit.toLocaleString()}</span></div>
+      <div class="booking-fee-row"><span>Booking fee <span class="fee-note">(8% · non-refundable)</span></span><span>$${bookingFee.toLocaleString()}</span></div>
+      <div class="booking-fee-total"><span>Due on approval</span><span>$${(deposit + bookingFee).toLocaleString()}</span></div>
+      <p class="booking-no-charge">No payment required to submit a request.</p>`;
+    feeBreakdown.style.display = '';
+  } else if (feeBreakdown) {
+    feeBreakdown.style.display = 'none';
+  }
+
   if (allReqs.length > 0) {
     showDash(`${allReqs.length} other request${allReqs.length>1?'s':''} for this date — you can still submit yours.`);
   }
@@ -1247,6 +1287,10 @@ function closeReqPanel() {
   calSelectedDate = null;
   const rf = document.getElementById('reqRiderFile');
   if (rf) { rf.value = ''; document.getElementById('reqRiderFileName').textContent = ''; }
+  const calCheck = document.getElementById('calCancelCheck');
+  const calSubmitBtn = document.getElementById('calReqSubmitBtn');
+  if (calCheck) calCheck.checked = false;
+  if (calSubmitBtn) calSubmitBtn.disabled = true;
 }
 
 function onRiderFileChange(e) {
@@ -1263,6 +1307,10 @@ function submitCalRequest() {
   const riderFile  = document.getElementById('reqRiderFile');
   const riderName  = riderFile && riderFile.files[0] ? riderFile.files[0].name : '';
 
+  if (!document.getElementById('calCancelCheck')?.checked) {
+    showDash('Please agree to the cancellation terms before submitting.');
+    return;
+  }
   if (!attendance) { showDash('Please enter expected attendance.'); return; }
 
   const newReq = {
@@ -1420,7 +1468,7 @@ function populateProfile() {
   profileAvatarEl.src     = profile.avatar || '';
   profileAvatarEl.onerror = () => {
     profileAvatarEl.onerror = null;
-    profileAvatarEl.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.firstName + ' ' + user.lastName)}&backgroundColor=FF385C&textColor=ffffff`;
+    profileAvatarEl.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.firstName + ' ' + user.lastName)}&backgroundColor=FF2D78&textColor=ffffff`;
   };
   // Account fields (shared across all profiles)
   document.getElementById('pfFirst').value          = user.firstName    || '';
@@ -1533,7 +1581,7 @@ function renderProfileCards() {
   container.innerHTML = all.map(p => `
     <div class="profile-card${p.id === profile.id ? ' profile-card-active' : ''}">
       <img class="profile-card-avatar" src="${p.avatar || ''}"
-           onerror="this.src='https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(p.artistName||'A')}&backgroundColor=FF385C&textColor=ffffff'"/>
+           onerror="this.src='https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(p.artistName||'A')}&backgroundColor=FF2D78&textColor=ffffff'"/>
       <div class="profile-card-info">
         <div class="profile-card-name">${p.artistName || 'Unnamed profile'}</div>
         <div class="profile-card-genre">${p.genre || ''}</div>
@@ -1590,7 +1638,7 @@ function saveNewProfile() {
   const genre = document.getElementById('npGenre').value.trim();
   const newProf = BookerAuth.createProfile({
     artistName, genre,
-    avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(artistName)}&backgroundColor=FF385C&textColor=ffffff`,
+    avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(artistName)}&backgroundColor=FF2D78&textColor=ffffff`,
   });
   profile = newProf;
   closeNewProfileModal();
@@ -1648,7 +1696,7 @@ function openBookerAgreement(id) {
       <div class="subtitle">Booking ID: ${r.id} &nbsp;·&nbsp; Issued: ${issuedStr}</div>
     </div>
     <div style="text-align:right">
-      <div style="font-size:18px;font-weight:700;color:#FF385C;letter-spacing:-0.5px">GigNVenue</div>
+      <div style="font-size:18px;font-weight:700;color:#FF2D78;letter-spacing:-0.5px">GigNVenue</div>
       <div style="font-size:11px;color:#999;margin-top:2px">gignvenue.com</div>
     </div>
   </div>
@@ -1712,7 +1760,7 @@ function openBookerAgreement(id) {
   <div class="watermark">Generated by GigNVenue · gignvenue.com · This document is for reference purposes only and does not constitute legal advice.</div>
 
   <div style="margin-top:32px;text-align:center;display:none" id="printBtnWrap">
-    <button onclick="window.print()" style="padding:10px 28px;font-size:14px;background:#FF385C;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:sans-serif">🖨 Print / Save as PDF</button>
+    <button onclick="window.print()" style="padding:10px 28px;font-size:14px;background:#FF2D78;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:sans-serif">🖨 Print / Save as PDF</button>
   </div>
   <script>document.getElementById('printBtnWrap').style.display='block';<\/script>
 </body>
@@ -1889,7 +1937,7 @@ function updateTourMap(stops, venueGroups) {
   // Route polyline
   if (geocoded.length > 1) {
     const line = L.polyline(geocoded.map(s => [s.lat, s.lng]), {
-      color: '#FF385C', weight: 2, opacity: 0.7, dashArray: '6 8'
+      color: '#FF2D78', weight: 2, opacity: 0.7, dashArray: '6 8'
     }).addTo(_tourMap);
     _tourMapLayers.push(line);
   }
@@ -1897,7 +1945,7 @@ function updateTourMap(stops, venueGroups) {
   // Numbered stop markers
   geocoded.forEach((stop, i) => {
     const el = document.createElement('div');
-    el.style.cssText = 'background:#FF385C;color:#fff;font-size:12px;font-weight:700;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.6)';
+    el.style.cssText = 'background:#FF2D78;color:#fff;font-size:12px;font-weight:700;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.6)';
     el.textContent = i + 1;
     const marker = L.marker([stop.lat, stop.lng], {
       icon: L.divIcon({ className: '', html: el, iconSize: [28, 28], iconAnchor: [14, 14] })
@@ -1911,7 +1959,7 @@ function updateTourMap(stops, venueGroups) {
     venues.forEach(v => {
       if (!v.lat || !v.lng) return;
       const el = document.createElement('div');
-      el.style.cssText = 'background:#1a1a1a;color:#fff;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;border:1px solid rgba(255,56,92,0.5);white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.5)';
+      el.style.cssText = 'background:#1a1a1a;color:#fff;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;border:1px solid rgba(255,45,120,0.5);white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.5)';
       el.textContent = v.title;
       const marker = L.marker([v.lat, v.lng], {
         icon: L.divIcon({ className: '', html: el, iconSize: [null, null] })
