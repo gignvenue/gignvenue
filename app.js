@@ -1911,6 +1911,21 @@ function submitVenueRequest() {
       showToast(`You already have a ${duplicate.status} request for this venue on that date.`);
       return;
     }
+    // Warn (but don't block) if artist already has a request on this date at a different venue
+    const dateConflict = allMine.find(r =>
+      r.bookerId === session.userId &&
+      r.venueId  !== bookerVenueId  &&
+      r.date     === modalCal.date  &&
+      (r.status === 'pending' || r.status === 'approved' || r.status === 'confirmed')
+    );
+    if (dateConflict && !submitVenueRequest._conflictArmed) {
+      submitVenueRequest._conflictArmed = modalCal.date;
+      showToast('⚠️ You already have a booking request on this date. Submit again to proceed anyway — if that booking is confirmed, this request will be auto-cancelled.');
+      return;
+    }
+    if (submitVenueRequest._conflictArmed !== modalCal.date) {
+      submitVenueRequest._conflictArmed = null;
+    }
   } catch(e) {}
 
   const eventType = document.getElementById('vrfEventType')?.value || 'Concert / live show';

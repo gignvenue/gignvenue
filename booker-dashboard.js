@@ -729,7 +729,11 @@ function renderRequests(filter) {
       <td>
         <span class="req-badge req-${dispStatus}">${passed ? 'Date passed' : capitalize(r.status)}</span>
         ${!passed && r.status === 'approved' && r.paymentStatus === 'unpaid' ? `<span class="req-badge req-payment-due">Payment due</span>` : ''}
-        ${r.status === 'cancelled' && r.cancelledBy ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px">by ${r.cancelledBy}</div>` : ''}
+        ${r.status === 'cancelled' && r.cancelReason === 'Another booking confirmed for this date'
+          ? `<span class="req-badge req-date-conflict" title="You confirmed a booking at another venue for this date">Date conflict</span>`
+          : r.status === 'cancelled' && r.cancelledBy
+          ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px">by ${r.cancelledBy}</div>`
+          : ''}
         ${v && !passed && r.status !== 'cancelled' ? (() => { const dep=Math.round(v.price*0.20); const fee=Math.round(v.price*0.05); return `<div style="font-size:11px;color:var(--text-muted);margin-top:5px">Deposit $${dep.toLocaleString()} · Fee $${fee.toLocaleString()} · <strong style="color:var(--text)">Total $${(dep+fee).toLocaleString()}</strong></div>`; })() : ''}
       </td>
       <td style="font-size:12px;color:var(--text-muted)">${r.sent ? fmtDate(r.sent) : '—'}</td>
@@ -1313,6 +1317,20 @@ function submitCalRequest() {
     return;
   }
   if (!attendance) { showDash('Please enter expected attendance.'); return; }
+
+  // Warn (but don't block) if artist already has a request on this date at a different venue
+  const _existingDateReq = ALL_REQUESTS.find(r =>
+    r.bookerId === user.id &&
+    r.venueId  !== calSelectedVenueId &&
+    r.date     === calSelectedDate &&
+    (r.status === 'pending' || r.status === 'approved' || r.status === 'confirmed')
+  );
+  if (_existingDateReq && !submitCalRequest._conflictArmed) {
+    submitCalRequest._conflictArmed = calSelectedDate;
+    showDash('⚠️ You already have a booking request on this date. Submit again to proceed anyway — if that booking is confirmed, this one will be auto-cancelled.');
+    return;
+  }
+  if (submitCalRequest._conflictArmed !== calSelectedDate) submitCalRequest._conflictArmed = null;
 
   const newReq = {
     id: 'req_' + Date.now(),
