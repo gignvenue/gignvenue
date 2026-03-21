@@ -416,6 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
   populateSidebarUser();
   populateTopbarAvatar();
   renderOverview();
+  checkAnalyticsLock();
   renderReservations('pending');
   renderListingsManager();
   renderCalVenueTabs();
@@ -426,6 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderEarnings();
   renderReviews();
   populateProfile();
+  renderAnalyticsPinSettings();
   checkPlayedOffNotifications();
   // Seed the initial history entry so the back button stays inside the dashboard
   history.replaceState({ section: _currentSection }, '', `?section=${_currentSection}`);
@@ -479,6 +481,7 @@ function navigate(e, section) {
     history.pushState({ section }, '', `?section=${section}`);
   }
   _currentSection = section;
+  if (section === 'overview') checkAnalyticsLock();
 }
 
 window.addEventListener('popstate', e => {
@@ -636,37 +639,66 @@ function renderEarningsChart(canvasId, year) {
 
   const monthTotals = months.map((_, i) =>
     HOST_LISTINGS.reduce((s, l) => s + (monthly[l.id]?.[i] || 0), 0));
-  const max   = Math.max(...monthTotals) || 1;
-  const ytd   = monthTotals.reduce((a, b) => a + b, 0);
+  const dataMax = Math.max(...monthTotals) || 1;
+  const ytd     = monthTotals.reduce((a, b) => a + b, 0);
   const hasData = ytd > 0;
 
-  // Stacked bars
+  // Compute a nice grid step so ticks land on round numbers
+  function niceStep(m) {
+    const raw = m / 4;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw || 1)));
+    const n   = raw / mag;
+    const s   = n < 1.5 ? 1 : n < 3.5 ? 2.5 : n < 7.5 ? 5 : 10;
+    return s * mag;
+  }
+  const step = niceStep(dataMax);
+  const gridTicks = [];
+  for (let v = step; v <= dataMax * 1.15; v += step) gridTicks.push(Math.round(v));
+  const gridMax = gridTicks[gridTicks.length - 1] || dataMax;
+
+  function fmtY(v) {
+    if (v >= 10000) return '$' + Math.round(v / 1000) + 'k';
+    if (v >= 1000)  return '$' + (v / 1000).toFixed(1) + 'k';
+    return '$' + v;
+  }
+
+  // Gridlines
+  const gridHtml = gridTicks.map(v => {
+    const pct = (v / gridMax) * 100;
+    return `<div class="chart-gl" style="bottom:${pct}%"><span>${fmtY(v)}</span></div>`;
+  }).join('');
+
+  // Bars (column divs only — labels in separate row below)
   const barsHtml = months.map((m, i) => {
     const total    = monthTotals[i];
     const isFuture = i > curMonth;
-    const barPct   = total ? Math.max((total / max) * 88, 6) : (isFuture ? 0 : 3);
+    const barPct   = total ? (total / gridMax) * 100 : 0;
 
     const segments = HOST_LISTINGS
       .filter(l => monthly[l.id]?.[i])
       .map(l => {
         const amt    = monthly[l.id][i];
         const segPct = (amt / total) * 100;
-        return `<div style="height:${segPct}%;background:${colors[l.id]};min-height:3px" title="${l.title}: $${amt.toLocaleString()}"></div>`;
+        return `<div style="height:${segPct}%;background:${colors[l.id]};min-height:3px"></div>`;
       }).join('');
 
     const tooltip = total
       ? `${m} ${year}: $${total.toLocaleString()}` + HOST_LISTINGS.filter(l => monthly[l.id]?.[i]).map(l => `\n  ${l.title}: $${monthly[l.id][i].toLocaleString()}`).join('')
       : `${m}: No data`;
 
-    return `<div class="chart-bar-wrap" title="${tooltip}">
-      <div class="chart-bar" style="height:${barPct}%;display:flex;flex-direction:column-reverse;overflow:hidden;background:${(!total && !isFuture) ? 'rgba(255,255,255,0.04)' : (isFuture ? 'rgba(255,255,255,0.03)' : 'transparent')}">
+    return `<div class="chart-bar-col" title="${tooltip}">
+      <div class="chart-bar" style="height:${barPct}%;display:flex;flex-direction:column-reverse;overflow:hidden;${!total ? (isFuture ? '' : 'background:rgba(255,255,255,0.04)') : ''}">
         ${segments}
       </div>
-      <div class="chart-bar-label" style="${i === curMonth && !isFuture ? 'color:var(--text);font-weight:700' : ''}">${m}</div>
     </div>`;
   }).join('');
 
-  // Legend (only if multiple venues have data this year)
+  // Month label row
+  const labelsHtml = months.map((m, i) =>
+    `<span style="${i === curMonth ? 'color:var(--text);font-weight:700' : ''}">${m}</span>`
+  ).join('');
+
+  // Legend (only if multiple venues have data)
   const activeVenues = HOST_LISTINGS.filter(l => monthly[l.id].some(v => v > 0));
   const legendHtml = activeVenues.length > 1
     ? `<div class="earnings-chart-legend">
@@ -680,21 +712,186 @@ function renderEarningsChart(canvasId, year) {
 
   const ytdText = hasData ? '$' + ytd.toLocaleString() : 'No data yet';
 
-  // Replace target (canvas on first render, div on re-render)
   const target = document.getElementById(canvasId) || document.getElementById('earningsChartWrap');
   if (!target) return;
   const wrap = document.createElement('div');
   wrap.id = 'earningsChartWrap';
-  wrap.innerHTML = `<div class="chart-bars">${barsHtml}</div>${legendHtml}`;
+  wrap.innerHTML = `
+    <div class="chart-area">
+      <div class="chart-plot">
+        <div class="chart-gridlines">${gridHtml}</div>
+        <div class="chart-bars">${barsHtml}</div>
+      </div>
+      <div class="chart-label-row">${labelsHtml}</div>
+    </div>
+    ${legendHtml}`;
   target.parentNode.replaceChild(wrap, target);
 
-  // Update YTD in card header
   const existingBadge = document.getElementById('earningsYtdBadge');
   if (existingBadge) { existingBadge.textContent = ytdText; existingBadge.className = 'earnings-ytd-badge'; }
 }
 
 function updateChart(year) {
   renderEarningsChart('earningsChartWrap', parseInt(year));
+}
+
+// ─── ANALYTICS PIN LOCK ───────────────────────────────────────────────────────
+
+function checkAnalyticsLock() {
+  const pin = localStorage.getItem('bb_analytics_pin');
+  const sec = document.getElementById('section-overview');
+  const existing = document.getElementById('analyticsLockOverlay');
+  if (existing) existing.remove();
+  if (!pin || sessionStorage.getItem('bb_analytics_unlocked') === '1') return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'analyticsLockOverlay';
+  overlay.className = 'analytics-lock-overlay';
+  overlay.innerHTML = `
+    <div class="analytics-lock-card">
+      <div class="analytics-lock-icon">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="11" width="18" height="11" rx="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
+      <h2 class="analytics-lock-title">Analytics &amp; Earnings</h2>
+      <p class="analytics-lock-sub">Enter your 4-digit PIN to view earnings and performance data.</p>
+      <form class="analytics-lock-form" onsubmit="analyticsUnlock(event)">
+        <input type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}"
+          id="analyticsPinInput" class="analytics-pin-input" placeholder="• • • •" autocomplete="off"/>
+        <p class="analytics-pin-error" id="analyticsPinError" style="display:none">Incorrect PIN — try again.</p>
+        <button type="submit" class="btn-save" style="width:100%;margin-top:4px">Unlock</button>
+      </form>
+      <p class="analytics-lock-footer">Manage this PIN in <a href="#" onclick="event.preventDefault();navigate(null,'profile')">Profile &amp; Settings</a>.</p>
+    </div>`;
+  sec.appendChild(overlay);
+  setTimeout(() => document.getElementById('analyticsPinInput')?.focus(), 60);
+}
+
+function analyticsUnlock(e) {
+  e.preventDefault();
+  const pin   = localStorage.getItem('bb_analytics_pin');
+  const input = document.getElementById('analyticsPinInput').value;
+  if (input === pin) {
+    sessionStorage.setItem('bb_analytics_unlocked', '1');
+    document.getElementById('analyticsLockOverlay')?.remove();
+    renderOverview();
+  } else {
+    document.getElementById('analyticsPinError').style.display = 'block';
+    document.getElementById('analyticsPinInput').value = '';
+    document.getElementById('analyticsPinInput').focus();
+  }
+}
+
+function renderAnalyticsPinSettings() {
+  const wrap = document.getElementById('analyticsPinSettings');
+  if (!wrap) return;
+  const hasPin = !!localStorage.getItem('bb_analytics_pin');
+  if (!hasPin) {
+    wrap.innerHTML = `
+      <p class="analytics-pin-desc">No PIN is set. Anyone who logs in with your credentials can view your earnings and analytics.</p>
+      <form onsubmit="setAnalyticsPin(event)" class="analytics-pin-set-form">
+        <div class="field-row-p">
+          <div class="p-field">
+            <label>New PIN <span style="font-weight:400;color:var(--text-muted)">(4 digits)</span></label>
+            <input type="password" inputmode="numeric" maxlength="4" id="apNewPin" placeholder="0000" class="analytics-pin-input-sm"/>
+          </div>
+          <div class="p-field">
+            <label>Confirm PIN</label>
+            <input type="password" inputmode="numeric" maxlength="4" id="apConfPin" placeholder="0000" class="analytics-pin-input-sm"/>
+          </div>
+        </div>
+        <button type="submit" class="btn-save" style="font-size:13px;padding:8px 20px">Set PIN</button>
+      </form>`;
+  } else {
+    wrap.innerHTML = `
+      <p class="analytics-pin-desc">Your Overview tab is PIN-protected. Co-managers logging in with your credentials will need the PIN to view earnings and performance data.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+        <button class="btn-save" style="font-size:13px;padding:8px 20px" onclick="showChangePinForm()">Change PIN</button>
+        <button class="profile-cancel-btn" style="font-size:13px;padding:8px 20px" onclick="showRemovePinForm()">Remove PIN</button>
+      </div>
+      <div id="changePinForm" style="display:none;margin-top:18px">
+        <form onsubmit="changeAnalyticsPin(event)" class="analytics-pin-set-form">
+          <div class="field-row-p">
+            <div class="p-field">
+              <label>Current PIN</label>
+              <input type="password" inputmode="numeric" maxlength="4" id="apCurrentPin" placeholder="0000" class="analytics-pin-input-sm"/>
+            </div>
+            <div class="p-field">
+              <label>New PIN</label>
+              <input type="password" inputmode="numeric" maxlength="4" id="apNewPin2" placeholder="0000" class="analytics-pin-input-sm"/>
+            </div>
+            <div class="p-field">
+              <label>Confirm new PIN</label>
+              <input type="password" inputmode="numeric" maxlength="4" id="apConfPin2" placeholder="0000" class="analytics-pin-input-sm"/>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button type="submit" class="btn-save" style="font-size:13px;padding:8px 20px">Save new PIN</button>
+            <button type="button" class="profile-cancel-btn" style="font-size:13px;padding:8px 20px" onclick="document.getElementById('changePinForm').style.display='none'">Cancel</button>
+          </div>
+        </form>
+      </div>
+      <div id="removePinForm" style="display:none;margin-top:18px">
+        <form onsubmit="removeAnalyticsPin(event)" class="analytics-pin-set-form">
+          <div class="p-field" style="max-width:160px">
+            <label>Enter current PIN to remove</label>
+            <input type="password" inputmode="numeric" maxlength="4" id="apRemovePin" placeholder="0000" class="analytics-pin-input-sm"/>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button type="submit" class="profile-cancel-btn" style="font-size:13px;padding:8px 20px;color:var(--red);border-color:rgba(255,45,120,0.4)">Remove PIN</button>
+            <button type="button" class="profile-cancel-btn" style="font-size:13px;padding:8px 20px" onclick="document.getElementById('removePinForm').style.display='none'">Cancel</button>
+          </div>
+        </form>
+      </div>`;
+  }
+}
+
+function setAnalyticsPin(e) {
+  e.preventDefault();
+  const n = document.getElementById('apNewPin').value;
+  const c = document.getElementById('apConfPin').value;
+  if (!/^\d{4}$/.test(n))       { showDash('PIN must be exactly 4 digits.'); return; }
+  if (n !== c)                   { showDash('PINs do not match.'); return; }
+  localStorage.setItem('bb_analytics_pin', n);
+  sessionStorage.setItem('bb_analytics_unlocked', '1'); // current session stays unlocked
+  renderAnalyticsPinSettings();
+  showDash('Analytics PIN set. Co-managers will be prompted for it on their next login.');
+}
+
+function changeAnalyticsPin(e) {
+  e.preventDefault();
+  const cur = document.getElementById('apCurrentPin').value;
+  const n   = document.getElementById('apNewPin2').value;
+  const c   = document.getElementById('apConfPin2').value;
+  if (cur !== localStorage.getItem('bb_analytics_pin')) { showDash('Current PIN is incorrect.'); return; }
+  if (!/^\d{4}$/.test(n))  { showDash('New PIN must be exactly 4 digits.'); return; }
+  if (n !== c)              { showDash('New PINs do not match.'); return; }
+  localStorage.setItem('bb_analytics_pin', n);
+  renderAnalyticsPinSettings();
+  showDash('Analytics PIN updated.');
+}
+
+function removeAnalyticsPin(e) {
+  e.preventDefault();
+  const cur = document.getElementById('apRemovePin').value;
+  if (cur !== localStorage.getItem('bb_analytics_pin')) { showDash('Incorrect PIN.'); return; }
+  localStorage.removeItem('bb_analytics_pin');
+  sessionStorage.removeItem('bb_analytics_unlocked');
+  renderAnalyticsPinSettings();
+  showDash('Analytics PIN removed — Overview tab is no longer protected.');
+}
+
+function showChangePinForm() {
+  document.getElementById('removePinForm').style.display = 'none';
+  const f = document.getElementById('changePinForm');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+function showRemovePinForm() {
+  document.getElementById('changePinForm').style.display = 'none';
+  const f = document.getElementById('removePinForm');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
 }
 
 // ─── RESERVATIONS ─────────────────────────────────────────────────────────────

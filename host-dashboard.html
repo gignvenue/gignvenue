@@ -333,6 +333,12 @@
             <button type="submit" class="btn-save">Save changes</button>
           </div>
         </form>
+
+        <!-- Analytics PIN -->
+        <div class="analytics-pin-settings-card">
+          <h2>Analytics PIN</h2>
+          <div id="analyticsPinSettings"></div>
+        </div>
       </div>
     </section>
 
@@ -487,6 +493,17 @@
           </button>
           <div class="host-faq-a">
             <p>Yes. Every booking in your Bookings section has a "+ Note" button. Click it to open a private note panel where you can apply quick tags (★ Rebook, 👍 Great show, ⚠️ Avoid, and others) and add a freeform note of your own. Notes are completely private — they are never shared with artists or shown publicly. They persist across sessions so you can build a personal record of how each booking went over time.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            Can I limit what a co-manager sees on my dashboard?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>Yes. Under Profile &amp; Settings → Analytics PIN, you can set a 4-digit PIN that locks the Overview tab — the section that shows your earnings chart, yearly totals, and booking counts. Anyone who logs in with your credentials will hit a PIN screen before they can view any financial data.</p>
+            <p>You don't need to remember to lock it. The PIN screen appears automatically at the start of every new login session, so a co-manager handling bookings, calendar updates, or venue edits never has incidental access to your earnings unless they know the PIN. You can set, change, or remove the PIN at any time from the same settings screen.</p>
           </div>
         </div>
 

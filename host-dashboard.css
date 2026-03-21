@@ -2155,3 +2155,110 @@ img { display: block; }
 .cdp-price-btn:hover { border-color: var(--border-light); color: var(--text); }
 .cdp-price-btn-day { color: var(--red); border-color: rgba(255,45,120,0.3); }
 .cdp-price-btn-day:hover { background: rgba(255,45,120,0.08); }
+
+/* ── Analytics PIN: lock overlay ──────────────────────────────────────────── */
+.analytics-lock-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  min-height: 400px;
+}
+.analytics-lock-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px 36px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+}
+.analytics-lock-icon {
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+}
+.analytics-lock-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+.analytics-lock-sub {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0 0 24px;
+}
+.analytics-lock-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.analytics-pin-input {
+  width: 100%;
+  text-align: center;
+  font-size: 24px;
+  letter-spacing: 10px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  box-sizing: border-box;
+}
+.analytics-pin-input:focus { outline: none; border-color: var(--red); }
+.analytics-pin-error {
+  font-size: 13px;
+  color: var(--red);
+  margin: 0;
+}
+.analytics-lock-footer {
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.analytics-lock-footer a { color: var(--red); text-decoration: none; }
+.analytics-lock-footer a:hover { text-decoration: underline; }
+
+/* ── Analytics PIN: settings card ─────────────────────────────────────────── */
+.analytics-pin-settings-card {
+  max-width: 560px;
+  margin-top: 24px;
+  padding: 24px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.analytics-pin-settings-card h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 16px;
+}
+.analytics-pin-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0 0 16px;
+  line-height: 1.55;
+}
+.analytics-pin-set-form { display: flex; flex-direction: column; gap: 14px; }
+.analytics-pin-input-sm {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 18px;
+  letter-spacing: 6px;
+  text-align: center;
+  box-sizing: border-box;
+}
+.analytics-pin-input-sm:focus { outline: none; border-color: var(--red); }
+
+#section-overview { position: relative; }
