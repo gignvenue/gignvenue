@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Host Dashboard · GigNVenue</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="host-dashboard.css"/>
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <a href="index.html" class="sidebar-logo-link">
+      <img src="gign-venue-logo-siteheader.svg" alt="GigNVenue" style="height:28px;width:auto;filter:brightness(1.05)"/>
+    </a>
+    <button class="sidebar-close" id="sidebarClose" onclick="closeSidebar()" aria-label="Close menu">✕</button>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="#" class="sidebar-link active" data-section="overview" onclick="navigate(event,'overview')">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+      Overview
+    </a>
+    <a href="#" class="sidebar-link" data-section="reservations" onclick="navigate(event,'reservations')">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+      Bookings
+      <span class="sidebar-badge" id="resBadge"></span>
+    </a>
+    <a href="#" class="sidebar-link" data-section="listings" onclick="navigate(event,'listings')">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 3L2 12h3v8h6v-5h2v5h6v-8h3L12 3z"/></svg>
+      Venues
+    </a>
+    <a href="#" class="sidebar-link" data-section="calendar" onclick="navigate(event,'calendar')">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg>
+      Calendar
+    </a>
+    <a href="#" class="sidebar-link" data-section="messages" onclick="navigate(event,'messages')">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+      Messages
+      <span class="sidebar-badge sidebar-badge-msg" id="msgBadge">3</span>
+    </a>
+    <a href="#" class="sidebar-link" data-section="analytics" onclick="navigate(event,'analytics');renderAnalytics()">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 3h4v18H3zm7 8h4v10h-4zm7-5h4v15h-4z"/></svg>
+      Analytics
+    </a>
+    <a href="#" class="sidebar-link" data-section="earnings" onclick="navigate(event,'earnings')">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+      Earnings
+    </a>
+    <a href="#" class="sidebar-link" data-section="reviews" onclick="navigate(event,'reviews')" style="display:none">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+      Reviews
+    </a>
+    <a href="#" class="sidebar-link" data-section="profile" onclick="navigate(event,'profile')">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      Profile
+    </a>
+    <a href="#" class="sidebar-link" data-section="help" onclick="navigate(event,'help')">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+      Help
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-user" id="sidebarUser">
+      <!-- filled by JS -->
+    </div>
+    <button class="sidebar-logout" onclick="Auth.logout('index.html')">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+      Log out
+    </button>
+  </div>
+</aside>
+
+<!-- ── MOBILE OVERLAY ── -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ── MAIN ── -->
+<div class="dashboard-main">
+
+  <!-- Top bar -->
+  <header class="dash-topbar">
+    <button class="hamburger" onclick="openSidebar()" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="dash-topbar-right">
+      <button class="topbar-icon-btn" aria-label="Notifications" onclick="navigate(null,'messages')">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+        <span class="topbar-badge" id="topbarMsgBadge"></span>
+      </button>
+      <div class="topbar-help-wrap">
+        <button class="topbar-icon-btn" aria-label="Help" id="helpBtn" onclick="toggleHelpMenu(event)">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+        </button>
+        <div class="help-dropdown hidden" id="helpDropdown">
+          <a href="#" class="help-dropdown-item" onclick="event.preventDefault();navigate(null,'help')">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+            FAQ
+          </a>
+          <a href="contact.html" class="help-dropdown-item">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            Contact
+          </a>
+        </div>
+      </div>
+      <div class="topbar-avatar" id="topbarAvatar" onclick="navigate(null,'profile')"></div>
+    </div>
+  </header>
+
+  <!-- ── SECTIONS ── -->
+  <div class="sections-wrap">
+
+    <!-- OVERVIEW -->
+    <section class="section active" id="section-overview">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title" id="overviewGreeting">Good evening!</h1>
+          <p class="section-sub" id="overviewDate"></p>
+        </div>
+        <button class="btn-add-listing" onclick="navigate(null,'listings')">+ Add venue</button>
+      </div>
+
+      <!-- Per-venue confirmed booking cards -->
+      <div class="venue-confirmed-grid" id="venueConfirmedCards"></div>
+
+      <!-- Two columns -->
+      <div class="overview-grid">
+
+        <!-- Action items -->
+        <div class="card">
+          <h2 class="card-title">Action items</h2>
+          <div class="action-items" id="actionItems"></div>
+        </div>
+
+        <!-- Confirmed bookings -->
+        <div class="card">
+          <div class="card-title-row">
+            <h2 class="card-title">Confirmed bookings</h2>
+            <a href="#" class="card-link" onclick="event.preventDefault();goToConfirmedTab()">See all</a>
+          </div>
+          <div class="checkin-list" id="checkinList"></div>
+        </div>
+      </div>
+
+      <!-- Earnings chart -->
+      <div class="card" style="margin-top:24px">
+        <div class="card-title-row">
+          <h2 class="card-title">Earnings this year</h2>
+          <select class="p-field" style="margin:0;border:1px solid var(--border);background:var(--bg-elevated);color:var(--text-sec);border-radius:6px;padding:4px 10px;font-size:13px" onchange="updateChart(this.value)">
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+          </select>
+        </div>
+        <canvas id="earningsChart" height="80"></canvas>
+      </div>
+    </section>
+
+    <!-- RESERVATIONS -->
+    <section class="section" id="section-reservations">
+      <div class="section-header">
+        <h1 class="section-title">Bookings</h1>
+      </div>
+      <div class="filter-tabs" id="resTabs">
+        <button class="filter-tab active" onclick="filterRes(event,'pending')">Pending</button>
+        <button class="filter-tab" id="confirmedTabBtn" onclick="filterRes(event,'confirmed')">Confirmed</button>
+        <button class="filter-tab" onclick="filterRes(event,'completed')">Completed</button>
+        <button class="filter-tab" onclick="filterRes(event,'cancelled')">Cancelled</button>
+      </div>
+      <div class="reservations-table-wrap">
+        <table class="res-table" id="resTable">
+          <thead>
+            <tr>
+              <th>Guest</th>
+              <th>Venue</th>
+              <th>Dates</th>
+              <th>Guests</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="resTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- LISTINGS -->
+    <section class="section" id="section-listings">
+      <div class="section-header">
+        <h1 class="section-title">Your Venues</h1>
+        <button class="btn-add-listing" onclick="openNewListingModal()">+ New venue</button>
+      </div>
+      <div class="listings-manager-grid" id="listingsManager"></div>
+    </section>
+
+    <!-- CALENDAR -->
+    <section class="section" id="section-calendar">
+      <div class="section-header">
+        <h1 class="section-title">Availability Calendar</h1>
+        <div class="cal-nav-btns">
+          <button onclick="prevCalMonth()">‹ Prev</button>
+          <strong id="calMonthLabel" style="color:var(--text-sec)"></strong>
+          <button onclick="nextCalMonth()">Next ›</button>
+        </div>
+      </div>
+      <div id="calVenueTabs" class="cal-venue-tabs"></div>
+      <div class="cal-legend">
+        <span class="leg-item"><span class="leg-dot available"></span> Available</span>
+        <span class="leg-item"><span class="leg-dot pending"></span> Pending <em style="font-style:normal;font-size:11px;color:var(--text-muted)">(requests still available)</em></span>
+        <span class="leg-item"><span class="leg-dot booked"></span> Booked</span>
+      </div>
+      <div class="big-calendar" id="bigCalendar"></div>
+    </section>
+
+    <!-- MESSAGES -->
+    <section class="section" id="section-messages">
+      <div class="section-header">
+        <h1 class="section-title">Messages</h1>
+      </div>
+      <div class="messages-layout">
+        <div class="msg-thread-list" id="msgThreadList"></div>
+        <div class="msg-chat" id="msgChat">
+          <div class="msg-chat-empty">Select a conversation</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ANALYTICS -->
+    <section class="section" id="section-analytics">
+      <div class="section-header">
+        <h1 class="section-title">Analytics</h1>
+      </div>
+      <div class="analytics-grid" id="analyticsGrid"></div>
+      <div class="card" style="margin-top:0">
+        <h2 class="card-title" style="margin-bottom:20px">Monthly request volume (last 6 months)</h2>
+        <div id="analyticsChart"></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h2 class="card-title" style="margin-bottom:16px">Top event types</h2>
+        <div id="analyticsGenres"></div>
+      </div>
+    </section>
+
+    <!-- EARNINGS -->
+    <section class="section" id="section-earnings">
+      <div class="section-header">
+        <h1 class="section-title">Earnings</h1>
+        <button class="res-action-btn" onclick="downloadEarningsCSV()" style="margin-left:auto;margin-top:0">⬇ Export CSV</button>
+      </div>
+      <div class="stats-grid" id="earningsStatsGrid"></div>
+
+      <div class="card" style="margin-top:24px">
+        <h2 class="card-title" style="margin-bottom:4px">Deposits in escrow</h2>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px">Deposits held by GigNVenue for upcoming confirmed bookings. Released to you within 24 hours of confirming the show played off.</p>
+        <table class="res-table">
+          <thead><tr><th>Event date</th><th>Venue</th><th>Artist</th><th>Event total</th><th>Deposit held (20%)</th><th>Status</th></tr></thead>
+          <tbody id="escrowTable"></tbody>
+        </table>
+      </div>
+
+      <div class="card" style="margin-top:24px">
+        <h2 class="card-title" style="margin-bottom:4px">Self-managed shows</h2>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px">Shows you added directly to your calendar — outside of GigNVenue requests. Log what each show earned to keep your full income picture in one place.</p>
+        <table class="res-table">
+          <thead><tr><th>Event date</th><th>Venue</th><th>Artist / Event</th><th>Earnings logged</th><th></th><th>Notes</th></tr></thead>
+          <tbody id="selfManagedTable"></tbody>
+        </table>
+      </div>
+
+      <div class="card" style="margin-top:24px">
+        <h2 class="card-title" style="margin-bottom:4px">GigNVenue payout history</h2>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px">Deposit releases and completed payouts from bookings confirmed through GigNVenue.</p>
+        <table class="res-table">
+          <thead><tr><th>Event date</th><th>Venue</th><th>Artist</th><th>Event total</th><th>Net payout</th><th>Status</th></tr></thead>
+          <tbody id="payoutTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- REVIEWS -->
+    <section class="section" id="section-reviews">
+      <div class="section-header">
+        <h1 class="section-title">Reviews</h1>
+      </div>
+      <div class="reviews-summary" id="reviewsSummary"></div>
+      <div class="reviews-list" id="reviewsList"></div>
+    </section>
+
+    <!-- PROFILE -->
+    <section class="section" id="section-profile">
+      <div class="section-header">
+        <h1 class="section-title">Profile &amp; Settings</h1>
+      </div>
+      <div class="profile-layout">
+        <form class="profile-form" id="profileForm" onsubmit="saveProfile(event)">
+          <div class="profile-avatar-wrap">
+            <img id="profileAvatar" src="" alt="Avatar" class="profile-avatar"/>
+            <button class="profile-avatar-edit" onclick="document.getElementById('avatarUpload').click()">Edit</button>
+            <input type="file" id="avatarUpload" accept="image/*" hidden onchange="handleAvatarUpload(event)"/>
+          </div>
+          <h2>Venue Contact Information</h2>
+          <div class="field-row-p">
+            <div class="p-field"><label>First name</label><input id="pfFirst" type="text"/></div>
+            <div class="p-field"><label>Last name</label><input id="pfLast" type="text"/></div>
+          </div>
+          <div class="p-field">
+            <label>Email address</label>
+            <input id="pfEmail" type="email"/>
+          </div>
+          <div class="p-field">
+            <label>Phone number</label>
+            <input id="pfPhone" type="tel" placeholder="+1 (555) 000-0000"/>
+          </div>
+          <p class="profile-contact-note">Your contact details are shared privately with artists after payment is completed — they are never shown publicly on your venue profile.</p>
+          <h2 style="margin-top:32px">Security</h2>
+          <div class="p-field">
+            <label>Current password</label>
+            <input type="password" id="pfCurrentPw" placeholder="Enter current password"/>
+          </div>
+          <div class="field-row-p">
+            <div class="p-field"><label>New password</label><input type="password" id="pfNewPw" placeholder="New password"/></div>
+            <div class="p-field"><label>Confirm</label><input type="password" id="pfConfirmPw" placeholder="Repeat password"/></div>
+          </div>
+
+          <div class="profile-form-footer">
+            <span class="profile-save-msg" id="profileSaveMsg"></span>
+            <button type="submit" class="btn-save">Save changes</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- HELP -->
+    <section class="section" id="section-help">
+      <div class="section-header">
+        <h1 class="section-title">Host Help Center</h1>
+      </div>
+      <div class="card" style="max-width:720px">
+        <h2 class="card-title" style="margin-bottom:20px">Frequently asked questions</h2>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            How do I approve or decline a booking request?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>All incoming requests appear in the Pending tab of your Bookings section. New requests are flagged with a "New" badge. Click "Details" on any request to open a full booking panel — including the artist's event type, expected attendance, notes, and booking timeline. Use the status dropdown to move the request to Confirmed or Cancelled. When you confirm, the artist is notified and given 48 hours to complete payment.</p>
+            <p>When multiple artists request the same date, you can review all pending requests and approve the best fit. Once you confirm a booking, all other pending requests for that date are automatically declined and those artists are notified — no manual follow-up needed.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            What is an artist's reliability score?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>Every artist on GigNVenue has a pay rate score — the percentage of their approved bookings that resulted in completed payment. You'll see it as a small badge on each pending request card: green for a strong track record, amber for some missed windows, and red for a recurring pattern of approvals expiring without action.</p>
+            <p>Artists who proactively decline a booking (rather than going silent) send their reason directly to your Messages section — that's a much better outcome than a no-show on payment day, and it's reflected in how scores are calculated.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            How does hold priority work when multiple artists request the same date?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>When two or more artists request the same date, GigNVenue gives you full control over how you rank your interest in each one. Inside the Bookings section, you can assign each competing request a hold position — First Hold, Second Hold, Third Hold, and so on — to privately record which artist you'd most like to confirm if your top choice falls through.</p>
+            <p>Hold positions are internal to your dashboard and are never visible to artists. They're simply your working shortlist. Reorder them at any time by dragging requests up or down, or use the arrow controls on each request card — changes save instantly. You're not obligated to respond in any particular order, and adjusting hold positions carries no commitment. When you're ready to decide, confirm your preferred request and all others for that date are automatically declined.</p>
+            <p>Think of it like a traditional performance hold: it keeps your thinking organised without tying anyone's hands until you're certain.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            When do I receive the deposit?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>The artist's 20% deposit is collected and held securely by GigNVenue when they confirm their booking. It is released to you within 24 hours of you confirming the show played off. This protects both sides — you're guaranteed the deposit is in place before the show, and the artist knows their money is held safely until then. The deposit is not GigNVenue's income; it goes to you in full.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            What happens if an artist doesn't complete payment after I approve them?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>Artists have 48 hours after approval to complete their deposit and booking fee payment. If you're concerned, you can reach out to them directly via the Messages section before the window closes. If payment still isn't completed in time, the booking is automatically cancelled and the date is released back to your calendar. You're free to approve a different artist for that date.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            Can I manage multiple venues from one account?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>Yes. One host account can manage any number of venue listings. Each listing has its own profile, calendar, and booking history, all visible from your single dashboard.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            What is a Featured Night and how does it work?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>Featured Night lets you proactively promote a specific open date — with an optional special rate and a short pitch to artists. Open your Availability Calendar, click any available future date, and select "Feature this night." You can set a reduced rate or keep your standard rate, and add a note up to 100 characters. Once posted, we notify artists who have saved your venue and those whose genre matches your space. Your featured night runs for up to 14 days — until it's booked or you remove it early, whichever comes first.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            Can I block dates on my calendar?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>Yes. Click any date in your Availability Calendar and select "Blocked" from the date options panel. Blocked dates are marked as unavailable and won't accept new booking requests. You can also set a recurring weekly block — for example, every Monday for the next 12 weeks — using the repeat option that appears when you block a date.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            How does the rating system work?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>After you mark a show as played off, you'll be prompted to rate the artist on three questions: did they arrive and perform as expected, were they professional and respectful of the space, and would you book them again? You can add an optional short note. You have 48 hours to revise your rating before it locks. After that, you can add a one-time written response to any rating you receive from an artist. Artist ratings are visible to you when reviewing new booking requests — helping you make better, more informed decisions over time.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            How do I manually add a show to my calendar?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>Open your Availability Calendar and click any date. From the day panel, select "Pending" (show expected but not yet confirmed) or "Booked" (confirmed). Enter the artist or event name, then click Save. The date will appear on your calendar and the show will be tracked in your Earnings section once the date passes — where you can log what it earned.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            Can I set up a recurring residency on my calendar?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>Yes. When you mark a date as Booked, check the "Set as recurring" option that appears. Choose your frequency — weekly, bi-weekly, or monthly — and how many occurrences to create. All dates are added to your calendar in one step. This is ideal for regular residencies like a weekly jazz night or a monthly showcase series.</p>
+            <p>Each occurrence appears in your calendar and your self-managed earnings tracker, where you can log what each individual show earned as the dates go by.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            How do I track earnings from shows not booked through GigNVenue?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>Any show you manually add to your calendar appears in the Self-managed shows table inside your Earnings section once the date has passed. Click "Log earnings" on any row to enter what that show earned and an optional note (door deal, ticket split, flat fee, etc.). Your total earnings stats — including both GigNVenue bookings and self-managed shows — update immediately.</p>
+            <p>This makes GigNVenue your single dashboard for your full venue income picture, not just the bookings that came through the platform.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            Can I export my earnings data?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>Yes. Click the "Export CSV" button at the top of your Earnings section to download a spreadsheet of all your earnings — both GigNVenue payouts and self-managed show records. The file includes date, venue, artist, source, gross amount, net amount, status, and any notes you've logged. It's formatted for easy import into accounting software or tax preparation tools.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            Can I add private notes to a booking?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>Yes. Every booking in your Bookings section has a "+ Note" button. Click it to open a private note panel where you can apply quick tags (★ Rebook, 👍 Great show, ⚠️ Avoid, and others) and add a freeform note of your own. Notes are completely private — they are never shared with artists or shown publicly. They persist across sessions so you can build a personal record of how each booking went over time.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            Still need help?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>Our support team is available via the <a href="contact.html" style="color:var(--red);font-weight:600">contact page</a>. You can also browse the <a href="help.html" style="color:var(--red);font-weight:600">public Help Center</a> for general platform questions.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </div><!-- /sections-wrap -->
+</div><!-- /dashboard-main -->
+
+<!-- ══════════════════════════════════════════
+     HOST RATING MODAL
+══════════════════════════════════════════ -->
+<div class="feature-night-overlay" id="hostRatingOverlay" onclick="closeHostRatingModal()"></div>
+<div class="feature-night-modal" id="hostRatingModal">
+  <div class="fn-modal-header">
+    <button class="fn-modal-close" onclick="closeHostRatingModal()">✕</button>
+    <h2 class="fn-modal-title">Rate your artist</h2>
+  </div>
+  <div class="fn-modal-body">
+    <p id="hostRatingSubtitle" style="font-size:14px;color:var(--text-sec);margin-bottom:18px"></p>
+    <div class="p-field">
+      <label style="font-size:13px">Arrived and performed as expected?</label>
+      <div class="star-rating" id="hrQ1">
+        <input type="radio" name="hrQ1" id="hrQ1s5" value="5"/><label for="hrQ1s5">★</label>
+        <input type="radio" name="hrQ1" id="hrQ1s4" value="4"/><label for="hrQ1s4">★</label>
+        <input type="radio" name="hrQ1" id="hrQ1s3" value="3"/><label for="hrQ1s3">★</label>
+        <input type="radio" name="hrQ1" id="hrQ1s2" value="2"/><label for="hrQ1s2">★</label>
+        <input type="radio" name="hrQ1" id="hrQ1s1" value="1"/><label for="hrQ1s1">★</label>
+      </div>
+    </div>
+    <div class="p-field">
+      <label style="font-size:13px">Professional and respectful of the space?</label>
+      <div class="star-rating" id="hrQ2">
+        <input type="radio" name="hrQ2" id="hrQ2s5" value="5"/><label for="hrQ2s5">★</label>
+        <input type="radio" name="hrQ2" id="hrQ2s4" value="4"/><label for="hrQ2s4">★</label>
+        <input type="radio" name="hrQ2" id="hrQ2s3" value="3"/><label for="hrQ2s3">★</label>
+        <input type="radio" name="hrQ2" id="hrQ2s2" value="2"/><label for="hrQ2s2">★</label>
+        <input type="radio" name="hrQ2" id="hrQ2s1" value="1"/><label for="hrQ2s1">★</label>
+      </div>
+    </div>
+    <div class="p-field">
+      <label style="font-size:13px">Would you book this act again?</label>
+      <div class="star-rating" id="hrQ3">
+        <input type="radio" name="hrQ3" id="hrQ3s5" value="5"/><label for="hrQ3s5">★</label>
+        <input type="radio" name="hrQ3" id="hrQ3s4" value="4"/><label for="hrQ3s4">★</label>
+        <input type="radio" name="hrQ3" id="hrQ3s3" value="3"/><label for="hrQ3s3">★</label>
+        <input type="radio" name="hrQ3" id="hrQ3s2" value="2"/><label for="hrQ3s2">★</label>
+        <input type="radio" name="hrQ3" id="hrQ3s1" value="1"/><label for="hrQ3s1">★</label>
+      </div>
+    </div>
+    <div class="p-field">
+      <label>Note <span style="color:var(--text-muted);font-weight:400">(optional, 200 char max)</span></label>
+      <textarea id="hrNote" rows="2" maxlength="200" placeholder="Any comments about this act…"
+        style="border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:14px;background:var(--bg-input);color:var(--text);outline:none;width:100%;resize:none"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn-save secondary" style="flex:1" onclick="closeHostRatingModal()">Skip</button>
+      <button class="btn-save" style="flex:2" onclick="submitHostRating()">Submit rating</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     FEATURE NIGHT MODAL
+══════════════════════════════════════════ -->
+<div class="feature-night-overlay" id="featureNightOverlay" onclick="closeFeatureNightModal()"></div>
+<div class="feature-night-modal" id="featureNightModal">
+  <div class="fn-modal-header">
+    <button class="fn-modal-close" onclick="closeFeatureNightModal()">✕</button>
+    <h2 class="fn-modal-title">★ Feature this night</h2>
+  </div>
+  <div class="fn-modal-body">
+    <div class="fn-date-label" id="fnDateLabel"></div>
+    <div class="p-field">
+      <label>Special rate for this night ($)</label>
+      <input type="number" id="fnRate" min="0" step="50" placeholder="e.g. 1500"
+        style="border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:14px;background:var(--bg-input);color:var(--text);outline:none;width:100%"/>
+      <small style="color:var(--text-muted);font-size:12px">Leave as your standard rate or enter a special offer price.</small>
+    </div>
+    <div class="p-field">
+      <label>Note to artists <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+      <textarea id="fnNote" rows="2" maxlength="100" placeholder="e.g. Last-minute opening. Full backline available."
+        oninput="document.getElementById('fnCharCount').textContent=this.value.length+'/100'"
+        style="border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:14px;background:var(--bg-input);color:var(--text);outline:none;width:100%;resize:none"></textarea>
+      <small style="color:var(--text-muted);font-size:12px" id="fnCharCount">0/100</small>
+    </div>
+    <p class="fn-notice">We'll notify matching artists and anyone who's favourited your venue. Your featured night runs for up to 14 days — until booked or removed.</p>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn-save secondary" style="flex:1" onclick="closeFeatureNightModal()">Cancel</button>
+      <button class="btn-save" style="flex:2" onclick="submitFeatureNight()">★ Feature this night</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     NEW LISTING MODAL — single scroll
+══════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="newListingOverlay" onclick="closeNewListingModal()"></div>
+<div class="new-listing-modal hidden" id="newListingModal" style="max-width:680px">
+  <div class="nlm-header">
+    <button onclick="closeNewListingModal()">✕</button>
+    <h2>Add New Venue</h2>
+  </div>
+
+  <div class="nlm-body">
+    <div class="p-field"><label>Venue name *</label><input type="text" id="nlTitle" required placeholder="e.g. The Velvet Underground Club"/></div>
+    <div class="p-field"><label>Street address *</label><input type="text" id="nlLocation" required placeholder="123 Main St, Hollywood, CA 90028"/></div>
+    <div class="field-row-p">
+      <div class="p-field">
+        <label>Venue type</label>
+        <select id="nlType">
+          <option value="clubs">Club / Nightclub</option>
+          <option value="amphitheaters">Amphitheatre</option>
+          <option value="arenas">Arena</option>
+          <option value="theaters">Theatre / Hall</option>
+          <option value="rooftops">Rooftop</option>
+          <option value="jazz">Jazz Club</option>
+          <option value="festival">Festival Ground</option>
+          <option value="dive-bars">Dive Bar</option>
+        </select>
+      </div>
+      <div class="p-field">
+        <label>Max capacity</label>
+        <input type="number" id="nlCapacity" min="1" value="300" placeholder="300"/>
+      </div>
+    </div>
+    <div class="p-field"><label>Description</label><textarea id="nlDesc" rows="4" placeholder="Describe the venue, its history, sound system, vibe…"></textarea></div>
+
+    <div class="nlm-section-divider">Pricing</div>
+
+    <div class="pricing-option-block">
+      <label class="pricing-option-header">
+        <input type="checkbox" id="nlRoomRentalEnabled" onchange="toggleRoomRental('nl')"/>
+        <div>
+          <span class="pricing-option-title">Offer room rental option</span>
+          <span class="pricing-option-sub">A lower-priced option — space only, minimal inclusions</span>
+        </div>
+      </label>
+      <div id="nlRoomRentalFields" style="display:none;margin-top:14px">
+        <div class="p-field">
+          <label>Room rental rate (USD)</label>
+          <input type="number" id="nlRoomRentalPrice" min="0" placeholder="e.g. 500"/>
+        </div>
+        <div class="p-field">
+          <label>What's included</label>
+          <textarea id="nlRoomRentalDesc" rows="2" placeholder="e.g. Space only — tables &amp; chairs, basic lighting. No sound system or staff."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="pricing-option-block" style="margin-top:14px">
+      <div class="pricing-option-title" style="margin-bottom:4px">Full booking rate</div>
+      <div class="pricing-option-sub" style="margin-bottom:14px">Fully hosted night — includes your listed amenities</div>
+      <div class="p-field">
+        <label>Booking rate (USD) *</label>
+        <input type="number" id="nlPrice" min="100" value="2000" oninput="updateDepositCalc('nl')"/>
+        <div class="deposit-calc" id="nlDepositCalc"></div>
+      </div>
+      <div class="p-field">
+        <label>What's included</label>
+        <textarea id="nlBookingDesc" rows="2" placeholder="e.g. Full PA system, stage lighting, green room, bar staff, security…"></textarea>
+      </div>
+    </div>
+
+    <div class="p-field" style="margin-top:14px">
+      <label>Availability</label>
+      <select id="nlAvail" onchange="toggleSeasonalFields('nl')">
+        <option value="now">Available now</option>
+        <option value="year">Year-round</option>
+        <option value="seasonal">Seasonal (specify months)</option>
+      </select>
+    </div>
+    <div id="nlSeasonalWrap" class="field-row-p" style="display:none">
+      <div class="p-field">
+        <label>Open from</label>
+        <select id="nlSeasonFrom">
+          <option>Jan</option><option>Feb</option><option>Mar</option><option>Apr</option>
+          <option>May</option><option>Jun</option><option>Jul</option><option>Aug</option>
+          <option>Sep</option><option>Oct</option><option>Nov</option><option>Dec</option>
+        </select>
+      </div>
+      <div class="p-field">
+        <label>Open through</label>
+        <select id="nlSeasonTo">
+          <option>Jan</option><option>Feb</option><option>Mar</option><option>Apr</option>
+          <option>May</option><option>Jun</option><option>Jul</option><option>Aug</option>
+          <option>Sep</option><option>Oct</option><option>Nov</option><option>Dec</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="nlm-section-divider">Photos</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">Upload photos of your venue. Click a photo to set it as the <strong style="color:var(--red)">feature image</strong>.</p>
+    <div class="img-dropzone" id="imgDropzone"
+         ondragover="imgDragOver(event)" ondragleave="imgDragLeave(event)" ondrop="imgDrop(event)"
+         onclick="document.getElementById('imgFileInput').click()">
+      <div class="dropzone-inner" id="dropzoneInner">
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="var(--text-muted)"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        <p>Drag &amp; drop photos here, or <span style="color:var(--red);font-weight:600">browse</span></p>
+        <small>JPG, PNG, WEBP · Up to 20 photos</small>
+      </div>
+    </div>
+    <input type="file" id="imgFileInput" accept="image/*" multiple hidden onchange="imgFilePicked(event)"/>
+    <div class="img-preview-grid" id="imgPreviewGrid"></div>
+
+    <div class="nlm-section-divider">Equipment &amp; Amenities</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:4px">Select all equipment and amenities your venue provides.</p>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">⭐ Feature up to 3 selected amenities — or add up to 3 custom highlights to really showcase your space!</p>
+    <div class="nlm-amenity-search-wrap">
+      <input type="text" id="nlmAmenitySearch" placeholder="Search amenities…"
+             oninput="renderNlmAmenities(this.value)" class="amenity-search-input" style="margin-bottom:16px"/>
+    </div>
+    <div id="nlmAmenityList" style="padding-right:4px"></div>
+
+    <div class="custom-hl-section" id="nlmCustomHlSection">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0 10px">
+        <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">Custom Featured Highlights</span>
+        <span id="nlmCustomHlSlots" style="font-size:11px;color:var(--text-muted)"></span>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">Write up to 3 featured highlights in your own words — these appear alongside any amenities you've starred above.</p>
+      <div id="nlmCustomHlList"></div>
+      <div id="nlmCustomHlForm" style="display:none;background:var(--bg-card);border-radius:10px;padding:14px;margin-bottom:10px">
+        <input id="nlmCustomHlTitle" type="text" placeholder="Highlight title (e.g. 1920s Steinway Piano)" class="p-input" style="width:100%;margin-bottom:8px"/>
+        <input id="nlmCustomHlDesc" type="text" placeholder="Short description (optional)" class="p-input" style="width:100%;margin-bottom:12px"/>
+        <div style="display:flex;gap:8px">
+          <button class="profile-save-btn" style="font-size:13px;padding:7px 18px" onclick="addNlmCustomHighlight()">Add</button>
+          <button class="profile-cancel-btn" style="font-size:13px;padding:7px 18px" onclick="cancelNlmCustomHlForm()">Cancel</button>
+        </div>
+      </div>
+      <button id="nlmAddCustomHlBtn" onclick="showNlmCustomHlForm()" style="width:100%;padding:9px;font-size:13px;font-weight:600;color:var(--red);background:rgba(255,56,92,0.06);border:1.5px dashed rgba(255,56,92,0.3);border-radius:8px;cursor:pointer;transition:background .15s">+ Add custom highlight</button>
+    </div>
+
+    <div class="nlm-section-divider">Cancellation Policy</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Your cancellation policy is displayed on your public venue profile and must be acknowledged by artists before they can submit a booking request. This protects you and ensures both parties have agreed to the same terms.</p>
+    <div class="p-field">
+      <label>Paste your cancellation policy <span style="color:var(--red)">*</span></label>
+      <textarea id="nlCancellationPolicy" rows="6" placeholder="e.g. Cancellations made more than 30 days before the event date are eligible for a full deposit refund. Cancellations within 30 days forfeit 50% of the deposit. Cancellations within 7 days forfeit the full deposit…"></textarea>
+    </div>
+    <div class="p-field">
+      <label>Or upload a policy document <span style="font-size:12px;color:var(--text-muted)">(PDF — optional if policy is entered above)</span></label>
+      <div class="policy-upload-zone" onclick="document.getElementById('nlPolicyFile').click()">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="var(--text-muted)"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm-2 8v-3H9v-2h2v-3l3 4-3 4z"/></svg>
+        <span id="nlPolicyFileName">Click to upload a PDF</span>
+      </div>
+      <input type="file" id="nlPolicyFile" accept=".pdf" hidden onchange="document.getElementById('nlPolicyFileName').textContent = this.files[0]?.name || 'Click to upload a PDF'"/>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:20px">
+      <button type="button" class="btn-save" onclick="submitNewListing()">🎸 Publish venue</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     BOOKING NOTE MODAL
+══════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="noteModalOverlay" onclick="closeNoteModal()"></div>
+<div class="new-listing-modal hidden" id="noteModal" style="max-width:460px">
+  <div class="nlm-header">
+    <button onclick="closeNoteModal()">✕</button>
+    <h2>Private booking note</h2>
+  </div>
+  <div class="nlm-body">
+    <p id="noteModalSubtitle" style="font-size:13px;color:var(--text-muted);margin:0 0 18px"></p>
+    <div class="p-field">
+      <label>Quick tags <span style="color:var(--text-muted);font-weight:400">(click to toggle)</span></label>
+      <div id="noteModalTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px"></div>
+    </div>
+    <div class="p-field" style="margin-top:14px">
+      <label>Note <span style="color:var(--text-muted);font-weight:400">(private — never visible to artists)</span></label>
+      <textarea id="noteModalText" rows="4" placeholder="e.g. Great energy, crowd loved the set. Worth rebooking for the spring." style="resize:vertical"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn-save" style="flex:1" onclick="saveNoteModal()">Save note</button>
+      <button class="btn-save secondary" onclick="clearNoteModal()">Clear</button>
+      <button class="btn-save secondary" onclick="closeNoteModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     LOG EARNINGS MODAL
+══════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="logEarningsOverlay" onclick="closeLogEarningsModal()"></div>
+<div class="new-listing-modal hidden" id="logEarningsModal" style="max-width:440px">
+  <div class="nlm-header">
+    <button onclick="closeLogEarningsModal()">✕</button>
+    <h2>Log earnings</h2>
+  </div>
+  <div class="nlm-body">
+    <p id="lemSubtitle" style="font-size:14px;color:var(--text-muted);margin:0 0 24px"></p>
+    <div class="p-field">
+      <label>Amount earned <span style="color:var(--text-muted);font-weight:400">(total received for this show)</span></label>
+      <div style="position:relative">
+        <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:15px;pointer-events:none">$</span>
+        <input type="number" id="lemAmount" min="0" step="50" placeholder="0" style="padding-left:28px;width:100%;box-sizing:border-box"/>
+      </div>
+    </div>
+    <div class="p-field" style="margin-top:16px">
+      <label>Notes <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+      <input type="text" id="lemNotes" placeholder="e.g. ticket split, private hire, door deal…"/>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:24px">
+      <button class="btn-save" style="flex:1" onclick="saveLoggedEarnings()">Save earnings</button>
+      <button class="btn-save secondary" onclick="closeLogEarningsModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     EDIT LISTING MODAL — single scroll
+══════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="editListingOverlay" onclick="closeEditModal()"></div>
+<div class="new-listing-modal hidden" id="editListingModal" style="max-width:680px">
+  <div class="nlm-header">
+    <button onclick="closeEditModal()">✕</button>
+    <h2 id="elmTitle">Edit venue</h2>
+  </div>
+
+  <div class="nlm-body">
+    <div class="p-field"><label>Venue name *</label><input type="text" id="elmName" required placeholder="e.g. The Velvet Underground Club"/></div>
+    <div class="p-field"><label>Street address *</label><input type="text" id="elmLocation" required placeholder="123 Main St, Hollywood, CA 90028"/></div>
+    <div class="field-row-p">
+      <div class="p-field">
+        <label>Venue type</label>
+        <select id="elmType">
+          <option value="clubs">Club / Nightclub</option>
+          <option value="amphitheaters">Amphitheatre</option>
+          <option value="arenas">Arena</option>
+          <option value="theaters">Theatre / Hall</option>
+          <option value="rooftops">Rooftop</option>
+          <option value="jazz">Jazz Club</option>
+          <option value="festival">Festival Ground</option>
+          <option value="dive-bars">Dive Bar</option>
+        </select>
+      </div>
+      <div class="p-field">
+        <label>Max capacity</label>
+        <input type="number" id="elmCapacity" min="1" placeholder="300"/>
+      </div>
+    </div>
+    <div class="p-field"><label>Description</label><textarea id="elmDesc" rows="4" placeholder="Describe the venue…"></textarea></div>
+
+    <div class="nlm-section-divider">Pricing</div>
+
+    <div class="pricing-option-block">
+      <label class="pricing-option-header">
+        <input type="checkbox" id="elmRoomRentalEnabled" onchange="toggleRoomRental('elm')"/>
+        <div>
+          <span class="pricing-option-title">Offer room rental option</span>
+          <span class="pricing-option-sub">A lower-priced option — space only, minimal inclusions</span>
+        </div>
+      </label>
+      <div id="elmRoomRentalFields" style="display:none;margin-top:14px">
+        <div class="p-field">
+          <label>Room rental rate (USD)</label>
+          <input type="number" id="elmRoomRentalPrice" min="0" placeholder="e.g. 500"/>
+        </div>
+        <div class="p-field">
+          <label>What's included</label>
+          <textarea id="elmRoomRentalDesc" rows="2" placeholder="e.g. Space only — tables &amp; chairs, basic lighting. No sound system or staff."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="pricing-option-block" style="margin-top:14px">
+      <div class="pricing-option-title" style="margin-bottom:4px">Full booking rate</div>
+      <div class="pricing-option-sub" style="margin-bottom:14px">Fully hosted night — includes your listed amenities</div>
+      <div class="p-field">
+        <label>Booking rate (USD) *</label>
+        <input type="number" id="elmPrice" min="100" oninput="updateDepositCalc('elm')"/>
+        <div class="deposit-calc" id="elmDepositCalc"></div>
+      </div>
+      <div class="p-field">
+        <label>What's included</label>
+        <textarea id="elmBookingDesc" rows="2" placeholder="e.g. Full PA system, stage lighting, green room, bar staff, security…"></textarea>
+      </div>
+    </div>
+
+    <div class="p-field" style="margin-top:14px">
+      <label>Availability</label>
+      <select id="elmAvail" onchange="toggleSeasonalFields('elm')">
+        <option value="now">Available now</option>
+        <option value="year">Year-round</option>
+        <option value="seasonal">Seasonal (specify months)</option>
+      </select>
+    </div>
+    <div id="elmSeasonalWrap" class="field-row-p" style="display:none">
+      <div class="p-field">
+        <label>Open from</label>
+        <select id="elmSeasonFrom">
+          <option>Jan</option><option>Feb</option><option>Mar</option><option>Apr</option>
+          <option>May</option><option>Jun</option><option>Jul</option><option>Aug</option>
+          <option>Sep</option><option>Oct</option><option>Nov</option><option>Dec</option>
+        </select>
+      </div>
+      <div class="p-field">
+        <label>Open through</label>
+        <select id="elmSeasonTo">
+          <option>Jan</option><option>Feb</option><option>Mar</option><option>Apr</option>
+          <option>May</option><option>Jun</option><option>Jul</option><option>Aug</option>
+          <option>Sep</option><option>Oct</option><option>Nov</option><option>Dec</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="nlm-section-divider">Equipment &amp; Amenities</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:4px">Select all equipment and amenities your venue provides.</p>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">⭐ Feature up to 3 selected amenities — or add up to 3 custom highlights to really showcase your space!</p>
+    <div class="nlm-amenity-search-wrap">
+      <input type="text" id="elmAmenitySearch" placeholder="Search amenities…"
+             oninput="renderElmAmenities(this.value)" class="amenity-search-input" style="margin-bottom:16px"/>
+    </div>
+    <div id="elmAmenityList" style="padding-right:4px"></div>
+
+    <div class="custom-hl-section" id="elmCustomHlSection">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0 10px">
+        <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">Custom Featured Highlights</span>
+        <span id="elmCustomHlSlots" style="font-size:11px;color:var(--text-muted)"></span>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">Write up to 3 featured highlights in your own words — these appear alongside any amenities you've starred above.</p>
+      <div id="elmCustomHlList"></div>
+      <div id="elmCustomHlForm" style="display:none;background:var(--bg-card);border-radius:10px;padding:14px;margin-bottom:10px">
+        <input id="elmCustomHlTitle" type="text" placeholder="Highlight title (e.g. 1920s Steinway Piano)" class="p-input" style="width:100%;margin-bottom:8px"/>
+        <input id="elmCustomHlDesc" type="text" placeholder="Short description (optional)" class="p-input" style="width:100%;margin-bottom:12px"/>
+        <div style="display:flex;gap:8px">
+          <button class="profile-save-btn" style="font-size:13px;padding:7px 18px" onclick="addElmCustomHighlight()">Add</button>
+          <button class="profile-cancel-btn" style="font-size:13px;padding:7px 18px" onclick="cancelElmCustomHlForm()">Cancel</button>
+        </div>
+      </div>
+      <button id="elmAddCustomHlBtn" onclick="showElmCustomHlForm()" style="width:100%;padding:9px;font-size:13px;font-weight:600;color:var(--red);background:rgba(255,56,92,0.06);border:1.5px dashed rgba(255,56,92,0.3);border-radius:8px;cursor:pointer;transition:background .15s">+ Add custom highlight</button>
+    </div>
+
+    <div class="nlm-section-divider">Cancellation Policy</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Your cancellation policy is displayed on your public venue profile and must be acknowledged by artists before they can submit a booking request. This protects you and ensures both parties have agreed to the same terms.</p>
+    <div class="p-field">
+      <label>Paste your cancellation policy <span style="color:var(--red)">*</span></label>
+      <textarea id="elmCancellationPolicy" rows="6" placeholder="e.g. Cancellations made more than 30 days before the event date are eligible for a full deposit refund. Cancellations within 30 days forfeit 50% of the deposit. Cancellations within 7 days forfeit the full deposit…"></textarea>
+    </div>
+    <div class="p-field">
+      <label>Or upload a policy document <span style="font-size:12px;color:var(--text-muted)">(PDF — optional if policy is entered above)</span></label>
+      <div class="policy-upload-zone" onclick="document.getElementById('elmPolicyFile').click()">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="var(--text-muted)"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm-2 8v-3H9v-2h2v-3l3 4-3 4z"/></svg>
+        <span id="elmPolicyFileName">Click to upload a PDF</span>
+      </div>
+      <input type="file" id="elmPolicyFile" accept=".pdf" hidden onchange="document.getElementById('elmPolicyFileName').textContent = this.files[0]?.name || 'Click to upload a PDF'"/>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:20px">
+      <button type="button" class="btn-save" onclick="saveEditedListing()">💾 Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     DELETE CONFIRM MODAL
+══════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="deleteConfirmOverlay" onclick="closeDeleteModal()"></div>
+<div class="delete-modal hidden" id="deleteConfirmModal">
+  <div class="delete-modal-icon">🗑️</div>
+  <h3>Delete venue?</h3>
+  <p id="deleteConfirmText">This will permanently remove this venue from your listings. This action cannot be undone.</p>
+  <div class="delete-modal-actions">
+    <button class="btn-delete-cancel" onclick="closeDeleteModal()">Cancel</button>
+    <button class="btn-delete-confirm" id="deleteConfirmBtn" onclick="confirmDelete()">Delete venue</button>
+  </div>
+</div>
+
+<!-- Message Chat Overlay (mobile) -->
+<div class="modal-overlay hidden" id="chatOverlay" onclick="closeChatOverlay()"></div>
+
+<!-- ══ BOOKING DETAILS DRAWER ══════════════════════════════════════════════ -->
+<div class="res-drawer-overlay hidden" id="resDrawerOverlay" onclick="closeResDrawer()"></div>
+<div class="res-drawer hidden" id="resDrawer">
+  <div class="res-drawer-header">
+    <span class="res-drawer-title">Booking Details</span>
+    <button class="res-drawer-close" onclick="closeResDrawer()">✕</button>
+  </div>
+  <div class="res-drawer-body" id="resDrawerBody"></div>
+</div>
+
+<script src="host-auth.js"></script>
+<script src="host-dashboard.js"></script>
+</body>
+</html>

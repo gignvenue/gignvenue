@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Artist Login · GigNVenue</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="host-login.css"/>
+</head>
+<body>
+
+<nav class="login-nav">
+  <a href="index.html" class="login-nav-logo" aria-label="Back to GigNVenue">
+    <img src="gign-venue-logo-siteheader.svg" alt="GigNVenue" style="height:26px;width:auto"/>
+  </a>
+  <a href="index.html" class="login-nav-back">← Back to browsing</a>
+</nav>
+
+<div class="login-layout">
+
+  <!-- Left: hero panel -->
+  <aside class="login-hero" aria-hidden="true">
+    <div class="login-hero-overlay"></div>
+    <img
+      src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200&q=80"
+      alt="Artist performing live"
+      class="login-hero-img"
+    />
+    <div class="login-hero-content">
+      <div class="login-hero-badge">🎤 Artist &amp; Promoter Portal</div>
+      <h2>Find your next stage.<br/>Book it tonight.</h2>
+      <p>Search thousands of music venues, check real-time availability, and send booking requests directly to venue hosts.</p>
+      <div class="login-hero-stats">
+        <div class="hero-stat">
+          <strong>12K+</strong>
+          <span>Venues available</span>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <strong>80+</strong>
+          <span>Cities worldwide</span>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <strong>48hr</strong>
+          <span>Avg. response time</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Right: form panel -->
+  <main class="login-form-panel">
+    <div class="login-form-inner">
+
+      <div class="auth-role-label">Artist &amp; Booker Account</div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLogin"  onclick="switchTab('login')">Log in</button>
+        <button class="auth-tab"        id="tabSignup" onclick="switchTab('signup')">Sign up</button>
+      </div>
+
+      <!-- ── LOGIN FORM ── -->
+      <form class="auth-form" id="loginForm" onsubmit="handleLogin(event)" novalidate>
+        <h1 class="auth-title">Welcome back</h1>
+        <p class="auth-subtitle">Log in to manage your booking requests and messages.</p>
+
+        <div class="demo-hint">
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+          <span>Demo: <strong>alex@example.com</strong> / <strong>Password1</strong></span>
+        </div>
+
+        <div class="field-group">
+          <label for="loginEmail">Email address</label>
+          <input type="email" id="loginEmail" name="email" placeholder="you@example.com" autocomplete="email" required/>
+          <span class="field-error" id="loginEmailErr"></span>
+        </div>
+
+        <div class="field-group">
+          <label for="loginPassword">Password</label>
+          <div class="password-wrap">
+            <input type="password" id="loginPassword" name="password" placeholder="Enter your password" autocomplete="current-password" required/>
+            <button type="button" class="toggle-pw" onclick="togglePw('loginPassword',this)">Show</button>
+          </div>
+          <span class="field-error" id="loginPwErr"></span>
+        </div>
+
+        <div class="form-meta">
+          <label class="checkbox-label">
+            <input type="checkbox" id="rememberMe"/> Remember me
+          </label>
+          <button type="button" class="link-btn" onclick="switchTab('forgot')">Forgot password?</button>
+        </div>
+
+        <span class="form-error" id="loginFormErr"></span>
+        <button type="submit" class="btn-primary" id="loginBtn">Log in</button>
+
+        <div class="divider">or continue with</div>
+
+        <button type="button" class="btn-social" onclick="socialLogin('google')">
+          <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/><path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z"/><path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.49a4.77 4.77 0 0 1 4.48-3.31z"/></svg>
+          Continue with Google
+        </button>
+        <button type="button" class="btn-social" onclick="socialLogin('apple')">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><path d="M13.3 9.3c0-2.1 1.7-3.1 1.8-3.2-1-1.5-2.5-1.7-3-1.7-1.3-.1-2.5.8-3.1.8-.7 0-1.7-.7-2.7-.7-1.4 0-2.7.8-3.4 2.1-1.5 2.5-.4 6.3 1 8.4.7 1 1.5 2.1 2.6 2 1-.1 1.4-.7 2.7-.7 1.2 0 1.6.7 2.7.6 1.1 0 1.8-1 2.5-2 .8-1.1 1.1-2.2 1.1-2.3 0 0-2.2-.8-2.2-3.3z"/><path d="M11.4 3.2c.6-.7 1-1.7.9-2.7-.9.1-2 .6-2.6 1.3-.6.6-1 1.6-.9 2.5.9.1 1.9-.4 2.6-1.1z"/></svg>
+          Continue with Apple
+        </button>
+
+        <p class="auth-footer-note">
+          Don't have an account? <button type="button" class="link-btn" onclick="switchTab('signup')">Sign up free</button>
+        </p>
+      </form>
+
+      <!-- ── SIGNUP FORM ── -->
+      <form class="auth-form hidden" id="signupForm" onsubmit="handleSignup(event)" novalidate>
+        <h1 class="auth-title">Create account</h1>
+        <p class="auth-subtitle">Join GigNVenue and start booking stages for your next show.</p>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label for="suFirst">First name</label>
+            <input type="text" id="suFirst" name="firstName" placeholder="Alex" autocomplete="given-name" required/>
+            <span class="field-error" id="suFirstErr"></span>
+          </div>
+          <div class="field-group">
+            <label for="suLast">Last name</label>
+            <input type="text" id="suLast" name="lastName" placeholder="Rivera" autocomplete="family-name" required/>
+            <span class="field-error" id="suLastErr"></span>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label for="suArtist">Artist / band name</label>
+          <input type="text" id="suArtist" name="artistName" placeholder="e.g. The Static, DJ Nomad…"/>
+        </div>
+
+        <div class="field-group">
+          <label for="suGenre">Genre / style</label>
+          <input type="text" id="suGenre" name="genre" placeholder="e.g. Indie Rock, Jazz, Electronic…"/>
+        </div>
+
+        <div class="field-group">
+          <label for="suEmail">Email address</label>
+          <input type="email" id="suEmail" name="email" placeholder="you@example.com" autocomplete="email" required/>
+          <span class="field-error" id="suEmailErr"></span>
+        </div>
+
+        <div class="field-group">
+          <label for="suPassword">Password</label>
+          <div class="password-wrap">
+            <input type="password" id="suPassword" name="password" placeholder="Create a password" autocomplete="new-password" required oninput="checkPwStrength(this.value)"/>
+            <button type="button" class="toggle-pw" onclick="togglePw('suPassword',this)">Show</button>
+          </div>
+          <div class="pw-strength"><div class="pw-bar" id="pwBar"></div></div>
+          <span class="pw-hint" id="pwHint">Use 8+ characters with a mix of letters and numbers.</span>
+          <span class="field-error" id="suPwErr"></span>
+        </div>
+
+        <div class="field-group">
+          <label for="suConfirm">Confirm password</label>
+          <input type="password" id="suConfirm" placeholder="Repeat password" autocomplete="new-password" required/>
+          <span class="field-error" id="suConfirmErr"></span>
+        </div>
+
+        <div class="form-meta" style="margin-top:8px">
+          <label class="checkbox-label">
+            <input type="checkbox" id="suAgree" required/>
+            I agree to the <a href="#" class="inline-link">Terms of Service</a> and <a href="#" class="inline-link">Privacy Policy</a>
+          </label>
+        </div>
+
+        <span class="form-error" id="signupFormErr"></span>
+        <button type="submit" class="btn-primary" id="signupBtn">Create account</button>
+
+        <p class="auth-footer-note">
+          Already have an account? <button type="button" class="link-btn" onclick="switchTab('login')">Log in</button>
+        </p>
+      </form>
+
+      <!-- ── FORGOT PASSWORD FORM ── -->
+      <div class="auth-form hidden" id="forgotForm">
+        <button type="button" class="back-btn" onclick="switchTab('login')">← Back to log in</button>
+        <h1 class="auth-title">Reset password</h1>
+        <p class="auth-subtitle">Enter your email and we'll send a reset link.</p>
+        <div class="forgot-success hidden" id="forgotSuccess">
+          <svg viewBox="0 0 20 20" width="18" height="18" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+          Check your inbox for a reset link.
+        </div>
+        <div class="field-group">
+          <label for="forgotEmail">Email address</label>
+          <input type="email" id="forgotEmail" placeholder="you@example.com"/>
+        </div>
+        <button type="button" class="btn-primary" onclick="handleForgot()">Send reset link</button>
+      </div>
+
+      <div class="auth-portal-switch">
+        Are you a venue owner or host? <a href="host-login.html" class="link-btn">Switch to Host Portal →</a>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="booker-auth.js"></script>
+<script src="booker-login.js"></script>
+</body>
+</html>

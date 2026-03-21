@@ -1,0 +1,556 @@
+/* ============================================
+   BOOKER DASHBOARD — Additional Styles
+   Extends host-dashboard.css
+   ============================================ */
+
+/* Request status badges */
+.req-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.req-pending      { background: rgba(245,158,11,0.15);  color: #fbbf24; }
+.req-approved     { background: rgba(16,185,129,0.15);  color: #34d399; }
+.req-declined     { background: rgba(239,68,68,0.15);   color: #f87171; }
+.req-cancelled    { background: rgba(102,102,102,0.15); color: #9ca3af; }
+.req-date_passed  { background: rgba(71,85,105,0.2);    color: #94a3b8; }
+.req-payment-due  { background: rgba(239,68,68,0.15);   color: #f87171; margin-left: 4px; }
+
+/* Action buttons */
+.res-action-btn {
+  font-size: 12px; font-weight: 600;
+  color: var(--red); text-decoration: underline;
+  white-space: nowrap;
+  background: none; border: none; padding: 0; cursor: pointer;
+}
+
+/* Payment action button */
+.res-action-btn-pay { background: var(--red) !important; color: #fff !important; font-weight: 600; text-decoration: none; padding: 5px 10px; border-radius: 6px; }
+.res-action-btn-pay:hover { opacity: .88; }
+
+/* Archive */
+.req-archive-btn { color: var(--text-muted) !important; }
+.req-archive-btn:hover { color: var(--text) !important; }
+.archived-toggle-row td {
+  padding: 10px 16px;
+  background: var(--bg-elevated);
+  border-top: 2px solid var(--border-light);
+}
+.archived-toggle-btn {
+  font-size: 12px; font-weight: 600;
+  color: var(--text-muted);
+  background: none; border: none;
+  cursor: pointer; padding: 0;
+}
+.archived-toggle-btn:hover { color: var(--text); }
+.archived-entry { opacity: 0.55; }
+
+/* Payment action-required alert */
+.payment-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  color: var(--text);
+  font-size: 14px;
+}
+.payment-alert svg { flex-shrink: 0; color: #f87171; }
+.payment-alert div { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.payment-alert span { color: var(--text-muted); font-size: 13px; }
+.payment-alert-btn {
+  flex-shrink: 0;
+  background: var(--red);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.payment-alert-btn:hover { opacity: .88; }
+
+/* ── Payment modal ── */
+.pm-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 1100;
+}
+.pm-overlay.open { display: block; }
+
+.pm-modal {
+  display: none;
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(480px, 94vw);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  z-index: 1101;
+  overflow: hidden;
+}
+.pm-modal.open { display: block; }
+
+.pm-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border-light);
+  position: relative;
+}
+.pm-title { font-size: 16px; font-weight: 700; margin: 0; }
+.pm-close {
+  position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--text-muted); font-size: 16px;
+  cursor: pointer; padding: 4px 8px; border-radius: 6px;
+}
+.pm-close:hover { background: var(--border-light); color: var(--text); }
+
+.pm-body { padding: 20px; }
+
+.pm-venue-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.pm-venue-img {
+  width: 60px; height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.pm-venue-name { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+.pm-venue-meta { font-size: 12px; color: var(--text-muted); }
+
+.pm-deadline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #fbbf24;
+  background: rgba(245,158,11,0.1);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 18px;
+}
+.pm-deadline strong { font-variant-numeric: tabular-nums; }
+
+.pm-breakdown {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pm-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.pm-row span:last-child { font-weight: 600; color: var(--text); }
+.pm-note { font-size: 11px; color: var(--text-muted); font-weight: 400; }
+.pm-row-total {
+  border-top: 1px solid var(--border-light);
+  padding-top: 10px;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+}
+.pm-row-total span:last-child { color: var(--red); font-size: 18px; }
+
+.pm-sub-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
+.pm-conflict-notice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.25);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.pm-conflict-notice svg { flex-shrink: 0; margin-top: 2px; color: #f59e0b; }
+.pm-conflict-notice strong { display: block; margin-bottom: 3px; color: var(--text); }
+.pm-conflict-notice p { margin: 0; color: var(--text-muted); }
+.pm-conflict-notice.hidden { display: none; }
+
+.pm-stripe-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(99,91,255,0.12);
+  border: 1px solid rgba(99,91,255,0.25);
+  color: var(--text-muted);
+  border-radius: 10px;
+  padding: 13px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: not-allowed;
+  margin-bottom: 10px;
+}
+.pm-coming-soon-pill {
+  font-size: 10px;
+  background: rgba(99,91,255,0.2);
+  color: #a5b4fc;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-weight: 700;
+}
+.pm-coming-soon-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Calendar demand indicators */
+.demand-dot {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-top: 3px;
+  line-height: 1.4;
+}
+.demand-none    { background: rgba(16,185,129,0.18);  color: #34d399; }
+.demand-low     { background: rgba(245,158,11,0.18);  color: #fbbf24; }
+.demand-high    { background: rgba(239,68,68,0.18);   color: #f87171; }
+.demand-booked  { background: rgba(255,56,92,0.25);   color: #ff6b87; }
+.demand-mine    { outline: 2px solid var(--red); outline-offset: -2px; }
+
+/* Venue request form inside calendar */
+.req-form-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: var(--r);
+  padding: 24px;
+  margin-top: 20px;
+}
+.req-form-panel h3 { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+.req-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* Saved venue cards */
+.saved-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+.saved-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.saved-card:hover { border-color: var(--border-light); box-shadow: var(--shadow-md); }
+.saved-card-link { display: block; text-decoration: none; color: inherit; }
+.saved-card-link:hover .saved-card-title { color: var(--red); }
+.saved-card-img { width: 100%; height: 160px; object-fit: cover; background: var(--border); filter: brightness(0.9); }
+.saved-card:hover .saved-card-img { filter: brightness(1); }
+.saved-card-body { padding: 14px 16px; }
+.saved-card-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.saved-card-loc   { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; }
+.saved-card-meta  { display: flex; align-items: center; justify-content: space-between; }
+.saved-card-price { font-size: 14px; font-weight: 700; color: var(--text); }
+.saved-card-price span { font-size: 12px; font-weight: 400; color: var(--text-muted); }
+.saved-card-actions { display: flex; gap: 8px; padding: 0 16px 14px; }
+
+/* Venue selector in calendar */
+.venue-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.venue-select-wrap label { font-size: 13px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+.venue-select-wrap select {
+  flex: 1; max-width: 320px;
+  border: 1px solid var(--border);
+  border-radius: 8px; padding: 9px 14px;
+  font-size: 14px; background: var(--bg-input);
+  color: var(--text); outline: none;
+  transition: border-color 0.15s;
+}
+.venue-select-wrap select:focus { border-color: var(--red); }
+.venue-select-wrap select option { background: var(--bg-elevated); }
+
+/* Venue request summary (below venue selector) */
+.cal-venue-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.cal-venue-summary-label {
+  font-weight: 600;
+  color: var(--text-sec);
+  white-space: nowrap;
+}
+.cal-venue-summary-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Demand legend */
+.demand-legend {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  margin-bottom: 16px; font-size: 12px; color: var(--text-muted);
+}
+.demand-legend .leg-item { display: flex; align-items: center; gap: 6px; }
+.dem-swatch { width: 12px; height: 12px; border-radius: 3px; }
+
+/* Request count badge on big-cal-cell */
+.req-count-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 4px;
+  margin-top: 2px;
+  display: inline-block;
+  line-height: 1.3;
+}
+
+/* Booked/unavailable calendar cells — diagonal line pattern */
+.big-cal-cell.cal-cell-booked {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255,56,92,0.07) 0px,
+      rgba(255,56,92,0.07) 2px,
+      transparent          2px,
+      transparent          10px
+    ),
+    rgba(255,56,92,0.10);
+}
+.big-cal-cell.cal-cell-booked:hover {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255,56,92,0.12) 0px,
+      rgba(255,56,92,0.12) 2px,
+      transparent          2px,
+      transparent          10px
+    ),
+    rgba(255,56,92,0.16);
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--text-muted);
+}
+.empty-state-icon { font-size: 48px; margin-bottom: 16px; }
+.empty-state h3 { font-size: 18px; font-weight: 600; color: var(--text-sec); margin-bottom: 8px; }
+.empty-state p { font-size: 14px; line-height: 1.6; max-width: 320px; margin: 0 auto 20px; }
+
+/* Requests table */
+.req-table {
+  width: 100%; border-collapse: collapse;
+  background: var(--bg-card);
+  border-radius: var(--r);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  font-size: 14px;
+  border: 1px solid var(--border);
+}
+.req-table th {
+  text-align: left; padding: 14px 16px;
+  background: var(--bg-elevated);
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+.req-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  color: var(--text-sec);
+}
+.req-table tr:last-child td { border-bottom: none; }
+.req-table tr:hover td { background: rgba(255,255,255,0.02); }
+.req-venue-cell { display: flex; align-items: center; gap: 10px; }
+.req-venue-cell img { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: var(--border); }
+.req-venue-link { text-decoration: none; border-radius: 6px; transition: opacity 0.15s; }
+.req-venue-link:hover { opacity: 0.8; }
+.req-venue-link:hover img { outline: 2px solid var(--red); }
+
+/* Calendar request overlay panel */
+.cal-req-panel {
+  position: fixed;
+  bottom: 28px; right: 28px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: var(--r);
+  padding: 20px 24px;
+  width: 340px;
+  z-index: 300;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.7);
+}
+.cal-req-panel.hidden { display: none; }
+.cal-req-panel-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px;
+}
+.cal-req-panel-header h4 { font-size: 14px; font-weight: 700; color: var(--text); }
+.cal-req-panel-close { color: var(--text-muted); font-size: 16px; }
+.cal-req-panel-close:hover { color: var(--red); }
+
+/* ── Artist Rating Modal (reuses feature-night-modal styles from host-dashboard.css) ── */
+.feature-night-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6); z-index: 1100;
+}
+.feature-night-overlay.open { display: block; }
+.feature-night-modal {
+  display: none; position: fixed;
+  top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: min(480px, 94vw);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: 16px; z-index: 1101; overflow: hidden;
+  max-height: 90vh; overflow-y: auto;
+}
+.feature-night-modal.open { display: block; }
+.fn-modal-header {
+  display: flex; align-items: center; justify-content: center;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border-light);
+  position: relative;
+}
+.fn-modal-title { font-size: 16px; font-weight: 700; margin: 0; }
+.fn-modal-close {
+  position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--text-muted); font-size: 16px;
+  cursor: pointer; padding: 4px 8px; border-radius: 6px;
+}
+.fn-modal-close:hover { background: var(--border-light); color: var(--text); }
+.fn-modal-body { padding: 20px; }
+
+/* ── Star rating inputs ── */
+.star-rating { display: flex; flex-direction: row-reverse; gap: 2px; justify-content: flex-end; margin-top: 6px; }
+.star-rating input { display: none; }
+.star-rating label {
+  font-size: 26px; color: var(--border-light);
+  cursor: pointer; transition: color 0.1s; line-height: 1;
+}
+.star-rating input:checked ~ label,
+.star-rating label:hover,
+.star-rating label:hover ~ label { color: #F59E0B; }
+
+/* ── Tour planner ── */
+.tour-stops-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.tour-stop-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; }
+.tour-results-section { margin-top: 24px; }
+.tour-stop-group { margin-bottom: 20px; }
+.tour-stop-group-title {
+  font-size: 13px; font-weight: 700; color: var(--text-sec);
+  margin-bottom: 10px; padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.tour-venue-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px; margin-bottom: 8px;
+}
+.tour-venue-img { width: 44px; height: 44px; border-radius: 6px; object-fit: cover; flex-shrink: 0; background: var(--border); }
+.tour-venue-info { flex: 1; min-width: 0; }
+.tour-venue-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.tour-venue-loc { font-size: 12px; color: var(--text-muted); }
+
+.tour-conflict-badge {
+  display: inline-block;
+  margin-left: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #f59e0b;
+  background: rgba(245,158,11,0.1);
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 4px;
+  padding: 2px 8px;
+  vertical-align: middle;
+}
+
+/* ── Venue suggestion modal ── */
+.suggest-modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5); z-index: 1100;
+}
+.suggest-modal-overlay.open { display: block; }
+.suggest-modal {
+  display: none; position: fixed;
+  top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: min(420px, 94vw);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: 16px; z-index: 1101; padding: 24px;
+}
+.suggest-modal.open { display: block; }
+
+/* ── Wishlist / Favorites ── */
+.venue-card-fav-btn {
+  position: absolute;
+  top: 10px; right: 10px;
+  background: none; border: none;
+  cursor: pointer;
+  z-index: 2;
+  font-size: 22px;
+  line-height: 1;
+  padding: 4px;
+  color: white;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  transition: transform 0.15s;
+}
+.venue-card-fav-btn:hover { transform: scale(1.2); }
+.wishlist-empty {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+@media (max-width: 600px) {
+  .req-form-grid { grid-template-columns: 1fr; }
+  .saved-grid { grid-template-columns: 1fr; }
+  .cal-req-panel { right: 12px; left: 12px; width: auto; bottom: 16px; }
+  .tour-stop-row { grid-template-columns: 1fr; }
+}

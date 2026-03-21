@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GigNVenue — Find and book live music venues for your next gig</title>
+  <meta name="description" content="GigNVenue is the live music venue booking marketplace for artists and venue owners. Find, compare, and book music venues across the USA — or list your stage and start hosting live events." />
+  <meta property="og:type" content="website"/>
+  <meta property="og:site_name" content="GigNVenue"/>
+  <meta property="og:url" content="https://gignvenue.com/"/>
+  <meta property="og:title" content="GigNVenue — Find and Book Live Music Venues"/>
+  <meta property="og:description" content="GigNVenue is the live music venue booking marketplace for artists and venue owners. Find, compare, and book music venues across the USA — or list your stage and start hosting live events."/>
+  <meta property="og:image" content="https://gignvenue.com/og-image.jpg"/>
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:site" content="@gignvenue"/>
+  <meta name="twitter:title" content="GigNVenue — Find and Book Live Music Venues"/>
+  <meta name="twitter:description" content="GigNVenue is the live music venue booking marketplace for artists and venue owners. Find, compare, and book music venues across the USA — or list your stage and start hosting live events."/>
+  <meta name="twitter:image" content="https://gignvenue.com/og-image.jpg"/>
+  <link rel="canonical" href="https://gignvenue.com/"/>
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml"/>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "name": "GigNVenue",
+        "url": "https://gignvenue.com",
+        "description": "Live music venue booking marketplace for artists and venue owners across the USA.",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://gignvenue.com/?q={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@type": "Organization",
+        "name": "GigNVenue",
+        "url": "https://gignvenue.com",
+        "logo": "https://gignvenue.com/gign-venue-logo-siteheader.svg",
+        "description": "Live music venue booking marketplace connecting artists with venues across the USA.",
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "customer support",
+          "email": "support@gignvenue.com",
+          "url": "https://gignvenue.com/contact.html",
+          "availableLanguage": "English"
+        }
+      }
+    ]
+  }
+  </script>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <!-- Leaflet.js — real interactive map, no API key required -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+</head>
+<body>
+
+<!-- =========== HEADER =========== -->
+<header class="header" id="header">
+  <div class="header-inner">
+
+    <!-- Logo -->
+    <a href="#" class="logo" aria-label="GigNVenue home" onclick="resetHome(event)">
+      <img src="gign-venue-logo-siteheader.svg" alt="GigNVenue" class="logo-img"/>
+    </a>
+
+    <!-- Compact Search Pill -->
+    <div class="search-bar" id="searchBar">
+      <button class="search-pill" id="searchPill" onclick="openSearch()">
+        <span class="search-pill-label">Search</span>
+        <span class="search-pill-divider"></span>
+        <span class="search-pill-location">Locations</span>
+        <span class="search-pill-divider"></span>
+        <span class="search-pill-guests">Capacity</span>
+        <span class="search-pill-btn">
+          <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="white">
+            <path d="M13 0C5.8 0 0 5.8 0 13s5.8 13 13 13c3 0 5.8-1.1 7.9-2.9l6 6 2.1-2.1-6-6C24.9 18.8 26 16 26 13 26 5.8 20.2 0 13 0zm0 2c6.1 0 11 4.9 11 11S19.1 24 13 24 2 19.1 2 13 6.9 2 13 2z"/>
+          </svg>
+        </span>
+      </button>
+    </div>
+
+    <!-- Expanded Search -->
+    <div class="search-expanded" id="searchExpanded">
+      <div class="search-fields" id="searchFields">
+
+        <!-- WHERE -->
+        <div class="search-field" id="sfWhere" onclick="activatePanel('where')">
+          <label>Where</label>
+          <input type="text" id="whereInput" placeholder="Search Locations"
+                 oninput="filterCitySuggestions(this.value)"
+                 onclick="event.stopPropagation(); activatePanel('where')"
+                 onkeydown="handleWhereKey(event)"/>
+        </div>
+
+        <div class="search-field-divider" id="sfDiv1"></div>
+
+        <!-- WHEN (hidden — keep for future use) -->
+        <div class="search-field" id="sfWhen" onclick="activatePanel('when')" style="display:none">
+          <label>When</label>
+          <span class="sf-value" id="whenValue">Find Dates</span>
+        </div>
+
+        <div class="search-field-divider" id="sfDiv2" style="display:none"></div>
+
+        <!-- CAPACITY + SUBMIT -->
+        <div class="search-field search-field-last" id="sfCapacity" onclick="activatePanel('capacity')">
+          <div>
+            <label>Capacity</label>
+            <span class="sf-value" id="capacityValue">Fit your fans</span>
+          </div>
+          <button class="search-submit" onclick="event.stopPropagation(); submitSearch()">
+            <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white">
+              <path d="M13 0C5.8 0 0 5.8 0 13s5.8 13 13 13c3 0 5.8-1.1 7.9-2.9l6 6 2.1-2.1-6-6C24.9 18.8 26 16 26 13 26 5.8 20.2 0 13 0zm0 2c6.1 0 11 4.9 11 11S19.1 24 13 24 2 19.1 2 13 6.9 2 13 2z"/>
+            </svg>
+            <span>Search</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Dropdown panels -->
+      <div class="search-dropdown" id="searchDropdown">
+
+        <!-- City suggestions -->
+        <div class="sdp" id="sdpCity">
+          <p class="sdp-heading">Major destinations</p>
+          <div class="city-list" id="cityList"></div>
+          <div class="radius-row">
+            <span class="radius-row-label">Within</span>
+            <div class="radius-presets">
+              <button class="radius-btn" data-mi="5" onclick="setRadius(5)">5 mi</button>
+              <button class="radius-btn" data-mi="10" onclick="setRadius(10)">10 mi</button>
+              <button class="radius-btn" data-mi="15" onclick="setRadius(15)">15 mi</button>
+              <button class="radius-btn" data-mi="25" onclick="setRadius(25)">25 mi</button>
+              <button class="radius-btn" data-mi="50" onclick="setRadius(50)">50 mi</button>
+              <button class="radius-btn" data-mi="100" onclick="setRadius(100)">100 mi</button>
+              <button class="radius-btn" data-mi="250" onclick="setRadius(250)">250 mi</button>
+              <button class="radius-btn active" data-mi="0" onclick="setRadius(0)">Any</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Date picker -->
+        <div class="sdp hidden" id="sdpDate">
+          <div class="dp-nav">
+            <button class="dp-nav-btn" onclick="dpNav(-1)">&#8249;</button>
+            <span class="dp-month-label" id="dpMonthLabel"></span>
+            <button class="dp-nav-btn" onclick="dpNav(1)">&#8250;</button>
+          </div>
+          <div class="dp-weekdays">
+            <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+          </div>
+          <div class="dp-grid" id="dpGrid"></div>
+          <div class="dp-actions">
+            <button class="dp-clear-btn" onclick="clearSearchDate()">Clear dates</button>
+          </div>
+        </div>
+
+        <!-- Capacity picker -->
+        <div class="sdp hidden" id="sdpCapacity">
+          <p class="sdp-heading">Venue Capacity</p>
+          <p class="sdp-sub">How many fans do you need to fit?</p>
+          <div class="cap-stepper">
+            <button class="cap-btn" onclick="adjustCapacity(-100)">−</button>
+            <input type="number" id="capInput" min="0" step="50" placeholder="Any" oninput="onCapInput(this.value)"/>
+            <button class="cap-btn" onclick="adjustCapacity(100)">+</button>
+          </div>
+          <div class="cap-presets" id="capPresets">
+            <button onclick="setCapacity(100)">100</button>
+            <button onclick="setCapacity(250)">250</button>
+            <button onclick="setCapacity(500)">500</button>
+            <button onclick="setCapacity(1000)">1,000</button>
+            <button onclick="setCapacity(2500)">2,500</button>
+            <button onclick="setCapacity(5000)">5,000+</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Right nav -->
+    <nav class="header-nav">
+      <a href="booker-login.html" class="nav-link">Book a venue</a>
+      <a href="host-login.html" class="nav-link">List your venue</a>
+      <a href="help.html" class="nav-help-btn" aria-label="Help Center">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+      </a>
+
+      <div class="user-menu" id="userMenu" onclick="toggleUserMenu()">
+        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round">
+          <path d="M4 8h24M4 16h24M4 24h24"/>
+        </svg>
+        <div class="user-avatar">
+          <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor">
+            <path d="M16 .7C7.56.7.7 7.56.7 16S7.56 31.3 16 31.3 31.3 24.44 31.3 16 24.44.7 16 .7zm0 28c-4.02 0-7.6-1.88-9.93-4.81a12.43 12.43 0 0 1 6.45-4.4A6.5 6.5 0 0 1 9.5 14a6.5 6.5 0 0 1 13 0 6.51 6.51 0 0 1-3.02 5.5 12.42 12.42 0 0 1 6.45 4.4A13.17 13.17 0 0 1 16 28.7z"/>
+          </svg>
+        </div>
+        <div class="user-dropdown" id="userDropdown">
+          <a href="booker-login.html" class="dropdown-item dropdown-item-bold">Artist / booker login</a>
+          <a href="host-login.html" class="dropdown-item dropdown-item-bold">Host login</a>
+          <a href="booker-login.html" class="dropdown-item">Sign up as artist</a>
+          <div class="dropdown-divider"></div>
+          <a href="booker-dashboard.html" class="dropdown-item">Booking dashboard</a>
+          <a href="list-your-venue.html" class="dropdown-item">List your venue</a>
+          <a href="host-dashboard.html" class="dropdown-item">Venue dashboard</a>
+          <a href="help.html" class="dropdown-item">Help Center</a>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Category Bar (rendered by JS) -->
+  <div class="category-bar">
+    <div class="category-bar-inner">
+      <div class="categories" id="categories"></div>
+      <div class="category-fade-right"></div>
+      <button class="filter-btn" id="filterBtn" onclick="toggleFilters()">
+        <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor">
+          <path d="M5 8c1.306 0 2.418.835 2.83 2H14v2H7.829A3.001 3.001 0 1 1 5 8zm0 2a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm6-8a3 3 0 1 1-2.829 4H2V4h6.17A3.001 3.001 0 0 1 11 2zm0 2a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>
+        </svg>
+        Filters
+        <span class="filter-badge-outer" id="amenityBadge"></span>
+      </button>
+      <button class="catbar-map-btn" id="catbarMapBtn" onclick="toggleMap()">
+        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor">
+          <path d="M31.25 4.45L21.42 1.1a1 1 0 0 0-.64 0L10.5 4.77 1.38 1.56A1 1 0 0 0 0 2.5v24a1 1 0 0 0 .68.95L10.5 30.9a1 1 0 0 0 .64 0L21.5 27.23l9.12 3.21A1 1 0 0 0 32 29.5v-24a1 1 0 0 0-.75-.95zM20.5 25.06l-9-3.18V6.94l9 3.18z"/>
+        </svg>
+        <span id="catbarMapLabel">Show map</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- =========== FILTER MODAL =========== -->
+<div class="filter-modal-overlay" id="filterOverlay" onclick="toggleFilters()"></div>
+<div class="filter-modal" id="filterModal">
+  <div class="filter-modal-header">
+    <button class="filter-close" onclick="toggleFilters()">✕</button>
+    <h2>Filters</h2>
+    <span></span>
+  </div>
+  <div class="filter-modal-body">
+
+    <!-- Date -->
+    <section class="filter-section">
+      <h3>Event date</h3>
+      <p class="filter-date-sub">Choose the date of your event</p>
+      <div class="filter-date-header-row">
+        <div class="filter-date-selected" id="filterDateFrom">No date selected</div>
+        <button class="clear-date-btn" id="clearDateBtn" onclick="clearDateFilter()" style="display:none">Clear date</button>
+      </div>
+      <div class="datepicker-calendars" id="dpCalendars"></div>
+    </section>
+    <div class="filter-divider"></div>
+
+    <!-- Price Range -->
+    <section class="filter-section">
+      <h3>Price range <small style="font-weight:400;font-size:13px;color:#888">per night</small></h3>
+      <p class="filter-sub">Nightly venue rate before service fees</p>
+      <div class="slider-row">
+        <input type="range" min="0" max="25000" step="100" value="0" id="priceMin" oninput="updatePriceDisplay()"/>
+      </div>
+      <div class="slider-row">
+        <input type="range" min="0" max="25000" step="100" value="25000" id="priceMax" oninput="updatePriceDisplay()"/>
+      </div>
+      <div class="slider-labels">
+        <span id="priceMinLabel">$0</span>
+        <span id="priceMaxLabel">$25k+</span>
+      </div>
+    </section>
+    <div class="filter-divider"></div>
+
+    <!-- Capacity Range -->
+    <section class="filter-section">
+      <h3>Capacity</h3>
+      <p class="filter-sub">Maximum audience size</p>
+      <div class="slider-row">
+        <input type="range" min="0" max="15000" step="50" value="0" id="capacityMin" oninput="updateCapacityDisplay()"/>
+      </div>
+      <div class="slider-row">
+        <input type="range" min="0" max="15000" step="50" value="15000" id="capacityMax" oninput="updateCapacityDisplay()"/>
+      </div>
+      <div class="slider-labels">
+        <span id="capMinLabel">0</span>
+        <span id="capMaxLabel">15k+</span>
+      </div>
+    </section>
+    <div class="filter-divider"></div>
+
+    <!-- Amenities with search -->
+    <section class="filter-section">
+      <h3>
+        Equipment &amp; amenities
+        <span class="amenity-badge-sm" id="amenityBadgeModal"></span>
+      </h3>
+      <div class="amenity-search-wrap">
+        <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor">
+          <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+        </svg>
+        <input
+          type="text"
+          class="amenity-search-input"
+          id="amenitySearch"
+          placeholder="Search amenities (e.g. stage, LED wall…)"
+          oninput="buildAmenityList(this.value); document.getElementById('amenityBadgeModal').textContent = filterState.amenities.size || ''"
+        />
+      </div>
+      <div id="amenityList"></div>
+    </section>
+
+  </div>
+  <div class="filter-modal-footer">
+    <button class="filter-clear" onclick="clearFilters()">Clear all</button>
+    <button id="filterApplyBtn" onclick="applyFilters(); toggleFilters()">Show 12 venues</button>
+  </div>
+</div>
+
+<!-- =========== PAGE BODY (listings + map side-by-side) =========== -->
+<div class="page-body" id="pageBody">
+
+  <main class="main-content" id="mainContent">
+    <div class="listings-hero">
+      <h1 class="listings-hero-title">Find and book live music venues for your next gig</h1>
+      <p class="listings-hero-sub">For artists and venue owners</p>
+    </div>
+    <div class="listings-sort-bar">
+      <span id="listingsCount" class="listings-count"></span>
+      <select id="sortSelect" class="sort-select" onchange="setSortOrder(this.value)">
+        <option value="recommended">Recommended</option>
+        <option value="price_asc">Price: Low to High</option>
+        <option value="price_desc">Price: High to Low</option>
+        <option value="capacity_asc">Capacity: Small to Large</option>
+        <option value="capacity_desc">Capacity: Large to Small</option>
+        <option value="rating">Highest Rated</option>
+      </select>
+    </div>
+    <div class="listings-grid" id="listingsGrid"></div>
+    <div id="loadMoreWrap" style="display:none;justify-content:center;padding:32px 0 48px">
+      <button id="loadMoreBtn" class="load-more-btn" onclick="loadMoreListings()">Show more venues</button>
+    </div>
+  </main>
+
+  <!-- =========== MAP PANEL (Leaflet) =========== -->
+  <div class="map-panel" id="mapPanel">
+    <button class="map-close-btn" onclick="toggleMap()" aria-label="Close map">✕</button>
+    <div id="leafletMap" style="width:100%;height:100%"></div>
+    <div class="map-search-area-wrap" id="searchAreaWrap" style="display:none">
+      <button class="map-search-area-btn" onclick="searchThisArea()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        Search this area
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- =========== FOOTER =========== -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-col">
+        <h4>Support</h4>
+        <ul>
+          <li><a href="help.html">Help Center</a></li>
+          <li><a href="pricing.html">Pricing &amp; fees</a></li>
+          <li><a href="contact.html">Contact us</a></li>
+          <li><a href="#">Cancellation policy</a></li>
+          <li><a href="#">Report a concern</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>For venue owners</h4>
+        <ul>
+          <li><a href="list-your-venue.html">List your venue</a></li>
+          <li><a href="how-it-works.html">How it works</a></li>
+          <li><a href="host-dashboard.html">Venue dashboard</a></li>
+          <li><a href="#">Hosting resources</a></li>
+          <li><a href="#">Responsible hosting</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>GigNVenue</h4>
+        <ul>
+          <li><a href="about.html">About us</a></li>
+          <li><a href="#">Newsroom</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Investors</a></li>
+          <li><a href="#">Gift cards</a></li>
+          <li><a href="#">Music charity programme</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-bottom-left">
+        <span>© 2026 gignvenue.com</span>
+        <span>·</span><a href="privacy.html">Privacy</a>
+        <span>·</span><a href="terms.html">Terms</a>
+        <span>·</span><a href="/sitemap.xml">Sitemap</a>
+      </div>
+      <div class="footer-bottom-right">
+        <button class="footer-lang-btn">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8 .25a7.75 7.75 0 1 0 0 15.5A7.75 7.75 0 0 0 8 .25zm1.6 11.5H6.4A7.64 7.64 0 0 1 6 9.75h4a7.64 7.64 0 0 1-.4 2zm-4 0H3.74A6.25 6.25 0 0 1 2 9.75h2.4a9.3 9.3 0 0 0 .4 2z"/></svg>
+          English (US)
+        </button>
+        <button class="footer-currency-btn">$ USD</button>
+        <div class="footer-social">
+          <a href="#" aria-label="Instagram">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+          </a>
+          <a href="#" aria-label="Twitter/X">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </a>
+          <a href="#" aria-label="TikTok">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.17 8.17 0 0 0 4.78 1.53V6.78a4.86 4.86 0 0 1-1.01-.09z"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Guest Picker -->
+<div class="guestpicker-overlay" id="guestpickerOverlay">
+  <div class="guestpicker-modal">
+    <div class="guestpicker-header">
+      <h3>Expected attendance</h3>
+      <button onclick="closeGuestPicker()">✕</button>
+    </div>
+    <div class="guest-row">
+      <div><strong>Adults</strong><p>General admission</p></div>
+      <div class="counter-btns">
+        <button onclick="changeGuests('adults',-1)">−</button>
+        <span id="adultsCount">0</span>
+        <button onclick="changeGuests('adults',1)">+</button>
+      </div>
+    </div>
+    <div class="guest-row">
+      <div><strong>VIP guests</strong><p>Premium access</p></div>
+      <div class="counter-btns">
+        <button onclick="changeGuests('children',-1)">−</button>
+        <span id="childrenCount">0</span>
+        <button onclick="changeGuests('children',1)">+</button>
+      </div>
+    </div>
+    <div class="guest-row">
+      <div><strong>Crew / Staff</strong><p>Production crew</p></div>
+      <div class="counter-btns">
+        <button onclick="changeGuests('infants',-1)">−</button>
+        <span id="infantsCount">0</span>
+        <button onclick="changeGuests('infants',1)">+</button>
+      </div>
+    </div>
+    <button class="gp-save" onclick="saveGuests()">Confirm</button>
+  </div>
+</div>
+
+<!-- Listing Detail Modal -->
+<div class="listing-modal-overlay" id="listingModalOverlay" onclick="closeListing()"></div>
+<div class="listing-modal" id="listingModal">
+  <button class="listing-modal-close" onclick="closeListing()">✕</button>
+  <div class="listing-modal-images" id="listingModalImages"></div>
+  <div class="listing-modal-body">
+    <div class="listing-modal-main">
+      <div class="listing-modal-title-row">
+        <h1 id="listingModalTitle"></h1>
+        <button class="listing-modal-save" id="modalSaveBtn" aria-label="Save venue">
+          <svg viewBox="0 0 32 32" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M16 28c7-4.733 14-10 14-17a6.98 6.98 0 0 0-7-7c-1.8 0-3.58.68-4.95 2.05L16 8.1l-2.05-2.05a6.98 6.98 0 0 0-9.9 0C2.61 7.42 2 9.21 2 11c0 7 7 12.267 14 17z"/>
+          </svg>
+          <span id="modalSaveBtnLabel">Save</span>
+        </button>
+      </div>
+      <p id="listingModalLocation"></p>
+      <div class="listing-modal-rating" id="listingModalRating"></div>
+      <div id="listingModalType"></div>
+      <div class="listing-modal-divider"></div>
+      <div class="listing-modal-highlights" id="listingModalHighlights"></div>
+      <div class="listing-modal-divider"></div>
+      <p class="listing-modal-desc" id="listingModalDesc"></p>
+      <div class="listing-modal-divider"></div>
+      <div class="listing-modal-amenities" id="listingModalAmenities"></div>
+      <div id="listingModalPricing"></div>
+    </div>
+    <div class="listing-modal-sidebar">
+      <div class="booking-card" id="bookingCard"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

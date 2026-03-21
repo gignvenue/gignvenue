@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Artist Dashboard · GigNVenue</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="host-dashboard.css"/>
+  <link rel="stylesheet" href="booker-dashboard.css"/>
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <a href="index.html" class="sidebar-logo-link">
+      <img src="gign-venue-logo-siteheader.svg" alt="GigNVenue" style="height:28px;width:auto;filter:brightness(1.05)"/>
+    </a>
+    <button class="sidebar-close" id="sidebarClose" onclick="closeSidebar()" aria-label="Close menu">✕</button>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="#" class="sidebar-link active" data-section="overview" onclick="navigate(event,'overview')">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+      Overview
+    </a>
+    <a href="index.html" class="sidebar-link">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      Browse venues
+    </a>
+    <a href="#" class="sidebar-link" data-section="requests" onclick="navigate(event,'requests')">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
+      My requests
+      <span class="sidebar-badge" id="reqBadge"></span>
+    </a>
+    <a href="#" class="sidebar-link" data-section="messages" onclick="navigate(event,'messages')">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+      Messages
+      <span class="sidebar-badge sidebar-badge-msg" id="msgBadge">2</span>
+    </a>
+    <a href="#" class="sidebar-link" data-section="calendar" onclick="navigate(event,'calendar')">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg>
+      Availability calendar
+    </a>
+    <a href="#" class="sidebar-link" data-section="saved" onclick="navigate(event,'saved')">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      Saved venues
+      <span class="sidebar-badge" id="savedBadge"></span>
+    </a>
+    <a href="#" class="sidebar-link" data-section="tour" onclick="navigate(event,'tour');renderTourPlanner()">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+      Tour planner
+    </a>
+    <a href="#" class="sidebar-link" data-section="profile" onclick="navigate(event,'profile')">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      Artist profile
+    </a>
+    <a href="#" class="sidebar-link" data-section="help" onclick="navigate(event,'help')">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+      Help
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-user" id="sidebarUser"></div>
+    <button class="sidebar-logout" onclick="BookerAuth.logout('index.html')">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+      Log out
+    </button>
+  </div>
+</aside>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ── MAIN ── -->
+<div class="dashboard-main">
+  <header class="dash-topbar">
+    <button class="hamburger" onclick="openSidebar()" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="dash-topbar-right">
+      <button class="topbar-icon-btn" aria-label="Notifications" onclick="navigate(null,'messages')">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+        <span class="topbar-badge" id="topbarBadge">2</span>
+      </button>
+      <div class="topbar-avatar" id="topbarAvatar" onclick="navigate(null,'profile')"></div>
+    </div>
+  </header>
+
+  <div class="sections-wrap">
+
+    <!-- STRIKE BANNER (hidden until strikes exist) -->
+    <div class="strike-banner" id="strikeBanner" style="display:none"></div>
+
+    <!-- OVERVIEW -->
+    <section class="section active" id="section-overview">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title" id="overviewGreeting">Good evening!</h1>
+          <p class="section-sub" id="overviewDate"></p>
+        </div>
+        <a href="index.html" class="btn-add-listing">🔍 Browse venues</a>
+      </div>
+      <div id="paymentAlert" style="display:none"></div>
+      <div id="overviewRatingPrompts" style="display:none;margin-bottom:12px"></div>
+      <div id="overviewFeaturedNights" style="display:none;margin-bottom:12px"></div>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="overview-grid">
+        <div class="card">
+          <h2 class="card-title" style="margin-bottom:16px">Recent requests</h2>
+          <div id="overviewRequests"></div>
+        </div>
+        <div class="card">
+          <div class="card-title-row">
+            <h2 class="card-title">Messages</h2>
+            <a href="#" class="card-link" onclick="navigate(event,'messages')">See all</a>
+          </div>
+          <div id="overviewMessages"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- REQUESTS -->
+    <section class="section" id="section-requests">
+      <div class="section-header">
+        <h1 class="section-title">Booking requests</h1>
+        <a href="index.html" class="btn-add-listing">+ New request</a>
+      </div>
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="filterRequests(event,'all')">All</button>
+        <button class="filter-tab" onclick="filterRequests(event,'pending')">Pending</button>
+        <button class="filter-tab" onclick="filterRequests(event,'approved')">Approved</button>
+        <button class="filter-tab" onclick="filterRequests(event,'declined')">Declined</button>
+        <button class="filter-tab" onclick="filterRequests(event,'cancelled')">Cancelled</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="req-table">
+          <thead>
+            <tr>
+              <th>Venue</th>
+              <th>Dates</th>
+              <th>Event type</th>
+              <th>Capacity</th>
+              <th>Est. attendance</th>
+              <th>Status</th>
+              <th>Sent</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="requestsTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- MESSAGES -->
+    <section class="section" id="section-messages">
+      <div class="section-header">
+        <h1 class="section-title">Messages</h1>
+      </div>
+      <div class="messages-layout">
+        <div class="msg-thread-list" id="msgThreadList"></div>
+        <div class="msg-chat" id="msgChat">
+          <div class="msg-chat-empty">Select a conversation</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CALENDAR -->
+    <section class="section" id="section-calendar">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Availability calendar</h1>
+          <p class="section-sub">See demand by date and submit booking requests</p>
+        </div>
+        <div class="cal-nav-btns">
+          <button onclick="prevCalMonth()">‹ Prev</button>
+          <strong id="calMonthLabel" style="color:var(--text-sec);min-width:140px;text-align:center"></strong>
+          <button onclick="nextCalMonth()">Next ›</button>
+        </div>
+      </div>
+
+      <div class="venue-select-wrap">
+        <label>Viewing venue:</label>
+        <select id="calVenueSelect" onchange="calVenueChange()"></select>
+      </div>
+      <div id="calVenueSummary"></div>
+
+      <div class="demand-legend">
+        <span class="leg-item"><span class="dem-swatch" style="background:rgba(16,185,129,0.25)"></span> Available</span>
+        <span class="leg-item"><span class="dem-swatch" style="background:rgba(245,158,11,0.25)"></span> 1–2 requests</span>
+        <span class="leg-item"><span class="dem-swatch" style="background:rgba(239,68,68,0.25)"></span> High demand (3+)</span>
+        <span class="leg-item"><span class="dem-swatch" style="background:rgba(255,56,92,0.4)"></span> Booked / unavailable</span>
+        <span class="leg-item"><span class="dem-swatch" style="border:2px solid #FF385C"></span> Your request</span>
+      </div>
+
+      <div class="big-calendar" id="bigCalendar"></div>
+    </section>
+
+    <!-- TOUR PLANNER -->
+    <section class="section" id="section-tour">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Tour planner</h1>
+          <p class="section-sub">Plan a multi-city tour and request venues in one go</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px">
+        <h2 class="card-title" style="margin-bottom:16px">Tour stops</h2>
+        <div class="tour-stops-list" id="tourStopsList">
+          <!-- Stop rows injected by renderTourPlanner() -->
+        </div>
+        <button class="btn-save secondary" style="font-size:13px;padding:8px 16px" onclick="addTourStop()">+ Add stop</button>
+        <div style="display:flex;gap:10px;margin-top:16px;align-items:center;flex-wrap:wrap">
+          <button class="btn-save" style="padding:10px 24px" onclick="searchTourVenues()">🔍 Find venues</button>
+          <span id="tourStopsHint" style="font-size:13px;color:var(--text-muted)">Add at least one city and date to search.</span>
+        </div>
+      </div>
+
+      <!-- Route optimization banner -->
+      <div id="tourRouteBanner" style="display:none;background:rgba(255,56,92,0.06);border:1px solid rgba(255,56,92,0.2);border-radius:12px;padding:16px 20px;margin-bottom:16px">
+        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">⚡ Smarter route found — saves ~<span id="tourRouteSavings"></span> miles</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">
+          <div>Your order: <span id="tourRouteOrig" style="color:var(--text-sec)"></span></div>
+          <div style="margin-top:2px">Suggested: <span id="tourRouteOpt" style="color:var(--red);font-weight:600"></span></div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn-save" style="padding:8px 18px;font-size:13px" onclick="acceptOptimizedRoute()">Use suggested order</button>
+          <button class="btn-save secondary" style="padding:8px 18px;font-size:13px" onclick="dismissRouteBanner()">Keep my order</button>
+        </div>
+      </div>
+
+      <div class="tour-results-section" id="tourResultsSection" style="display:none">
+        <h2 class="card-title" style="margin-bottom:16px">Available venues</h2>
+        <div id="tourResultsBody"></div>
+      </div>
+
+      <!-- Tour details panel — shown when venues are selected -->
+      <div class="card" id="tourDetailsPanel" style="display:none;margin-top:20px">
+        <h2 class="card-title" style="margin-bottom:4px">Request details</h2>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px">These details are sent with every selected venue request.</p>
+        <div class="p-field"><label>Event type</label>
+          <select id="tourEventType" style="border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:14px;background:var(--bg-input);color:var(--text);outline:none;width:100%">
+            <option>Concert / live show</option>
+            <option>Album launch</option>
+            <option>Private event</option>
+            <option>Festival set</option>
+            <option>Corporate event</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="p-field"><label>Expected attendance</label>
+          <input type="number" id="tourAttendance" min="1" placeholder="Enter expected attendance"
+            style="border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:14px;background:var(--bg-input);color:var(--text);outline:none;width:100%"/>
+        </div>
+        <div class="p-field"><label>Notes to all venues</label>
+          <textarea id="tourNotes" rows="3" placeholder="Tell venues about your show, tech rider, load-in needs — this message goes to every venue you've selected."
+            style="border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:14px;background:var(--bg-input);color:var(--text);outline:none;width:100%;resize:vertical"></textarea>
+        </div>
+        <div class="p-field"><label>Rider / Tech Spec <span style="color:var(--text-muted);font-weight:400">(PDF, optional — applies to all stops)</span></label>
+          <input type="file" id="tourRiderFile" accept=".pdf" onchange="onTourRiderFileChange(event)"
+            style="border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:13px;background:var(--bg-input);color:var(--text-sec);outline:none;width:100%;cursor:pointer"/>
+          <div id="tourRiderFileName" style="font-size:12px;color:var(--text-muted);margin-top:4px"></div>
+        </div>
+        <button class="btn-save" id="tourSubmitBtn" onclick="submitTourRequests()" style="width:100%;margin-top:8px;padding:12px">📨 Send tour requests</button>
+      </div>
+
+      <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);text-align:center">
+        <span style="font-size:13px;color:var(--text-muted)">Can't find your venue? </span>
+        <button class="res-action-btn" onclick="openSuggestVenueModal()" style="font-size:13px">Suggest a venue →</button>
+      </div>
+    </section>
+
+    <!-- SAVED VENUES -->
+    <section class="section" id="section-saved">
+      <div class="section-header">
+        <h1 class="section-title">Saved venues</h1>
+        <a href="index.html" class="btn-add-listing">Browse more</a>
+      </div>
+      <div class="saved-grid" id="savedGrid"></div>
+    </section>
+
+    <!-- PROFILE -->
+    <section class="section" id="section-profile">
+      <div class="section-header">
+        <h1 class="section-title">Artist profile</h1>
+        <button class="btn-save secondary" style="font-size:13px;padding:8px 16px" onclick="window.open('artist-profile.html?preview=1','_blank')">👁 Preview profile</button>
+      </div>
+
+      <!-- Profile cards -->
+      <div class="profile-cards-section">
+        <h2 class="profile-cards-heading">My profiles</h2>
+        <div id="profileCardsWrap" class="profile-cards-wrap"></div>
+      </div>
+
+      <div class="profile-layout">
+        <form class="profile-form" id="profileForm" onsubmit="saveProfile(event)">
+
+          <!-- Avatar -->
+          <div class="profile-avatar-wrap">
+            <img id="profileAvatar" src="" alt="Avatar" class="profile-avatar"/>
+            <button type="button" class="profile-avatar-edit" onclick="document.getElementById('avatarUpload').click()">Edit</button>
+            <input type="file" id="avatarUpload" accept="image/*" hidden onchange="handleAvatarUpload(event)"/>
+          </div>
+
+          <h2>Contact Information</h2>
+          <div class="field-row-p">
+            <div class="p-field"><label>First name</label><input id="pfFirst" type="text"/></div>
+            <div class="p-field"><label>Last name</label><input id="pfLast" type="text"/></div>
+          </div>
+          <div class="field-row-p">
+            <div class="p-field"><label>Email address</label><input id="pfEmail" type="email"/></div>
+            <div class="p-field"><label>Phone number</label><input id="pfPhone" type="tel" placeholder="+1 (555) 000-0000"/></div>
+          </div>
+
+          <h2 style="margin-top:28px">Act Information</h2>
+          <div class="field-row-p">
+            <div class="p-field"><label>Artist / act name</label><input id="pfArtist" type="text" placeholder="e.g. The Static, DJ Nomad, Sarah Chen…"/></div>
+            <div class="p-field">
+              <label>Act type</label>
+              <select id="pfActType">
+                <option value="">Select type…</option>
+                <option value="solo_musician">Solo Musician</option>
+                <option value="duo">Duo</option>
+                <option value="band">Band / Group</option>
+                <option value="dj">DJ / Electronic Act</option>
+                <option value="orchestra">Orchestra / Ensemble</option>
+                <option value="comedian">Comedian</option>
+                <option value="spoken_word">Spoken Word / Poetry</option>
+                <option value="variety">Variety / Circus Act</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row-p">
+            <div class="p-field"><label>Genre / style</label><input id="pfGenre" type="text" placeholder="e.g. Indie Rock, Jazz, Stand-up…"/></div>
+            <div class="p-field"><label>Home city</label><input id="pfHomeCity" type="text" placeholder="e.g. Los Angeles, CA"/></div>
+          </div>
+          <div class="field-row-p">
+            <div class="p-field"><label>Number of performers</label><input id="pfPerformers" type="number" min="1" placeholder="1"/></div>
+            <div class="p-field"><label>Years active</label><input id="pfYearsActive" type="number" min="0" placeholder="e.g. 5"/></div>
+          </div>
+
+          <h2 style="margin-top:28px">Performance Details</h2>
+          <div class="field-row-p">
+            <div class="p-field"><label>Typical set length</label><input id="pfSetLength" type="text" placeholder="e.g. 60 min, 2 sets of 45 min…"/></div>
+            <div class="p-field">
+              <label>Travel availability</label>
+              <select id="pfTravel">
+                <option value="">Select…</option>
+                <option value="local">Local only</option>
+                <option value="regional">Regional</option>
+                <option value="national">National</option>
+                <option value="international">International</option>
+              </select>
+            </div>
+          </div>
+          <div class="p-field"><label>Event types</label><input id="pfEvents" type="text" placeholder="e.g. Concerts, Festivals, Corporate events, Private events…"/></div>
+          <div class="p-field"><label>Typical audience size</label><input id="pfAudienceSize" type="text" placeholder="e.g. 50–200, 500+…"/></div>
+
+          <h2 style="margin-top:28px">Technical Rider</h2>
+          <div class="field-row-p">
+            <div class="p-field">
+              <label>Sound / PA needs</label>
+              <select id="pfSound">
+                <option value="">Select…</option>
+                <option value="bring_own">Brings own full setup</option>
+                <option value="pa_required">Venue PA required</option>
+                <option value="partial">Partial backline needed</option>
+                <option value="acoustic">Acoustic — no PA needed</option>
+              </select>
+            </div>
+            <div class="p-field"><label>Min. stage size (ft)</label><input id="pfStageSize" type="text" placeholder="e.g. 16×12, flexible…"/></div>
+          </div>
+          <div class="p-field"><label>Special requirements</label><textarea id="pfRider" rows="3" placeholder="Green room, load-in access, specific equipment, dietary needs…"></textarea></div>
+
+          <h2 style="margin-top:28px">Bio &amp; Links</h2>
+          <div class="p-field"><label>Bio</label><textarea id="pfBio" rows="4" placeholder="Tell venues about yourself, your act, your story, and what makes your show unique…"></textarea></div>
+          <div class="field-row-p">
+            <div class="p-field"><label>Website</label><input id="pfWebsite" type="url" placeholder="https://…"/></div>
+            <div class="p-field"><label>EPK / Press kit</label><input id="pfEpk" type="url" placeholder="https://…"/></div>
+          </div>
+          <div class="field-row-p">
+            <div class="p-field"><label>Instagram</label><input id="pfInstagram" type="url" placeholder="https://instagram.com/…"/></div>
+            <div class="p-field"><label>Facebook</label><input id="pfFacebook" type="url" placeholder="https://facebook.com/…"/></div>
+          </div>
+          <div class="field-row-p">
+            <div class="p-field"><label>TikTok</label><input id="pfTiktok" type="url" placeholder="https://tiktok.com/@…"/></div>
+            <div class="p-field"><label>YouTube</label><input id="pfYoutube" type="url" placeholder="https://youtube.com/…"/></div>
+          </div>
+          <div class="field-row-p">
+            <div class="p-field"><label>Spotify <span style="font-weight:400;color:var(--text-muted)">(embeds player on your profile)</span></label><input id="pfSpotify" type="url" placeholder="https://open.spotify.com/artist/…"/></div>
+            <div class="p-field"><label>SoundCloud <span style="font-weight:400;color:var(--text-muted)">(embeds player on your profile)</span></label><input id="pfSoundcloud" type="url" placeholder="https://soundcloud.com/…"/></div>
+          </div>
+
+          <h2 style="margin-top:28px">Security</h2>
+          <div class="field-row-p">
+            <div class="p-field"><label>New password</label><input type="password" id="pfNewPw" placeholder="New password"/></div>
+            <div class="p-field"><label>Confirm</label><input type="password" id="pfConfirmPw" placeholder="Repeat password"/></div>
+          </div>
+
+          <div class="profile-form-footer">
+            <span class="profile-save-msg" id="profileSaveMsg"></span>
+            <button type="submit" class="btn-save">Save changes</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- HELP -->
+    <section class="section" id="section-help">
+      <div class="section-header">
+        <h1 class="section-title">Help Center</h1>
+      </div>
+      <div class="card" style="max-width:720px">
+        <h2 class="card-title" style="margin-bottom:20px">Frequently asked questions</h2>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            How do I submit a booking request?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>Search for venues on the main page, open the venue profile for any listing that looks right, and click "Request to book." Fill in your event details — type, date, expected attendance, and any notes — verify that you've reviewed the venue's terms, and submit. The host reviews your request and you'll receive a notification once they respond, usually within 1–2 business days. No payment is required at this stage.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            Can I request multiple venues at the same time?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>Yes. You can send requests to multiple venues for the same date simultaneously — there's no penalty for doing so while you're still deciding. If a venue approves your request and you complete payment, any other pending requests for that same date are automatically cancelled and noted in your booking history — so you can revisit those venues for next time.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            How long does it take to hear back from a venue?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>Hosts are strongly encouraged to respond within 1–2 business days. If a host hasn't responded in that time, you're completely free, as always, to request other venues — and you can cancel a request at any time with no penalty to your account and no obligation to wait indefinitely.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            What happens after I'm approved?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>You'll receive a notification that your booking has been approved. You then have 48 hours to complete payment — a 20% venue deposit plus an 8% booking fee, the same figures you saw before submitting your request. Once payment is received, your date is locked and confirmed. If payment isn't completed within 48 hours, the approval expires and the date becomes available again on the venue's calendar.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            What is the deposit and where does it go?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>The deposit is 20% of the venue's nightly rate. It's collected by GigNVenue when you confirm your booking and held securely until after your event. Within 24 hours of the event playing off, the full deposit is released to the venue. The deposit is not GigNVenue's income — it acts as a security hold that protects both you and the venue.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            What is the booking fee?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>The booking fee is 8% of the venue's nightly rate and is charged to you when a booking is confirmed. This below-market, non-refundable fee covers payment processing, platform infrastructure, and customer support. Venue owners are never charged any fee. Browsing venues and submitting requests is always free.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            Can I save venues to review later?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>Yes. Click the heart icon on any venue card or inside a venue profile to save it to your Saved Venues. Access them anytime from the Saved Venues section in your dashboard. It's a great way to build a shortlist before you're ready to commit to a date.</p>
+            <p>Saving a venue also keeps you in the loop — when a venue you've saved posts a Featured Night (a proactively promoted date, sometimes at a special rate), you'll see an alert on your dashboard Overview so you can browse and request before the date is taken.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            Can I plan a multi-city tour through GigNVenue?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>Yes — the Tour Planner in your dashboard lets you add multiple stops (city + date) for an upcoming tour. For each stop, GigNVenue shows you available venues in that area. Select the ones you want and submit booking requests to all of them in one go.</p>
+          </div>
+        </div>
+
+        <div class="host-faq-item">
+          <button class="host-faq-q" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            Still need help?
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="host-faq-a">
+            <p>Our support team is available via the <a href="contact.html" style="color:var(--red);font-weight:600">contact page</a>. You can also browse the <a href="help.html" style="color:var(--red);font-weight:600">full Help Center</a> for more detailed answers.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- Booking Request Slide-in Panel -->
+<div class="cal-req-panel hidden" id="calReqPanel">
+  <div class="cal-req-panel-header">
+    <h4 id="calReqPanelTitle">Request date</h4>
+    <button class="cal-req-panel-close" onclick="closeReqPanel()">✕</button>
+  </div>
+  <div class="p-field"><label>Event type</label>
+    <select id="reqEventType" style="border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:14px;background:var(--bg-input);color:var(--text);outline:none;width:100%">
+      <option>Concert / live show</option>
+      <option>Album launch</option>
+      <option>Private event</option>
+      <option>Festival set</option>
+      <option>Corporate event</option>
+      <option>Club night / DJ set</option>
+      <option>Other</option>
+    </select>
+  </div>
+  <div class="p-field"><label>Expected attendance</label>
+    <input type="number" id="reqAttendance" min="1" placeholder="Enter expected attendance"
+      style="border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:14px;background:var(--bg-input);color:var(--text);outline:none;width:100%"/>
+  </div>
+  <div class="p-field"><label>Notes to venue</label>
+    <textarea id="reqNotes" rows="3" placeholder="Tell the venue about your show, tech rider, load-in needs…"
+      style="border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:14px;background:var(--bg-input);color:var(--text);outline:none;width:100%;resize:vertical"></textarea>
+  </div>
+  <div class="p-field"><label>Rider / Tech Spec <span style="color:var(--text-muted);font-weight:400">(PDF, optional)</span></label>
+    <input type="file" id="reqRiderFile" accept=".pdf" onchange="onRiderFileChange(event)"
+      style="border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:13px;background:var(--bg-input);color:var(--text-sec);outline:none;width:100%;cursor:pointer"/>
+    <div id="reqRiderFileName" style="font-size:12px;color:var(--text-muted);margin-top:4px"></div>
+  </div>
+  <div style="display:flex;gap:10px;margin-top:4px">
+    <button class="btn-save secondary" style="flex:1" onclick="closeReqPanel()">Cancel</button>
+    <button class="btn-save" style="flex:2" onclick="submitCalRequest()">🎸 Send request</button>
+  </div>
+</div>
+
+<!-- ── Payment modal ── -->
+<div class="pm-overlay" id="pmOverlay" onclick="closePaymentModal()"></div>
+<div class="pm-modal" id="pmModal">
+  <div class="pm-header">
+    <button class="pm-close" onclick="closePaymentModal()">✕</button>
+    <h2 class="pm-title">Complete your booking</h2>
+  </div>
+  <div class="pm-body">
+    <div class="pm-venue-row">
+      <img class="pm-venue-img" id="pmVenueImg" src="" alt=""/>
+      <div>
+        <div class="pm-venue-name" id="pmVenueName"></div>
+        <div class="pm-venue-meta" id="pmVenueMeta"></div>
+      </div>
+    </div>
+    <div class="pm-deadline" id="pmDeadlineWrap">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Payment due in <strong id="pmCountdown">—</strong>
+    </div>
+    <div class="pm-conflict-notice hidden" id="pmConflictNotice">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div>
+        <strong>Your request was approved — congrats!</strong>
+        <p>You have other pending requests for this date at <span id="pmConflictVenues"></span>. Once payment is complete, those will be automatically cancelled and noted in your booking history.</p>
+      </div>
+    </div>
+    <div class="pm-breakdown">
+      <div class="pm-row"><span>Venue deposit <span class="pm-note">(held &amp; released within 24 hrs of event)</span></span><span id="pmDepositAmt"></span></div>
+      <div class="pm-row"><span>Booking fee <span class="pm-note">(non-refundable)</span></span><span id="pmFeeAmt"></span></div>
+      <div class="pm-row pm-row-total"><span>Due today</span><span id="pmTotalAmt"></span></div>
+    </div>
+    <p class="pm-sub-note">The remaining venue balance is settled directly with the venue on the day of your event. Your deposit is held securely by GigNVenue and released to the venue after the event is completed.</p>
+    <button class="pm-stripe-btn" disabled>
+      <svg viewBox="0 0 60 25" width="38" height="16" fill="currentColor" style="opacity:.7"><path d="M59.64 14.28h-8.06c.19 1.93 1.6 2.55 3.2 2.55 1.64 0 2.96-.37 4.05-.95v3.32a10.26 10.26 0 0 1-4.56.95c-4.01 0-6.83-2.53-6.83-7.07 0-4.01 2.48-7.06 6.31-7.06 3.92 0 5.96 2.91 5.96 6.62 0 .6-.04 1.17-.07 1.64zm-5.92-5.77c-1.03 0-2.17.73-2.17 2.58h4.25c0-1.85-1.07-2.58-2.08-2.58zM40.95 20.3c-1.44 0-2.32-.6-2.9-1.04l-.02 4.63-4.12.87V6.43h3.64l.15 1.01c.56-.7 1.62-1.22 3-1.22 2.86 0 5.51 2.53 5.51 7.04 0 4.43-2.55 7.04-5.26 7.04zm-.87-10.57c-.84 0-1.48.31-1.93.79l.02 5.51c.42.46 1.05.79 1.91.79 1.51 0 2.54-1.56 2.54-3.54 0-2.02-1.05-3.55-2.54-3.55zM28.24 5.07c1.36 0 2.18-1.01 2.18-2.27C30.42.99 29.6 0 28.24 0c-1.36 0-2.21 1-2.21 2.8 0 1.26.85 2.27 2.21 2.27zm2.07 15.22h-4.14V6.43h4.14v13.86zM22.22 7.43l-.26-1h-3.56v13.85h4.12v-9.6c.97-1.27 2.62-1.04 3.13-.87V6.43c-.52-.19-2.4-.52-3.43 1zm-8.94-.61c-1.44 0-2.6.52-3.34 1.5l-.16-1.89H6.27C6.33 7.5 6.4 9.3 6.4 11.07v9.21h4.14v-8.96c0-.35.03-.68.12-.93.26-.72.87-1.45 1.87-1.45 1.32 0 1.87.9 1.87 2.22v9.12h4.12v-9.55c0-3.72-1.93-5.91-5.24-5.91z"/></svg>
+      Pay with Stripe
+      <span class="pm-coming-soon-pill">Coming soon</span>
+    </button>
+    <p class="pm-coming-soon-note">Stripe payment processing is being integrated. You'll receive an email notification when payments go live — your approved booking is reserved in the meantime.</p>
+    <button class="pm-demo-btn" onclick="completePaymentDemo()">✓ Confirm payment (demo mode)</button>
+  </div>
+</div>
+
+<!-- ── Decline booking modal ── -->
+<div class="dm-overlay" id="dmOverlay" onclick="closeDeclineModal()"></div>
+<div class="dm-modal" id="dmModal">
+  <div class="dm-header">
+    <h2 class="dm-title">Decline this booking</h2>
+    <button class="dm-close" onclick="closeDeclineModal()">✕</button>
+  </div>
+  <div class="dm-body">
+    <p class="dm-note">Let the venue know you won't be proceeding — it frees up their date for other artists and keeps your reliability score intact.</p>
+    <div class="dm-field">
+      <label class="dm-label">Reason for declining</label>
+      <select id="dmReason" class="dm-select">
+        <option value="">Select a reason</option>
+        <option value="Funding fell through">Funding fell through</option>
+        <option value="Booked a different venue">Booked a different venue</option>
+        <option value="Tour date cancelled">Tour date cancelled</option>
+        <option value="Change of plans">Change of plans</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="dm-actions">
+      <button class="dm-cancel-btn" onclick="closeDeclineModal()">Keep booking</button>
+      <button class="dm-confirm-btn" onclick="submitDecline()">Confirm decline</button>
+    </div>
+  </div>
+</div>
+
+<!-- New profile modal -->
+<div class="np-modal-overlay" id="newProfileModal" onclick="if(event.target===this)closeNewProfileModal()">
+  <div class="np-modal">
+    <h2 class="np-modal-title">New profile</h2>
+    <p class="np-modal-sub">Each profile is a separate act with its own details and booking history.</p>
+    <div class="p-field" style="margin-bottom:14px">
+      <label>Artist / act name <span style="color:var(--red)">*</span></label>
+      <input id="npArtistName" type="text" placeholder="e.g. The Static, DJ Nomad…" onkeydown="if(event.key==='Enter')saveNewProfile()"/>
+    </div>
+    <div class="p-field" style="margin-bottom:24px">
+      <label>Genre / style</label>
+      <input id="npGenre" type="text" placeholder="e.g. Indie Rock, Jazz…" onkeydown="if(event.key==='Enter')saveNewProfile()"/>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn-save secondary" style="flex:1" onclick="closeNewProfileModal()">Cancel</button>
+      <button class="btn-save" style="flex:2" onclick="saveNewProfile()">Create profile</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Suggest a Venue Modal ── -->
+<div class="suggest-modal-overlay" id="suggestVenueOverlay" onclick="closeSuggestVenueModal()"></div>
+<div class="suggest-modal" id="suggestVenueModal">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+    <h2 style="font-size:16px;font-weight:700;margin:0">Suggest a venue</h2>
+    <button onclick="closeSuggestVenueModal()" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:6px">✕</button>
+  </div>
+  <p style="font-size:13px;color:var(--text-sec);margin-bottom:18px">Know a great venue that's not on GigNVenue yet? Let us know and we'll reach out to them.</p>
+  <div class="p-field">
+    <label>Venue name <span style="color:var(--red)">*</span></label>
+    <input id="svName" type="text" placeholder="e.g. The Fillmore, Music Hall…"
+      style="border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:14px;background:var(--bg-input);color:var(--text);outline:none;width:100%"/>
+  </div>
+  <div class="p-field">
+    <label>City <span style="color:var(--red)">*</span></label>
+    <input id="svCity" type="text" placeholder="e.g. Nashville, TN"
+      style="border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:14px;background:var(--bg-input);color:var(--text);outline:none;width:100%"/>
+  </div>
+  <div class="p-field">
+    <label>Website <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+    <input id="svWebsite" type="url" placeholder="https://…"
+      style="border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:14px;background:var(--bg-input);color:var(--text);outline:none;width:100%"/>
+  </div>
+  <div class="p-field">
+    <label>Note <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+    <textarea id="svNote" rows="2" maxlength="300" placeholder="Why do you think this venue would be a good fit?"
+      style="border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:14px;background:var(--bg-input);color:var(--text);outline:none;width:100%;resize:none"></textarea>
+  </div>
+  <div style="display:flex;gap:10px;margin-top:6px">
+    <button class="btn-save secondary" style="flex:1" onclick="closeSuggestVenueModal()">Cancel</button>
+    <button class="btn-save" style="flex:2" onclick="submitVenueSuggestion()">Send suggestion</button>
+  </div>
+</div>
+
+<!-- ── Artist Rating Modal ── -->
+<div class="feature-night-overlay" id="artistRatingOverlay" onclick="closeArtistRatingModal()"></div>
+<div class="feature-night-modal" id="artistRatingModal">
+  <div class="fn-modal-header">
+    <button class="fn-modal-close" onclick="closeArtistRatingModal()">✕</button>
+    <h2 class="fn-modal-title">Rate your experience</h2>
+  </div>
+  <div class="fn-modal-body">
+    <p id="artistRatingSubtitle" style="font-size:14px;color:var(--text-sec);margin-bottom:18px"></p>
+    <div class="p-field">
+      <label style="font-size:13px">Was the venue as described?</label>
+      <div class="star-rating" id="arQ1">
+        <input type="radio" name="arQ1" id="arQ1s5" value="5"/><label for="arQ1s5">★</label>
+        <input type="radio" name="arQ1" id="arQ1s4" value="4"/><label for="arQ1s4">★</label>
+        <input type="radio" name="arQ1" id="arQ1s3" value="3"/><label for="arQ1s3">★</label>
+        <input type="radio" name="arQ1" id="arQ1s2" value="2"/><label for="arQ1s2">★</label>
+        <input type="radio" name="arQ1" id="arQ1s1" value="1"/><label for="arQ1s1">★</label>
+      </div>
+    </div>
+    <div class="p-field">
+      <label style="font-size:13px">Was the host communicative and professional?</label>
+      <div class="star-rating" id="arQ2">
+        <input type="radio" name="arQ2" id="arQ2s5" value="5"/><label for="arQ2s5">★</label>
+        <input type="radio" name="arQ2" id="arQ2s4" value="4"/><label for="arQ2s4">★</label>
+        <input type="radio" name="arQ2" id="arQ2s3" value="3"/><label for="arQ2s3">★</label>
+        <input type="radio" name="arQ2" id="arQ2s2" value="2"/><label for="arQ2s2">★</label>
+        <input type="radio" name="arQ2" id="arQ2s1" value="1"/><label for="arQ2s1">★</label>
+      </div>
+    </div>
+    <div class="p-field">
+      <label style="font-size:13px">Would you book here again?</label>
+      <div class="star-rating" id="arQ3">
+        <input type="radio" name="arQ3" id="arQ3s5" value="5"/><label for="arQ3s5">★</label>
+        <input type="radio" name="arQ3" id="arQ3s4" value="4"/><label for="arQ3s4">★</label>
+        <input type="radio" name="arQ3" id="arQ3s3" value="3"/><label for="arQ3s3">★</label>
+        <input type="radio" name="arQ3" id="arQ3s2" value="2"/><label for="arQ3s2">★</label>
+        <input type="radio" name="arQ3" id="arQ3s1" value="1"/><label for="arQ3s1">★</label>
+      </div>
+    </div>
+    <div class="p-field">
+      <label>Note <span style="color:var(--text-muted);font-weight:400">(optional, 200 char max)</span></label>
+      <textarea id="arNote" rows="2" maxlength="200" placeholder="Anything else to share about your experience…"
+        style="border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:14px;background:var(--bg-input);color:var(--text);outline:none;width:100%;resize:none"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn-save secondary" style="flex:1" onclick="closeArtistRatingModal()">Skip</button>
+      <button class="btn-save" style="flex:2" onclick="submitArtistRating()">Submit rating</button>
+    </div>
+  </div>
+</div>
+
+<script src="booker-auth.js"></script>
+<script src="booker-dashboard.js"></script>
+</body>
+</html>

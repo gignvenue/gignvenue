@@ -1,0 +1,43 @@
+# GigNVenue
+
+> GigNVenue is a live music venue booking marketplace connecting independent artists and bookers with venue owners across the United States. Artists browse and request venues; hosts list their spaces and manage bookings — all through a single platform.
+
+## What GigNVenue does
+
+- Artists and bookers search for music venues by location, capacity, price, and amenities
+- Artists submit booking requests for specific dates with event details
+- Venue hosts review requests, approve or decline, and manage their calendar
+- Upon approval, a 20% deposit is held via Stripe; the artist pays an 8% booking fee at confirmation
+- Contact details between artist and host are exchanged only after payment is completed
+- Performance agreements are auto-generated at confirmation
+- Venue hosts can feature open dates to attract bookings
+
+## Who it's for
+
+- **Artists and bookers**: independent musicians, bands, event producers looking to book live music venues without cold-calling or intermediaries
+- **Venue hosts**: bar owners, club operators, event space managers who want to fill their calendar with live music bookings
+
+## Key pages
+
+- [Homepage](https://gignvenue.com/) — search and browse music venues
+- [How It Works](https://gignvenue.com/how-it-works.html) — full explanation of the booking and hosting process
+- [List Your Venue](https://gignvenue.com/list-your-venue.html) — for venue owners who want to list their space
+- [Pricing](https://gignvenue.com/pricing.html) — free to list; 8% booking fee paid by artists on confirmed bookings only
+- [Help Center](https://gignvenue.com/help.html) — FAQ for artists and hosts
+- [About](https://gignvenue.com/about.html) — mission and story
+- [Contact](https://gignvenue.com/contact.html) — support contact form
+
+## Pricing model
+
+- Venue hosts: free to list, no subscription, no fees
+- Artists: free to browse and request; 8% booking fee only on confirmed bookings
+- Deposits: 20% of venue nightly rate, held at confirmation, released to host after the event
+
+## Geographic scope
+
+Currently serving the United States only. USD pricing throughout.
+
+## Contact
+
+- Support: support@gignvenue.com
+- Privacy inquiries: privacy@gignvenue.com

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Artist Profile — GigNVenue</title>
+  <link rel="stylesheet" href="host-dashboard.css"/>
+  <style>
+    body { background: var(--bg); min-height: 100vh; color: var(--text); font-family: var(--font); }
+
+    /* ── TOP BAR ── */
+    .ap-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 24px; border-bottom: 1px solid var(--border);
+      background: var(--bg-elevated); position: sticky; top: 0; z-index: 10;
+    }
+    .ap-topbar-logo { font-size: 16px; font-weight: 800; color: var(--red); letter-spacing: -0.5px; }
+    .ap-close-btn {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 600; color: var(--text-muted);
+      background: none; border: 1px solid var(--border); border-radius: 999px;
+      padding: 6px 14px; cursor: pointer; font-family: var(--font);
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .ap-close-btn:hover { color: var(--text); border-color: var(--text-muted); }
+
+    /* ── PAGE LAYOUT ── */
+    .ap-page { max-width: 720px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ── HERO ── */
+    .ap-hero { display: flex; align-items: flex-start; gap: 24px; margin-bottom: 36px; }
+    .ap-avatar {
+      width: 110px; height: 110px; border-radius: 50%; object-fit: cover;
+      border: 3px solid var(--border-light); flex-shrink: 0;
+    }
+    .ap-hero-info { flex: 1; min-width: 0; padding-top: 6px; }
+    .ap-artist-name { font-size: 26px; font-weight: 800; color: var(--text); line-height: 1.2; margin-bottom: 6px; }
+    .ap-meta-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
+    .ap-meta-pill {
+      font-size: 12px; font-weight: 600; color: var(--text-muted);
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 999px; padding: 3px 10px; white-space: nowrap;
+    }
+    .ap-links-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .ap-link-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 700; border-radius: 999px; padding: 5px 14px;
+      border: 1px solid var(--border); background: var(--bg-card); color: var(--text-muted);
+      cursor: pointer; text-decoration: none; font-family: var(--font);
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .ap-link-btn:hover { border-color: var(--red); color: var(--red); }
+    .ap-link-btn.epk { background: var(--red); border-color: var(--red); color: #fff; }
+    .ap-link-btn.epk:hover { opacity: 0.88; }
+
+    /* ── SECTIONS ── */
+    .ap-section { margin-bottom: 32px; }
+    .ap-section-title {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--text-muted); margin-bottom: 12px; padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ap-bio { font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
+
+    /* ── DETAILS GRID ── */
+    .ap-details-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 12px; }
+    .ap-detail-card {
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: var(--r-sm); padding: 12px 14px;
+    }
+    .ap-detail-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); margin-bottom: 4px; }
+    .ap-detail-value { font-size: 13px; font-weight: 600; color: var(--text); }
+
+    /* ── RIDER ── */
+    .ap-rider-text { font-size: 13px; color: var(--text-secondary); line-height: 1.65; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 14px 16px; }
+
+    /* ── SOCIAL LINKS ── */
+    .ap-social-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    /* ── EMPTY STATE ── */
+    .ap-empty { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+    .ap-empty-icon { font-size: 48px; margin-bottom: 14px; }
+    .ap-empty-msg { font-size: 15px; }
+
+    /* ── PREVIEW BANNER ── */
+    .ap-preview-banner {
+      background: rgba(255,56,92,0.12); border: 1px solid rgba(255,56,92,0.3);
+      border-radius: var(--r-sm); padding: 10px 16px; margin-bottom: 28px;
+      font-size: 13px; color: var(--red); font-weight: 600; text-align: center;
+    }
+
+    @media (max-width: 500px) {
+      .ap-hero { flex-direction: column; align-items: center; text-align: center; }
+      .ap-meta-row, .ap-links-row, .ap-social-grid { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="ap-topbar">
+  <span class="ap-topbar-logo">GigNVenue</span>
+  <button class="ap-close-btn" onclick="window.close()">✕ Close</button>
+</div>
+
+<div class="ap-page" id="apPage">
+  <div class="ap-empty">
+    <div class="ap-empty-icon">🎸</div>
+    <div class="ap-empty-msg">Loading profile…</div>
+  </div>
+</div>
+
+<script src="booker-auth.js"></script>
+<script>
+'use strict';
+
+const params      = new URLSearchParams(location.search);
+const rid         = params.get('rid')  || '';
+const fbName      = params.get('name') || '';
+const fbBand      = params.get('band') || '';
+const fbImg       = params.get('img')  || '';
+const isPreview   = params.get('preview') === '1';
+
+// ── Data lookup ──────────────────────────────────────────────────────────────
+// Lookup chain: rid → bb_site_requests → bookerId → vf_booker_users → vf_band_profiles
+function loadData() {
+  let user = null, profile = null;
+
+  if (isPreview) {
+    // Artist previewing their own active profile
+    user    = BookerAuth.currentUser();
+    profile = BookerAuth.currentProfile();
+  } else if (rid) {
+    try {
+      const siteReqs = JSON.parse(localStorage.getItem('bb_site_requests') || '[]');
+      const req = siteReqs.find(r => r.id === rid);
+      if (req && req.bookerId) {
+        const users = JSON.parse(localStorage.getItem('vf_booker_users') || '[]');
+        user = users.find(u => u.id === req.bookerId) || null;
+        if (user) {
+          const profiles = JSON.parse(localStorage.getItem('vf_band_profiles') || '[]');
+          profile = profiles.find(p => p.userId === user.id) || null;
+        }
+      }
+    } catch(e) {}
+  }
+
+  return { user, profile };
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function detail(label, value) {
+  if (!value) return '';
+  return `<div class="ap-detail-card">
+    <div class="ap-detail-label">${label}</div>
+    <div class="ap-detail-value">${value}</div>
+  </div>`;
+}
+
+function socialBtn(href, label, icon) {
+  if (!href) return '';
+  return `<a class="ap-link-btn" href="${href}" target="_blank" rel="noopener">${icon} ${label}</a>`;
+}
+
+function actTypeLabel(v) {
+  return { solo_musician:'Solo Musician', duo:'Duo', band:'Band / Group', dj:'DJ / Electronic Act',
+           orchestra:'Orchestra / Ensemble', comedian:'Comedian', spoken_word:'Spoken Word / Poetry',
+           variety:'Variety / Circus Act' }[v] || v;
+}
+
+function soundLabel(v) {
+  return { bring_own:'Brings own setup', pa_required:'Venue PA required',
+           partial:'Partial backline needed', acoustic:'Acoustic — no PA' }[v] || v;
+}
+
+function travelLabel(v) {
+  return { local:'Local only', regional:'Regional', national:'National', international:'International' }[v] || v;
+}
+
+function render() {
+  const { user, profile } = loadData();
+  const page = document.getElementById('apPage');
+
+  const displayName   = profile?.artistName || fbBand || fbName || 'Unknown Artist';
+  const displayAvatar = profile?.avatar     || fbImg  || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayName)}&backgroundColor=FF385C&textColor=ffffff`;
+  const realName      = user ? `${user.firstName} ${user.lastName}`.trim() : fbName;
+
+  // Meta pills
+  const meta = [
+    profile?.genre      ? profile.genre                      : null,
+    profile?.actType    ? actTypeLabel(profile.actType)      : null,
+    profile?.homeCity   ? `📍 ${profile.homeCity}`           : null,
+    profile?.yearsActive? `${profile.yearsActive} yrs active`: null,
+  ].filter(Boolean).map(v => `<span class="ap-meta-pill">${v}</span>`).join('');
+
+  // Header links
+  const epkBtn  = profile?.epk     ? `<a class="ap-link-btn epk" href="${profile.epk}" target="_blank" rel="noopener">📋 Press Kit / EPK</a>` : '';
+  const webBtn  = profile?.website ? `<a class="ap-link-btn" href="${profile.website}" target="_blank" rel="noopener">🌐 Website</a>` : '';
+
+  // Bio
+  const bioSection = (profile?.bio) ? `
+    <div class="ap-section">
+      <div class="ap-section-title">About</div>
+      <div class="ap-bio">${profile.bio.replace(/\n/g,'<br/>')}</div>
+    </div>` : '';
+
+  // Performance details
+  const perfCards = [
+    detail('Set length',    profile?.setLength),
+    detail('Travel',        profile?.travel    ? travelLabel(profile.travel) : ''),
+    detail('Event types',   profile?.eventTypes),
+    detail('Audience size', profile?.audienceSize),
+    detail('Performers',    profile?.performers ? `${profile.performers} person${profile.performers>1?'s':''}` : ''),
+  ].filter(Boolean).join('');
+
+  const perfSection = perfCards ? `
+    <div class="ap-section">
+      <div class="ap-section-title">Performance</div>
+      <div class="ap-details-grid">${perfCards}</div>
+    </div>` : '';
+
+  // Technical rider
+  const riderCards = [
+    detail('Sound / PA',  profile?.sound ? soundLabel(profile.sound) : ''),
+    detail('Min. stage',  profile?.stageSize),
+  ].filter(Boolean).join('');
+
+  const riderNotes = profile?.rider
+    ? `<div class="ap-rider-text" style="margin-top:10px">${profile.rider.replace(/\n/g,'<br/>')}</div>`
+    : '';
+
+  const riderSection = (riderCards || riderNotes) ? `
+    <div class="ap-section">
+      <div class="ap-section-title">Technical Rider</div>
+      ${riderCards ? `<div class="ap-details-grid" style="margin-bottom:${riderNotes?'10px':'0'}">${riderCards}</div>` : ''}
+      ${riderNotes}
+    </div>` : '';
+
+  // Music embeds
+  function buildSpotifyEmbed(url) {
+    if (!url) return '';
+    const m = url.match(/open\.spotify\.com\/(artist|track|album|playlist)\/([A-Za-z0-9]+)/);
+    return m ? `https://open.spotify.com/embed/${m[1]}/${m[2]}?utm_source=generator&theme=0` : '';
+  }
+  function buildSoundCloudEmbed(url) {
+    if (!url) return '';
+    return `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23FF385C&auto_play=false&hide_related=false&show_comments=false&show_user=true&visual=true`;
+  }
+  const spotifyEmbed    = buildSpotifyEmbed(profile?.spotify);
+  const soundcloudEmbed = buildSoundCloudEmbed(profile?.soundcloud);
+
+  const musicSection = (spotifyEmbed || soundcloudEmbed) ? `
+    <div class="ap-section">
+      <div class="ap-section-title">Music</div>
+      ${spotifyEmbed ? `<div style="margin-bottom:${soundcloudEmbed ? '16px' : '0'}">
+        <iframe src="${spotifyEmbed}" width="100%" height="352" frameborder="0"
+          allowfullscreen allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          loading="lazy" style="border-radius:12px;display:block"></iframe>
+      </div>` : ''}
+      ${soundcloudEmbed ? `<div>
+        <iframe width="100%" height="300" scrolling="no" frameborder="no" allow="autoplay"
+          src="${soundcloudEmbed}" style="border-radius:12px;display:block"></iframe>
+      </div>` : ''}
+    </div>` : '';
+
+  // Social links (Spotify + SoundCloud covered by embed players above)
+  const socials = [
+    socialBtn(profile?.instagram,  'Instagram',  '📸'),
+    socialBtn(profile?.youtube,    'YouTube',    '▶️'),
+    socialBtn(profile?.tiktok,     'TikTok',     '🎬'),
+    socialBtn(profile?.facebook,   'Facebook',   '📘'),
+    socialBtn(profile?.website,    'Website',    '🌐'),
+  ].filter(Boolean).join('');
+
+  const socialSection = socials ? `
+    <div class="ap-section">
+      <div class="ap-section-title">Follow</div>
+      <div class="ap-social-grid">${socials}</div>
+    </div>` : '';
+
+  const previewBanner = isPreview
+    ? `<div class="ap-preview-banner">👁 Preview — this is how your profile appears to venue hosts</div>`
+    : '';
+
+  page.innerHTML = `
+    ${previewBanner}
+    <div class="ap-hero">
+      <img class="ap-avatar" src="${displayAvatar}"
+           onerror="this.src='https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayName)}&backgroundColor=FF385C&textColor=ffffff'"/>
+      <div class="ap-hero-info">
+        <div class="ap-artist-name">${displayName}</div>
+        ${realName && realName !== displayName ? `<div style="font-size:13px;color:var(--text-muted);margin-bottom:8px">${realName}</div>` : ''}
+        ${meta ? `<div class="ap-meta-row">${meta}</div>` : ''}
+        ${(epkBtn || webBtn) ? `<div class="ap-links-row">${epkBtn}${webBtn}</div>` : ''}
+      </div>
+    </div>
+    ${bioSection}
+    ${musicSection}
+    ${perfSection}
+    ${riderSection}
+    ${socialSection}
+    ${!bioSection && !musicSection && !perfSection && !riderSection && !socialSection && !profile ? `
+      <div class="ap-empty">
+        <div class="ap-empty-icon">🎸</div>
+        <div class="ap-empty-msg">This artist hasn't filled out their full profile yet.</div>
+      </div>` : ''}`;
+}
+
+render();
+</script>
+</body>
+</html>
