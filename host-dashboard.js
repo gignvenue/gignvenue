@@ -643,7 +643,6 @@ function renderEarningsChart(canvasId, year) {
   const ytd     = monthTotals.reduce((a, b) => a + b, 0);
   const hasData = ytd > 0;
 
-  // Compute a nice grid step so ticks land on round numbers
   function niceStep(m) {
     const raw = m / 4;
     const mag = Math.pow(10, Math.floor(Math.log10(raw || 1)));
@@ -662,35 +661,37 @@ function renderEarningsChart(canvasId, year) {
     return '$' + v;
   }
 
-  // Gridlines
-  const gridHtml = gridTicks.map(v => {
-    const pct = (v / gridMax) * 100;
-    return `<div class="chart-gl" style="bottom:${pct}%"><span>${fmtY(v)}</span></div>`;
+  // SVG coordinate space
+  const svgW = 600, svgH = 120;
+  // X centers: each month occupies 1/12 of the width
+  const xs = Array.from({length: 12}, (_, i) => ((i + 0.5) * svgW / 12).toFixed(1));
+
+  // Gridlines (SVG horizontal lines)
+  const gridSvg = gridTicks.map(v => {
+    const y = (svgH - (v / gridMax) * svgH).toFixed(1);
+    return `<line x1="0" y1="${y}" x2="${svgW}" y2="${y}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>`;
   }).join('');
 
-  // Bars (column divs only — labels in separate row below)
-  const barsHtml = months.map((m, i) => {
-    const total    = monthTotals[i];
-    const isFuture = i > curMonth;
-    const barPct   = total ? (total / gridMax) * 100 : 0;
+  // Per-venue polylines + dots
+  const linesSvg = HOST_LISTINGS.map(l => {
+    const pts = xs.map((x, i) => {
+      const v = monthly[l.id]?.[i] || 0;
+      const y = (svgH - (v / gridMax) * svgH).toFixed(1);
+      return `${x},${y}`;
+    }).join(' ');
+    const dots = xs.map((x, i) => {
+      const v = monthly[l.id]?.[i] || 0;
+      if (!v) return '';
+      const y = (svgH - (v / gridMax) * svgH).toFixed(1);
+      return `<circle cx="${x}" cy="${y}" r="3" fill="${colors[l.id]}" stroke="rgba(0,0,0,0.4)" stroke-width="1.5"/>`;
+    }).join('');
+    return `<polyline points="${pts}" fill="none" stroke="${colors[l.id]}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>${dots}`;
+  }).join('');
 
-    const segments = HOST_LISTINGS
-      .filter(l => monthly[l.id]?.[i])
-      .map(l => {
-        const amt    = monthly[l.id][i];
-        const segPct = (amt / total) * 100;
-        return `<div style="height:${segPct}%;background:${colors[l.id]};min-height:3px"></div>`;
-      }).join('');
-
-    const tooltip = total
-      ? `${m} ${year}: $${total.toLocaleString()}` + HOST_LISTINGS.filter(l => monthly[l.id]?.[i]).map(l => `\n  ${l.title}: $${monthly[l.id][i].toLocaleString()}`).join('')
-      : `${m}: No data`;
-
-    return `<div class="chart-bar-col" title="${tooltip}">
-      <div class="chart-bar" style="height:${barPct}%;display:flex;flex-direction:column-reverse;overflow:hidden;${!total ? (isFuture ? '' : 'background:rgba(255,255,255,0.04)') : ''}">
-        ${segments}
-      </div>
-    </div>`;
+  // Y-axis labels (HTML, left of SVG so they don't distort with preserveAspectRatio:none)
+  const yLabelsHtml = gridTicks.map(v => {
+    const pct = ((v / gridMax) * 100).toFixed(1);
+    return `<div class="chart-gl-label" style="bottom:${pct}%;transform:translateY(50%)">${fmtY(v)}</div>`;
   }).join('');
 
   // Month label row
@@ -698,7 +699,7 @@ function renderEarningsChart(canvasId, year) {
     `<span style="${i === curMonth ? 'color:var(--text);font-weight:700' : ''}">${m}</span>`
   ).join('');
 
-  // Legend (only if multiple venues have data)
+  // Legend
   const activeVenues = HOST_LISTINGS.filter(l => monthly[l.id].some(v => v > 0));
   const legendHtml = activeVenues.length > 1
     ? `<div class="earnings-chart-legend">
@@ -719,8 +720,11 @@ function renderEarningsChart(canvasId, year) {
   wrap.innerHTML = `
     <div class="chart-area">
       <div class="chart-plot">
-        <div class="chart-gridlines">${gridHtml}</div>
-        <div class="chart-bars">${barsHtml}</div>
+        <div class="chart-y-labels">${yLabelsHtml}</div>
+        <svg class="chart-svg" viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="none">
+          ${gridSvg}
+          ${linesSvg}
+        </svg>
       </div>
       <div class="chart-label-row">${labelsHtml}</div>
     </div>
