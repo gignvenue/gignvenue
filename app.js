@@ -188,7 +188,7 @@ const LISTINGS = [
   {
     id: 4,
     title: 'The Midnight Rooftop',
-    location: 'Manhattan, New York',
+    location: '230 W 39th St, New York, NY',
     subtitle: 'Hosted by Skyline Spaces',
     dates: 'Year-round',
     price: 3600,
@@ -217,7 +217,7 @@ const LISTINGS = [
   {
     id: 5,
     title: 'Blue Note Underground',
-    location: 'New Orleans, Louisiana',
+    location: '623 Frenchmen St, New Orleans, LA',
     subtitle: 'Hosted by Harlan J.',
     dates: 'Available Mar 20+',
     price: 1400,
@@ -246,7 +246,7 @@ const LISTINGS = [
   {
     id: 6,
     title: 'Coachella Stage II Replica',
-    location: 'Indio, California',
+    location: '81800 Avenue 51, Indio, CA',
     subtitle: 'Hosted by Desert Events Co.',
     dates: 'Apr – Oct only',
     price: 8500,
@@ -275,7 +275,7 @@ const LISTINGS = [
   {
     id: 7,
     title: 'The Chicago Shrine',
-    location: 'Chicago, Illinois',
+    location: '3730 N Clark St, Chicago, IL',
     subtitle: 'Hosted by Lakeshore Music Group',
     dates: 'Year-round',
     price: 3200,
@@ -304,7 +304,7 @@ const LISTINGS = [
   {
     id: 8,
     title: 'The Ryman Stage',
-    location: 'Nashville, Tennessee',
+    location: '116 5th Ave N, Nashville, TN',
     subtitle: 'Hosted by Ryman Heritage',
     dates: 'Available select dates',
     price: 6800,
@@ -333,7 +333,7 @@ const LISTINGS = [
   {
     id: 9,
     title: 'Red Rocks Amphitheatre',
-    location: 'Morrison, Colorado',
+    location: '18300 W Alameda Pkwy, Morrison, CO',
     subtitle: 'Hosted by Denver Arts & Venues',
     dates: 'May – October',
     price: 22000,
@@ -362,7 +362,7 @@ const LISTINGS = [
   {
     id: 10,
     title: 'The Corner Dive',
-    location: 'Austin, Texas',
+    location: '415 E 6th St, Austin, TX',
     subtitle: 'Hosted by Sixth Street Collective',
     dates: 'Year-round',
     price: 800,
@@ -391,7 +391,7 @@ const LISTINGS = [
   {
     id: 11,
     title: 'The Fox Theatre',
-    location: 'Atlanta, Georgia',
+    location: '660 Peachtree St NE, Atlanta, GA',
     subtitle: 'Hosted by Atlanta Landmarks',
     dates: 'By application only',
     price: 18000,
@@ -420,7 +420,7 @@ const LISTINGS = [
   {
     id: 12,
     title: 'Fillmore West Revival',
-    location: 'San Francisco, California',
+    location: '1805 Geary Blvd, San Francisco, CA',
     subtitle: 'Hosted by Bay Area Shows',
     dates: 'Year-round',
     price: 3800,
@@ -449,7 +449,7 @@ const LISTINGS = [
   {
     id: 13,
     title: 'The Summit Arena',
-    location: 'Houston, Texas',
+    location: '1510 Polk St, Houston, TX',
     subtitle: 'Hosted by Houston Live Events',
     dates: 'Year-round',
     price: 28000,
@@ -487,11 +487,11 @@ const VENUE_TIMEZONES = {
   4:  'America/New_York',    // The Midnight Rooftop    — Manhattan, NY
   5:  'America/Chicago',     // Blue Note Underground   — New Orleans, LA
   6:  'America/Los_Angeles', // Coachella Stage II      — Indio, CA
-  7:  'Europe/Amsterdam',    // Paradiso Hall           — Amsterdam
+  7:  'America/Chicago',     // The Chicago Shrine      — Chicago, IL
   8:  'America/Chicago',     // The Ryman Stage         — Nashville, TN
-  9:  'Europe/London',       // Wembley Arena East Wing — London
+  9:  'America/Denver',      // Red Rocks Amphitheatre  — Morrison, CO
   10: 'America/Chicago',     // The Corner Dive         — Austin, TX
-  11: 'Australia/Sydney',    // The Opera House Stage   — Sydney
+  11: 'America/New_York',    // The Fox Theatre         — Atlanta, GA
   12: 'America/Los_Angeles', // Fillmore West Revival   — San Francisco, CA
   13: 'America/Chicago',     // The Summit Arena         — Houston, TX
 };
