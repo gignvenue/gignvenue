@@ -1245,6 +1245,40 @@ function viewRes(id) {
        </div>`
     : '';
 
+  if (r.hostGenerated) {
+    const venueId = getVenueIdForReservation(r);
+    const loggedEntry = venueId ? (MANUAL_CAL_ENTRIES[venueId] || {})[r.checkin] : null;
+    const loggedEarnings = loggedEntry?.earnings;
+
+    document.getElementById('resDrawerBody').innerHTML = `
+      <div class="rd-section">
+        <div class="rd-artist-name" style="font-size:18px;font-weight:700">${r.guest}</div>
+        ${r.bandName ? `<div class="rd-artist-band" style="margin-top:4px">${r.bandName}</div>` : ''}
+      </div>
+
+      <div class="rd-section">
+        <div class="rd-section-label">Event details</div>
+        ${r.eventType ? `<div class="rd-row"><span class="rd-row-label">Event type</span><span class="rd-row-val">${r.eventType}</span></div>` : ''}
+        <div class="rd-row"><span class="rd-row-label">Turnout</span><span class="rd-row-val">${r.guests ? r.guests.toLocaleString() : '—'}</span></div>
+        ${r.notes ? `<div class="rd-notes">"${r.notes}"</div>` : ''}
+      </div>
+
+      <div class="rd-section">
+        <div class="rd-section-label">Venue &amp; date</div>
+        <div class="rd-row"><span class="rd-row-label">Venue</span><span class="rd-row-val">${r.property}</span></div>
+        <div class="rd-row"><span class="rd-row-label">Date</span><span class="rd-row-val">${fmt(r.checkin)}</span></div>
+      </div>
+
+      <div class="rd-section">
+        <div class="rd-section-label">Night's earnings</div>
+        ${loggedEarnings
+          ? `<div class="rd-fin-row-total"><span>Total logged</span><span>$${Number(loggedEarnings).toLocaleString()}</span></div>
+             ${loggedEntry.earningsNotes ? `<div class="rd-notes" style="margin-top:8px">${loggedEntry.earningsNotes}</div>` : ''}`
+          : `<div style="font-size:13px;color:var(--text-muted)">No earnings logged yet. <button class="res-action-btn" style="font-size:13px" onclick="closeResDrawer();openLogEarningsModal('${r.id}','${venueId || ''}','${r.checkin}','${r.guest}','${r.property}')">Log earnings →</button></div>`
+        }
+      </div>
+    `;
+  } else {
   document.getElementById('resDrawerBody').innerHTML = `
     <div class="rd-section">
       <div class="rd-artist-card">
@@ -1327,6 +1361,7 @@ function viewRes(id) {
       </button>
     </div>` : ''}
   `;
+  }
 
   document.getElementById('resDrawerOverlay').classList.remove('hidden');
   document.getElementById('resDrawer').classList.remove('hidden');
