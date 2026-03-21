@@ -2792,8 +2792,8 @@ function openThread(id) {
     : `<span class="msg-prerequest-badge">Pre-request</span>`;
   const chatArea = document.getElementById('msgChat');
   const profileClick = booking
-    ? `onclick="openContactPopup(event,'${booking.id}')" style="cursor:pointer" title="View artist profile"`
-    : `onclick="openMsgArtistProfile(event,'${m.from}','${m.fromImg}','${band||''}')" style="cursor:pointer" title="View artist profile"`;
+    ? `onclick="viewArtistProfile('${booking.id}')" style="cursor:pointer" title="View artist profile"`
+    : `onclick="viewArtistProfileFromMsg('${m.from}','${m.fromImg}','${band||''}')" style="cursor:pointer" title="View artist profile"`;
   chatArea.innerHTML = `
     <div class="msg-chat-header">
       <img src="${m.fromImg}" alt="" class="msg-thread-avatar" style="width:40px;height:40px;cursor:pointer" onerror="this.style.background='#1C1C1C'" ${profileClick}/>
