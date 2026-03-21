@@ -604,6 +604,7 @@ function renderOverview() {
 function goToCalendarDate(venueId, iso) {
   const d = new Date(iso + 'T00:00:00');
   calSelectedVenueId = venueId;
+  calSelectedDate    = iso;
   calYear  = d.getFullYear();
   calMonth = d.getMonth();
   navigate(null, 'calendar');
@@ -611,7 +612,6 @@ function goToCalendarDate(venueId, iso) {
     const sel = document.getElementById('calVenueSelect');
     if (sel && [...sel.options].some(o => o.value === venueId)) sel.value = venueId;
     renderCalendar();
-    calDayClick(iso);
   }, 50);
 }
 
