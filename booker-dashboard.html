@@ -398,8 +398,22 @@
             <div class="p-field"><label>YouTube</label><input id="pfYoutube" type="url" placeholder="https://youtube.com/…"/></div>
           </div>
           <div class="field-row-p">
-            <div class="p-field"><label>Spotify <span style="font-weight:400;color:var(--text-muted)">(embeds player on your profile)</span></label><input id="pfSpotify" type="url" placeholder="https://open.spotify.com/artist/…"/></div>
-            <div class="p-field"><label>SoundCloud <span style="font-weight:400;color:var(--text-muted)">(embeds player on your profile)</span></label><input id="pfSoundcloud" type="url" placeholder="https://soundcloud.com/…"/></div>
+            <div class="p-field">
+              <label>Spotify</label>
+              <input id="pfSpotify" type="url" placeholder="https://open.spotify.com/artist/…"/>
+              <label class="embed-toggle-label">
+                <input type="checkbox" id="pfSpotifyEmbed" style="accent-color:#FF385C"/>
+                Embed player on profile <span style="font-weight:400;color:var(--text-muted)">(unchecked = link only)</span>
+              </label>
+            </div>
+            <div class="p-field">
+              <label>SoundCloud</label>
+              <input id="pfSoundcloud" type="url" placeholder="https://soundcloud.com/…"/>
+              <label class="embed-toggle-label">
+                <input type="checkbox" id="pfSoundcloudEmbed" style="accent-color:#FF385C"/>
+                Embed player on profile <span style="font-weight:400;color:var(--text-muted)">(unchecked = link only)</span>
+              </label>
+            </div>
           </div>
 
           <h2 style="margin-top:28px">Security</h2>
