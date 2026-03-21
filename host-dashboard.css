@@ -2042,3 +2042,7 @@ img { display: block; }
   pointer-events: auto;
 }
 .listing-mgr-card--archived:hover { opacity: 0.8; }
+
+/* ── Chat widget: shift past sidebar so it doesn't cover user/logout ── */
+#gnv-chat-btn   { left: calc(var(--sidebar-w) + 20px); }
+#gnv-chat-panel { left: calc(var(--sidebar-w) + 20px); }

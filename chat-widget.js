@@ -59,12 +59,12 @@
     /* ── Declined / cancelled (artist) ── */
     {
       label: 'My request was declined',
-      keywords: ['declined','rejected','denied','not approved','request declined'],
-      answer: 'No worries — a declined request moves to your <strong>Declined tab</strong> with no penalty to your account. You can request other venues right away. On the declined booking you\'ll also see a <strong>Join waitlist</strong> button: if that venue\'s date opens up later, you\'ll be notified.',
+      keywords: ['declined','rejected','denied','not approved','request declined','why declined','why was i declined','why did they decline','why did the venue decline'],
+      answer: 'A decline is almost never about the artist. Venues decline for all kinds of reasons — a conflicting booking, a change in their calendar, a different event type they\'re prioritising that period, or simply availability. It\'s not a reflection on you or your act. Your request moves to the <strong>Declined tab</strong> with no penalty to your account, and you\'re free to request other venues right away. You can also tap <strong>Join waitlist</strong> on the declined booking — if that date opens up later, you\'ll be notified.',
     },
     {
       label: 'What is the waitlist?',
-      keywords: ['waitlist','wait list','waiting list','date opens','notification','notified when'],
+      keywords: ['waitlist','wait list','waiting list','date opens','notification','notified when','date become available','if they change their mind'],
       answer: 'On any declined booking, you can tap <strong>Join waitlist</strong>. If that venue\'s date later becomes available (cancellation or change of plans), you\'ll be notified so you can submit a new request. You can leave the waitlist at any time.',
     },
     {
@@ -106,9 +106,9 @@
       answer: 'In your <strong>Bookings → Pending tab</strong>, click Details on any request to see full info — event type, attendance, artist notes. Use the status dropdown to Confirm or Cancel. When you confirm, the artist gets 48 hours to complete payment. If multiple artists request the same date, you can approve the best fit and all others are auto-declined.',
     },
     {
-      label: 'Hold priority (multiple requests)',
-      keywords: ['hold','first hold','second hold','priority','multiple artists','same date','competing','hold position'],
-      answer: 'When two or more artists request the same date, assign each a <strong>hold position</strong> (First Hold, Second Hold…) inside your Bookings section to privately rank your preference. Hold positions are never visible to artists — they\'re your working shortlist. Reorder them anytime; no commitment until you confirm.',
+      label: 'Multiple requests for the same date',
+      keywords: ['hold','first hold','second hold','priority','multiple artists','same date','competing','hold position','other artists','another artist'],
+      answer: 'When multiple artists request the same date at a venue, the host evaluates each request and confirms the one that\'s the best fit for their space and calendar. If you\'re waiting on a response, it may simply mean the host is still weighing their options — not that your request has been dismissed. If you\'re a host managing multiple requests for a date, you can privately rank them using hold positions in your Bookings section. No commitment is made until you confirm.',
     },
 
     /* ── Host: deposit & payment ── */
