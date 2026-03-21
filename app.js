@@ -2217,9 +2217,14 @@ function openListing(id) {
       ${l.roomRentalDesc ? `<p class="room-rental-desc">${l.roomRentalDesc}</p>` : ''}
     </div>` : ''}
 
+    ${l.cancellationPolicy ? `
+    <div class="vrf-cancel-policy-box">
+      <div class="vrf-cancel-policy-label">Venue cancellation policy</div>
+      <div class="vrf-cancel-policy-text">${l.cancellationPolicy.replace(/\n/g, '<br>')}</div>
+    </div>` : ''}
     <label class="vrf-cancel-check">
       <input type="checkbox" id="vrfCancelCheck" onchange="document.getElementById('venueReqBtn').disabled=!this.checked"/>
-      <span>I have reviewed the ${l.cancellationPolicy ? `<a href="#venueCancelPolicySection" onclick="event.stopPropagation()">venue's cancellation policy</a> and ` : ''}<a href="terms.html#cancellation" target="_blank" onclick="event.stopPropagation()">GigNVenue's cancellation terms</a></span>
+      <span>I have read and agree to the ${l.cancellationPolicy ? 'venue cancellation policy above and ' : ''}<a href="terms.html#cancellation" target="_blank" onclick="event.stopPropagation()">GigNVenue's cancellation terms</a></span>
     </label>
     <button class="booking-reserve-btn" id="venueReqBtn" onclick="submitVenueRequest()" disabled>Request to book</button>
     ${(()=>{ try { return JSON.parse(localStorage.getItem('vf_booker_session')||'null'); } catch(e){} return null; })()
