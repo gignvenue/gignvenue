@@ -1586,7 +1586,7 @@ function openBookerAgreement(id) {
         <tr><td>Nightly rate</td><td>$${v.price.toLocaleString()}</td><td>Agreed venue fee</td></tr>
         <tr><td>Deposit (20%)</td><td>$${deposit.toLocaleString()}</td><td>Held by GigNVenue; released within 24 hrs of show completion</td></tr>
         <tr><td>Booking fee (8%)</td><td>$${bookingFee.toLocaleString()}</td><td>GigNVenue platform fee — non-refundable</td></tr>
-        <tr><td>Remaining balance</td><td>$${remaining.toLocaleString()}</td><td>Settled directly with venue on day of event</td></tr>
+        <tr><td>Remaining balance</td><td>$${remaining.toLocaleString()}</td><td>Settled directly with venue in terms agreed between venue and artist</td></tr>
         <tr class="total-row"><td>Paid at confirmation</td><td>$${(deposit + bookingFee).toLocaleString()}</td><td>Deposit + booking fee</td></tr>
       </tbody>
     </table>
