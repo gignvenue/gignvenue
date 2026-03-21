@@ -1107,6 +1107,7 @@ ul { list-style: none; }
   white-space: nowrap;
 }
 .mcp-badge-booked           { background: rgba(255,56,92,0.18);  color: #ff6b87; }
+.mcp-badge-act              { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
 .mcp-badge-pending          { background: rgba(245,158,11,0.18); color: #fbbf24; }
 .mcp-badge-my-req-approved  { background: rgba(16,185,129,0.22); color: #34d399; }
 .mcp-badge-my-req-pending   { background: rgba(245,158,11,0.22); color: #fbbf24; }

@@ -210,7 +210,10 @@ function publishPublicCalendars() {
   HOST_LISTINGS.forEach(l => {
     const manual = {};
     Object.entries(MANUAL_CAL_ENTRIES[l.id] || {}).forEach(([iso, e]) => {
-      if (!e.reservationId) manual[iso] = e.status;
+      if (!e.reservationId) {
+        // If host opted to show the act name publicly, publish an object; otherwise just the status string
+        manual[iso] = (e.publicAct && e.bandName) ? { status: e.status, actName: e.bandName } : e.status;
+      }
     });
     const merged = { ...manual, ...(DATE_STATUSES[l.id] || {}) };
     try {
@@ -2522,11 +2525,18 @@ function openCalDayPopup(iso) {
       </button>
     </div>
     <div class="cdp-band-section" id="cdpBandSection"${showBandSection ? '' : ' style="display:none"'}>
-      <label class="cdp-band-label">Band Name</label>
+      <label class="cdp-band-label">Band / Act Name</label>
       <input class="cdp-band-input" id="cdpBandInput" type="text"
              placeholder="e.g. The Midnight Echoes"
              value="${existingBandName.replace(/"/g, '&quot;')}"
+             oninput="cdpTogglePublicActRow()"
              onkeydown="if(event.key==='Enter')cdpSave('${iso}')"/>
+      <div id="cdpPublicActRow" style="${status === 'booked' && existingBandName ? '' : 'display:none'}">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-secondary);margin-top:8px;cursor:pointer">
+          <input type="checkbox" id="cdpPublicAct" style="accent-color:#FF385C;width:13px;height:13px" ${manualEntry?.publicAct ? 'checked' : ''}/>
+          Display act name publicly on venue calendar
+        </label>
+      </div>
       <div class="cdp-recurring-wrap" id="cdpRecurringWrap" style="display:none">
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-sec);margin-top:8px;cursor:pointer">
           <input type="checkbox" id="cdpRecurring" style="accent-color:#FF385C" onchange="document.getElementById('cdpRecurOptions').style.display=this.checked?'flex':'none'"/>
@@ -2589,6 +2599,12 @@ function closeCalDayPopup() {
   document.removeEventListener('click', calPopupOutsideClick);
 }
 
+function cdpTogglePublicActRow() {
+  const row   = document.getElementById('cdpPublicActRow');
+  const input = document.getElementById('cdpBandInput');
+  if (row) row.style.display = (_cdpStatus === 'booked' && input?.value.trim()) ? '' : 'none';
+}
+
 function cdpSelectStatus(status) {
   _cdpStatus = status;
   document.querySelectorAll('.cdp-opt').forEach(b => b.classList.remove('cdp-active'));
@@ -2613,17 +2629,19 @@ function cdpSelectStatus(status) {
     if (bandLabel) { bandLabel.style.display = ''; }
     if (recurringWrap) { recurringWrap.style.display = 'none'; }
   }
+  cdpTogglePublicActRow();
 }
 
 function cdpSave(iso) {
   if (!_cdpStatus) return;
   const bandName  = document.getElementById('cdpBandInput')?.value.trim() || '';
+  const publicAct = !!document.getElementById('cdpPublicAct')?.checked;
   const recurring = document.getElementById('cdpRecurring')?.checked;
   const freq      = document.getElementById('cdpRecurFreq')?.value || 'weekly';
   const count     = parseInt(document.getElementById('cdpRecurCount')?.value) || 8;
 
   if (_cdpStatus === 'blocked') {
-    setDateStatus(iso, 'blocked', '');
+    setDateStatus(iso, 'blocked', '', false);
     if (recurring) {
       const [y, m, d] = iso.split('-').map(Number);
       let date = new Date(y, m - 1, d);
@@ -2645,7 +2663,7 @@ function cdpSave(iso) {
   }
 
   // Save first occurrence
-  setDateStatus(iso, _cdpStatus, bandName);
+  setDateStatus(iso, _cdpStatus, bandName, publicAct);
 
   // Create recurring future occurrences for booked status
   if (recurring && _cdpStatus === 'booked' && count > 0) {
@@ -2674,13 +2692,13 @@ function cdpSave(iso) {
   }
 }
 
-function setDateStatus(iso, newStatus, bandName = '') {
+function setDateStatus(iso, newStatus, bandName = '', publicAct = false) {
   if (!MANUAL_CAL_ENTRIES[calVenueId]) MANUAL_CAL_ENTRIES[calVenueId] = {};
   const existingEntry = MANUAL_CAL_ENTRIES[calVenueId][iso];
   const venue = HOST_LISTINGS.find(l => l.id === calVenueId);
 
   if (newStatus === 'blocked') {
-    MANUAL_CAL_ENTRIES[calVenueId][iso] = { status: 'blocked', bandName: '' };
+    MANUAL_CAL_ENTRIES[calVenueId][iso] = { status: 'blocked', bandName: '', publicAct: false };
     saveManualEntries();
     publishPublicCalendars();
     closeCalDayPopup();
@@ -2713,10 +2731,10 @@ function setDateStatus(iso, newStatus, bandName = '') {
       const newRes = { id: rid, guest: guestName, guestImg: '', property: venue?.title || '', propertyImg: venue?.img || '', checkin: iso, checkout: iso, guests: 0, total: 0, status: resStatus, hostGenerated: true };
       if (bandName) newRes.bandName = bandName;
       RESERVATIONS.push(newRes);
-      MANUAL_CAL_ENTRIES[calVenueId][iso] = { status: newStatus, bandName, reservationId: rid };
+      MANUAL_CAL_ENTRIES[calVenueId][iso] = { status: newStatus, bandName, publicAct, reservationId: rid };
     }
     if (existingEntry?.reservationId) {
-      MANUAL_CAL_ENTRIES[calVenueId][iso] = { ...existingEntry, status: newStatus, bandName };
+      MANUAL_CAL_ENTRIES[calVenueId][iso] = { ...existingEntry, status: newStatus, bandName, publicAct };
     }
   }
 

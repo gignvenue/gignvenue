@@ -1787,10 +1787,12 @@ function renderModalCal() {
 
   for (let d = 1; d <= daysInMo; d++) {
     const iso  = `${modalCal.year}-${String(modalCal.month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const status = statuses[iso] || 'available';
-    const isPast = iso < todayIso;
-    const isBooked = status === 'booked';
-    const disabled = isPast || isBooked;
+    const entry         = statuses[iso];
+    const status        = typeof entry === 'object' ? entry.status : (entry || 'available');
+    const actName       = typeof entry === 'object' ? (entry.actName || null) : null;
+    const isPast        = iso < todayIso;
+    const isUnavailable = status === 'booked' || status === 'blocked';
+    const disabled      = isPast || isUnavailable;
 
     const myReqStatus = !isPast ? myReqMap.get(iso) : undefined; // 'approved'|'pending'|'declined'|undefined
     const hasMyReq    = myReqStatus !== undefined;
@@ -1807,12 +1809,14 @@ function renderModalCal() {
     const clickAttr = hasMyReq
       ? `onclick="goToBookerCalendarDate('${iso}')" style="cursor:pointer"`
       : disabled ? '' : `onclick="modalCalPick('${iso}')"`;
-    const title = hasMyReq    ? ` title="Your request — click to view in your dashboard"`
-                : status === 'pending' ? ' title="Pending — requests still available"'
-                : status === 'booked'  ? ' title="Booked — unavailable"' : '';
+    const title = hasMyReq       ? ` title="Your request — click to view in your dashboard"`
+                : status === 'pending'   ? ' title="Pending — requests still available"'
+                : isUnavailable && actName ? ` title="${actName}"`
+                : isUnavailable          ? ' title="Unavailable"' : '';
     html += `<div class="${cls}"${title}${clickAttr}>
       <span class="mcp-num">${d}</span>
-      ${status === 'booked' && !hasMyReq ? '<span class="mcp-badge mcp-badge-booked">Booked</span>' : ''}
+      ${isUnavailable && !hasMyReq && actName ? `<span class="mcp-badge mcp-badge-booked mcp-badge-act" title="${actName}">${actName}</span>` : ''}
+      ${isUnavailable && !hasMyReq && !actName ? '<span class="mcp-badge mcp-badge-booked">Unavailable</span>' : ''}
       ${status === 'pending' && !disabled && !hasMyReq ? '<span class="mcp-badge mcp-badge-pending">Pending</span>' : ''}
       ${hasMyReq ? `<span class="mcp-badge mcp-badge-my-req-${myReqStatus}">YOUR REQ</span>` : ''}
     </div>`;
