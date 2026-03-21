@@ -1845,12 +1845,13 @@ img { display: block; }
 .host-faq-q svg { flex-shrink: 0; transition: transform 0.2s; }
 .host-faq-q.open svg { transform: rotate(180deg); }
 .host-faq-a {
-  display: none; padding-bottom: 16px;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.25s ease-out, padding-bottom 0.25s;
   font-size: 14px; color: var(--text-sec); line-height: 1.65;
-  display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.2s;
+  padding-bottom: 0;
 }
-.host-faq-a.open { grid-template-rows: 1fr; }
-.host-faq-a p { overflow: hidden; }
+.host-faq-a.open { max-height: 600px; padding-bottom: 16px; }
 .host-faq-a p + p { margin-top: 10px; }
 
 /* ── FEATURE NIGHT ── */
