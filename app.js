@@ -1964,9 +1964,9 @@ function updateModalBookingTotal() {
   if (!el) return;
   el.innerHTML = `
     <div class="booking-fee-row"><span>Venue fee</span><span>$${l.price.toLocaleString()} / night</span></div>
+    <div class="booking-fee-row"><span>Booking fee <span class="fee-note">(non-refundable · due on submission)</span></span><span>$${bookingFee.toLocaleString()}</span></div>
     <div class="booking-fee-row"><span>Deposit <span class="fee-note">(due on approval)</span></span><span>$${deposit.toLocaleString()}</span></div>
-    <div class="booking-fee-row"><span>Booking fee <span class="fee-note">(non-refundable)</span></span><span>$${bookingFee.toLocaleString()}</span></div>
-    <div class="booking-fee-total"><span>Due on approval</span><span>$${(deposit + bookingFee).toLocaleString()}</span></div>`;
+    <div class="booking-fee-total"><span>Due on submission</span><span>$${bookingFee.toLocaleString()}</span></div>`;
 }
 
 // ─── LISTING DETAIL MODAL ────────────────────────────────────────────────────
@@ -2189,7 +2189,11 @@ function openListing(id) {
       ${l.roomRentalDesc ? `<p class="room-rental-desc">${l.roomRentalDesc}</p>` : ''}
     </div>` : ''}
 
-    <button class="booking-reserve-btn" id="venueReqBtn" onclick="submitVenueRequest()">Request to book</button>
+    <label class="vrf-cancel-check">
+      <input type="checkbox" id="vrfCancelCheck" onchange="document.getElementById('venueReqBtn').disabled=!this.checked"/>
+      <span>I have reviewed the <a href="terms.html#cancellation" target="_blank" onclick="event.stopPropagation()">cancellation policy</a></span>
+    </label>
+    <button class="booking-reserve-btn" id="venueReqBtn" onclick="submitVenueRequest()" disabled>Request to book</button>
     ${(()=>{ try { return JSON.parse(localStorage.getItem('vf_booker_session')||'null'); } catch(e){} return null; })()
         ? `<button class="msg-venue-btn" onclick="messageVenue(${JSON.stringify(l.title)})"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Message venue first</button>`
         : `<button class="msg-venue-btn msg-venue-btn-disabled" disabled title="Log in to send messages"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Log in to message venue</button>`}

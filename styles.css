@@ -935,7 +935,10 @@ ul { list-style: none; }
   font-family: var(--font);
 }
 .booking-reserve-btn:hover  { opacity: 0.9; }
-.booking-reserve-btn:disabled { opacity: 0.75; cursor: default; background: #059669; }
+.booking-reserve-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.vrf-cancel-check { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; cursor: pointer; line-height: 1.4; }
+.vrf-cancel-check input { margin-top: 2px; flex-shrink: 0; accent-color: #10B981; width: 15px; height: 15px; cursor: pointer; }
+.vrf-cancel-check a { color: var(--red); text-decoration: underline; }
 .vrf-fields { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
 .vrf-field  { display: flex; flex-direction: column; gap: 4px; }
 .vrf-label  { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); }
