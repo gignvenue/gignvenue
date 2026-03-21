@@ -601,6 +601,20 @@ function renderOverview() {
 
 // ─── REQUESTS ─────────────────────────────────────────────────────────────────
 
+function goToCalendarDate(venueId, iso) {
+  const d = new Date(iso + 'T00:00:00');
+  calSelectedVenueId = venueId;
+  calYear  = d.getFullYear();
+  calMonth = d.getMonth();
+  navigate(null, 'calendar');
+  setTimeout(() => {
+    const sel = document.getElementById('calVenueSelect');
+    if (sel && [...sel.options].some(o => o.value === venueId)) sel.value = venueId;
+    renderCalendar();
+    calDayClick(iso);
+  }, 50);
+}
+
 function goToRequestsTab(filter) {
   navigate(null, 'requests');
   requestFilter = filter;
@@ -673,7 +687,7 @@ function renderRequests(filter) {
           </div>
         </a>
       </td>
-      <td>${fmtDate(r.date)}</td>
+      <td><span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;color:inherit" onclick="goToCalendarDate('${r.venueId}','${r.date}')" title="View on calendar">${fmtDate(r.date)}</span></td>
       <td>${r.eventType}</td>
       <td>${v?.capacity ? v.capacity.toLocaleString() : '—'}</td>
       <td>${r.attendance ? Number(r.attendance).toLocaleString() : '—'}</td>
