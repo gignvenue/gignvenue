@@ -2028,3 +2028,17 @@ img { display: block; }
   .field-row-p { grid-template-columns: 1fr; }
   .reviews-summary { flex-direction: column; gap: 16px; }
 }
+
+/* ── Archived venue listings ─────────────────────────────────────────────── */
+.lmgr-archived-section { margin-top: 8px; }
+.lmgr-archived-section > .archived-toggle-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 13px; color: var(--text-muted); padding: 6px 0;
+}
+.lmgr-archived-section > .archived-toggle-btn:hover { color: var(--text); }
+.listing-mgr-card--archived {
+  opacity: 0.6;
+  border-style: dashed;
+  pointer-events: auto;
+}
+.listing-mgr-card--archived:hover { opacity: 0.8; }
