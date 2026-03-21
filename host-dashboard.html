@@ -588,6 +588,55 @@
 </div>
 
 <!-- ══════════════════════════════════════════
+     RESOLVE BOOKING MODAL
+══════════════════════════════════════════ -->
+<div class="feature-night-overlay" id="resolveOverlay" onclick="closeResolveModal()"></div>
+<div class="resolve-modal" id="resolveModal">
+  <div class="resolve-modal-header">
+    <div>
+      <h2 class="resolve-modal-title">Resolve booking</h2>
+      <p class="resolve-modal-sub" id="resolveModalSub"></p>
+    </div>
+    <button class="fn-modal-close" onclick="closeResolveModal()">✕</button>
+  </div>
+
+  <div class="resolve-options" id="resolveOptions">
+    <button class="resolve-opt" data-type="played" onclick="selectResolutionType('played')">
+      <span class="resolve-opt-icon resolve-opt-icon--green">✓</span>
+      <span class="resolve-opt-label">Show played off</span>
+      <span class="resolve-opt-desc">Show happened — release deposit to you</span>
+    </button>
+    <button class="resolve-opt" data-type="host-cancel" onclick="selectResolutionType('host-cancel')">
+      <span class="resolve-opt-icon resolve-opt-icon--red">✕</span>
+      <span class="resolve-opt-label">Host canceled</span>
+      <span class="resolve-opt-desc">You canceled — full deposit returned to artist</span>
+    </button>
+    <button class="resolve-opt" data-type="artist-cancel" onclick="selectResolutionType('artist-cancel')">
+      <span class="resolve-opt-icon resolve-opt-icon--amber">✕</span>
+      <span class="resolve-opt-label">Artist canceled</span>
+      <span class="resolve-opt-desc">Artist canceled — refund per your cancellation terms</span>
+    </button>
+    <button class="resolve-opt" data-type="mutual" onclick="selectResolutionType('mutual')">
+      <span class="resolve-opt-icon resolve-opt-icon--amber">⇄</span>
+      <span class="resolve-opt-label">Mutually agreed</span>
+      <span class="resolve-opt-desc">Both agreed to cancel — refund per your cancellation terms</span>
+    </button>
+    <button class="resolve-opt resolve-opt--wide" data-type="postponed" onclick="selectResolutionType('postponed')">
+      <span class="resolve-opt-icon resolve-opt-icon--blue">↗</span>
+      <span class="resolve-opt-label">Postponed</span>
+      <span class="resolve-opt-desc">Move to a new date — deposit stays held until new show date</span>
+    </button>
+  </div>
+
+  <div class="resolve-details" id="resolveDetails" style="display:none"></div>
+
+  <div class="resolve-modal-footer">
+    <button class="profile-cancel-btn" onclick="closeResolveModal()">Cancel</button>
+    <button class="btn-save" id="resolveConfirmBtn" onclick="submitResolution()" disabled style="min-width:200px">Select an option above</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
      FEATURE NIGHT MODAL
 ══════════════════════════════════════════ -->
 <div class="feature-night-overlay" id="featureNightOverlay" onclick="closeFeatureNightModal()"></div>

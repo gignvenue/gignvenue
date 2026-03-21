@@ -2112,9 +2112,7 @@ img { display: block; }
 }
 .listing-mgr-card--archived:hover { opacity: 0.8; }
 
-/* ── Chat widget: shift past sidebar so it doesn't cover user/logout ── */
-/* Uses a CSS custom property so the variable wins regardless of stylesheet load order */
-:root { --gnv-chat-left: calc(var(--sidebar-w) + 20px); }
+/* Chat button repositioning handled at end of file via body # higher-specificity selector */
 
 /* ── Earnings chart legend + YTD badge ───────────────────────────────────── */
 .earnings-ytd-badge { font-size: 14px; font-weight: 700; color: var(--text); }
@@ -2277,3 +2275,166 @@ img { display: block; }
 .analytics-pin-input-sm:focus { outline: none; border-color: var(--red); }
 
 #section-overview { position: relative; }
+
+/* ── Resolve Booking Modal ─────────────────────────────────────────────────── */
+.resolve-modal {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(0.97);
+  width: min(580px, calc(100vw - 32px));
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  z-index: 10001;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.resolve-modal.open {
+  opacity: 1;
+  pointer-events: all;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.resolve-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 24px 24px 0;
+  gap: 12px;
+}
+.resolve-modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 4px;
+}
+.resolve-modal-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* 5 option cards — 2-column grid, last card spans full width */
+.resolve-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 20px 24px;
+}
+.resolve-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 14px 16px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.resolve-opt:hover { border-color: var(--border-light); }
+.resolve-opt.active {
+  border-color: var(--red);
+  background: rgba(255,45,120,0.06);
+}
+.resolve-opt--wide { grid-column: 1 / -1; flex-direction: row; align-items: center; }
+.resolve-opt--wide .resolve-opt-desc { margin-left: auto; text-align: right; }
+
+.resolve-opt-icon {
+  font-size: 16px;
+  font-weight: 700;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 2px;
+  font-style: normal;
+  flex-shrink: 0;
+}
+.resolve-opt--wide .resolve-opt-icon { margin-bottom: 0; margin-right: 10px; }
+.resolve-opt-icon--green { background: rgba(16,185,129,0.15); color: #10B981; }
+.resolve-opt-icon--red   { background: rgba(255,45,120,0.15);  color: var(--red); }
+.resolve-opt-icon--amber { background: rgba(245,158,11,0.15); color: #F59E0B; }
+.resolve-opt-icon--blue  { background: rgba(59,130,246,0.15);  color: #3B82F6; }
+
+.resolve-opt-label {
+  font-size: 13px; font-weight: 600; color: var(--text);
+}
+.resolve-opt-desc {
+  font-size: 11px; color: var(--text-muted); line-height: 1.4;
+}
+
+/* Details panel */
+.resolve-details {
+  margin: 0 24px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+.resolve-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+  color: var(--text-sec);
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.resolve-detail-row:last-of-type { border-bottom: none; }
+.resolve-detail-row.resolve-detail-total {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  border-bottom: none;
+  font-weight: 600;
+}
+.resolve-detail-label { color: var(--text-muted); }
+.resolve-detail-muted { color: var(--text-muted); font-size: 12px; }
+.resolve-detail-amount { color: #10B981; font-size: 16px; font-weight: 700; }
+.resolve-detail-amount--zero { color: var(--text-muted); }
+.resolve-detail-note {
+  font-size: 12px; color: var(--text-muted);
+  margin: 10px 0 0; line-height: 1.5;
+}
+
+/* Cancellation policy block */
+.resolve-policy-block {
+  background: rgba(245,158,11,0.06);
+  border: 1px solid rgba(245,158,11,0.2);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.resolve-policy-label {
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: #F59E0B; margin-bottom: 6px;
+}
+.resolve-policy-text {
+  font-size: 12px; color: var(--text-sec);
+  line-height: 1.55; margin-bottom: 8px;
+}
+.resolve-policy-applied {
+  font-size: 12px; font-weight: 600;
+  color: var(--text);
+}
+
+.resolve-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px 24px;
+}
+
+/* ── Chat button: move to bottom-right on host dashboard to clear sidebar ── */
+/* body # selector has higher specificity than # alone — wins regardless of CSS load order */
+@media (min-width: 769px) {
+  body #gnv-chat-btn   { left: auto; right: 28px; }
+  body #gnv-chat-panel { left: auto; right: 28px; }
+}

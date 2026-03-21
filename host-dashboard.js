@@ -1361,6 +1361,245 @@ function markPlayedOff(id) {
   openHostRatingModal(id);
 }
 
+// ─── RESOLVE BOOKING MODAL ────────────────────────────────────────────────────
+
+let _resolveTargetId = null;
+let _resolveType     = null;
+
+function parseCancelPolicy(policyText, daysUntilShow) {
+  // Extract "more than X days before" thresholds — policies follow consistent patterns
+  const moreThans = [...(policyText || '').matchAll(/more than (\d+) days? before/gi)]
+    .map(m => parseInt(m[1]));
+  const fullCutoff = moreThans[0] || 30;   // days for full refund
+  const halfCutoff = moreThans[1] || 7;    // days for 50% refund
+  let refundPct, explanation;
+  if (daysUntilShow > fullCutoff) {
+    refundPct = 100;
+    explanation = `${daysUntilShow} days before event — more than ${fullCutoff} days: full deposit refunded to artist`;
+  } else if (daysUntilShow > halfCutoff) {
+    refundPct = 50;
+    explanation = `${daysUntilShow} days before event — within ${fullCutoff} days: 50% deposit refunded to artist`;
+  } else {
+    refundPct = 0;
+    explanation = daysUntilShow <= 0
+      ? `Show date has passed — deposit forfeited in full per cancellation policy`
+      : `${daysUntilShow} days before event — within ${halfCutoff} days: deposit forfeited in full per policy`;
+  }
+  return { refundPct, fullCutoff, halfCutoff, explanation };
+}
+
+function openResolveModal(resId) {
+  const r = RESERVATIONS.find(x => x.id === resId);
+  if (!r) return;
+  _resolveTargetId = resId;
+  _resolveType = null;
+  const artistName = r.bandName ? `${r.guest} / ${r.bandName}` : r.guest;
+  document.getElementById('resolveModalSub').textContent =
+    `${r.property} · ${artistName} · ${fmt(r.checkin)}`;
+  document.querySelectorAll('.resolve-opt').forEach(b => b.classList.remove('active'));
+  document.getElementById('resolveDetails').style.display = 'none';
+  const confirmBtn = document.getElementById('resolveConfirmBtn');
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = 'Select an option above';
+  document.getElementById('resolveOverlay').classList.add('open');
+  document.getElementById('resolveModal').classList.add('open');
+}
+
+function closeResolveModal() {
+  document.getElementById('resolveOverlay').classList.remove('open');
+  document.getElementById('resolveModal').classList.remove('open');
+  _resolveTargetId = null;
+  _resolveType = null;
+}
+
+function selectResolutionType(type) {
+  _resolveType = type;
+  document.querySelectorAll('.resolve-opt').forEach(b =>
+    b.classList.toggle('active', b.dataset.type === type));
+
+  const r = RESERVATIONS.find(x => x.id === _resolveTargetId);
+  if (!r) return;
+
+  const deposit  = r.total * 0.20;
+  const fee      = r.total * 0.05;
+  const venueNet = Math.round(deposit - fee);          // 15% of total (standard payout)
+
+  const showDate = new Date(r.checkin + 'T00:00:00');
+  const today    = new Date(); today.setHours(0,0,0,0);
+  const daysUntilShow = Math.floor((showDate - today) / (1000 * 60 * 60 * 24));
+
+  const venue  = HOST_LISTINGS.find(l => l.title === r.property);
+  const policy = venue?.cancellationPolicy || '';
+
+  const detailsEl = document.getElementById('resolveDetails');
+  detailsEl.style.display = 'block';
+
+  const confirmBtn = document.getElementById('resolveConfirmBtn');
+  confirmBtn.disabled = false;
+
+  const confirmLabels = {
+    'played':        'Confirm — release $' + venueNet.toLocaleString() + ' to you',
+    'host-cancel':   'Confirm — refund artist $' + Math.round(deposit).toLocaleString(),
+    'artist-cancel': 'Confirm — apply cancellation terms',
+    'mutual':        'Confirm — apply cancellation terms',
+    'postponed':     'Confirm — move to new date',
+  };
+  confirmBtn.textContent = confirmLabels[type] || 'Confirm resolution';
+
+  if (type === 'played') {
+    detailsEl.innerHTML = `
+      <div class="resolve-detail-row">
+        <span class="resolve-detail-label">Deposit held</span>
+        <span>$${Math.round(deposit).toLocaleString()} (20% of booking total)</span>
+      </div>
+      <div class="resolve-detail-row">
+        <span class="resolve-detail-label">GigNVenue fee</span>
+        <span class="resolve-detail-muted">−$${Math.round(fee).toLocaleString()} (5% of booking total)</span>
+      </div>
+      <div class="resolve-detail-row resolve-detail-total">
+        <span class="resolve-detail-label">Released to you</span>
+        <span class="resolve-detail-amount">$${venueNet.toLocaleString()}</span>
+      </div>
+      <p class="resolve-detail-note">Funds transfer within 24 hours of confirmation.</p>`;
+
+  } else if (type === 'host-cancel') {
+    detailsEl.innerHTML = `
+      <div class="resolve-detail-row">
+        <span class="resolve-detail-label">Artist deposit refund</span>
+        <span>$${Math.round(deposit).toLocaleString()} — full 20% returned to artist</span>
+      </div>
+      <div class="resolve-detail-row">
+        <span class="resolve-detail-label">Your venue fee</span>
+        <span class="resolve-detail-muted">Waived — no venue fee charged on host cancellations</span>
+      </div>
+      <div class="resolve-detail-row resolve-detail-total">
+        <span class="resolve-detail-label">Released to you</span>
+        <span class="resolve-detail-amount resolve-detail-amount--zero">$0</span>
+      </div>
+      <p class="resolve-detail-note">GigNVenue retains the booking fee already collected from the artist. The artist's deposit is returned in full.</p>`;
+
+  } else if (type === 'artist-cancel' || type === 'mutual') {
+    const parsed        = parseCancelPolicy(policy, daysUntilShow);
+    const artistRefund  = Math.round(deposit * parsed.refundPct / 100);
+    const remaining     = deposit - artistRefund;
+    const gnvFee        = Math.min(Math.round(fee), Math.round(remaining));
+    const venuePayout   = Math.max(0, Math.round(remaining - fee));
+
+    detailsEl.innerHTML = `
+      <div class="resolve-policy-block">
+        <div class="resolve-policy-label">Your cancellation policy</div>
+        <div class="resolve-policy-text">${policy || 'No cancellation policy set for this venue.'}</div>
+        <div class="resolve-policy-applied">↳ ${parsed.explanation}</div>
+      </div>
+      <div class="resolve-detail-row">
+        <span class="resolve-detail-label">Deposit held</span>
+        <span>$${Math.round(deposit).toLocaleString()}</span>
+      </div>
+      <div class="resolve-detail-row">
+        <span class="resolve-detail-label">Artist refund (${parsed.refundPct}%)</span>
+        <span class="resolve-detail-muted">−$${artistRefund.toLocaleString()} returned to artist</span>
+      </div>
+      ${gnvFee > 0 ? `
+      <div class="resolve-detail-row">
+        <span class="resolve-detail-label">GigNVenue fee (5%)</span>
+        <span class="resolve-detail-muted">−$${gnvFee.toLocaleString()}</span>
+      </div>` : ''}
+      <div class="resolve-detail-row resolve-detail-total">
+        <span class="resolve-detail-label">Released to you</span>
+        <span class="resolve-detail-amount${venuePayout === 0 ? ' resolve-detail-amount--zero' : ''}">$${venuePayout.toLocaleString()}</span>
+      </div>
+      ${type === 'mutual' ? '<p class="resolve-detail-note">Mutually agreed cancellation — the same cancellation policy terms apply as for an artist-initiated cancellation.</p>' : ''}`;
+
+  } else if (type === 'postponed') {
+    const minDate = new Date(today);
+    minDate.setDate(minDate.getDate() + 1);
+    const minDateStr = minDate.toISOString().slice(0, 10);
+    confirmBtn.textContent = 'Confirm — move to new date';
+    confirmBtn.disabled = false;
+    detailsEl.innerHTML = `
+      <p class="resolve-detail-note" style="margin-bottom:16px">The deposit stays held and no funds are released. When the new show date passes, this booking will re-enter the resolution queue.</p>
+      <div class="p-field" style="margin-bottom:0">
+        <label>New show date</label>
+        <input type="date" id="postponeNewDate" min="${minDateStr}"
+          style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:14px;width:100%;box-sizing:border-box"
+          onchange="document.getElementById('resolveConfirmBtn').textContent='Confirm — move to ' + (this.value ? new Date(this.value+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : 'new date')"/>
+      </div>`;
+    confirmBtn.disabled = false;
+  }
+}
+
+function submitResolution() {
+  if (!_resolveTargetId || !_resolveType) return;
+  const r = RESERVATIONS.find(x => x.id === _resolveTargetId);
+  if (!r) return;
+
+  const deposit       = r.total * 0.20;
+  const fee           = r.total * 0.05;
+  const showDate      = new Date(r.checkin + 'T00:00:00');
+  const today         = new Date(); today.setHours(0,0,0,0);
+  const daysUntilShow = Math.floor((showDate - today) / (1000 * 60 * 60 * 24));
+  const venue         = HOST_LISTINGS.find(l => l.title === r.property);
+  const policy        = venue?.cancellationPolicy || '';
+
+  function refreshAll() {
+    syncCalendarFromBookings(); renderCalendar();
+    renderReservations(currentResFilter); updateConfirmedTabBadge();
+    renderOverview(); renderEarnings();
+  }
+
+  if (_resolveType === 'played') {
+    closeResolveModal();
+    markPlayedOff(_resolveTargetId);   // handles state, renders, toast, rating prompt
+
+  } else if (_resolveType === 'host-cancel') {
+    r.status      = 'cancelled';
+    r.cancelledBy = 'host';
+    r.cancelReason = 'Host canceled';
+    r.resolution  = 'host-cancel';
+    r.artistRefund = Math.round(deposit);
+    r.venueRelease = 0;
+    closeResolveModal();
+    refreshAll();
+    showDash(`Booking canceled — $${Math.round(deposit).toLocaleString()} deposit refunded to artist.`);
+
+  } else if (_resolveType === 'artist-cancel' || _resolveType === 'mutual') {
+    const parsed      = parseCancelPolicy(policy, daysUntilShow);
+    const artistRefund = Math.round(deposit * parsed.refundPct / 100);
+    const remaining   = deposit - artistRefund;
+    const venuePayout = Math.max(0, Math.round(remaining - fee));
+    r.status      = 'cancelled';
+    r.cancelledBy = _resolveType === 'mutual' ? 'mutual' : 'artist';
+    r.cancelReason = _resolveType === 'mutual' ? 'Mutually agreed cancellation' : 'Artist canceled';
+    r.resolution  = _resolveType;
+    r.artistRefund = artistRefund;
+    r.venueRelease = venuePayout;
+    closeResolveModal();
+    refreshAll();
+    const who  = _resolveType === 'mutual' ? 'Mutual cancellation' : 'Artist cancellation';
+    const msg  = [
+      who + ' recorded.',
+      artistRefund > 0 ? `$${artistRefund.toLocaleString()} returned to artist.` : 'No artist refund.',
+      venuePayout > 0  ? `$${venuePayout.toLocaleString()} released to you.`    : 'No venue payout.',
+    ].join(' ');
+    showDash(msg);
+
+  } else if (_resolveType === 'postponed') {
+    const newDateInput = document.getElementById('postponeNewDate');
+    const newDate = newDateInput?.value;
+    if (!newDate) { showDash('Please select a new show date.'); return; }
+    if (newDate <= new Date().toISOString().slice(0, 10)) {
+      showDash('New date must be in the future.'); return;
+    }
+    r.originalCheckin = r.originalCheckin || r.checkin;
+    r.checkin   = newDate;
+    r.postponed = true;
+    r.postponedAt = Date.now();
+    closeResolveModal();
+    refreshAll();
+    showDash(`Show postponed to ${fmt(newDate)}. Deposit held until the new show plays off.`);
+  }
+}
+
 // ─── RATINGS ─────────────────────────────────────────────────────────────────
 
 let BB_RATINGS = [];
@@ -3596,7 +3835,7 @@ function renderEarnings() {
 
   // Deposits in escrow table
   const escrowRows = [
-    // Shows needing confirmation (past) — sorted most recent first
+    // Shows needing resolution (show date passed) — sorted most recent first
     ...[...awaitingConf].sort((a,b) => new Date(b.checkin) - new Date(a.checkin)).map(r => `
         <tr style="background:rgba(245,158,11,0.05)">
           <td>${fmt(r.checkin)}</td>
@@ -3605,18 +3844,20 @@ function renderEarnings() {
           <td>$${r.total.toLocaleString()}</td>
           <td><strong>$${Math.round(r.total * 0.20).toLocaleString()}</strong></td>
           <td>
-            <button class="res-action-btn confirm-played-btn" onclick="confirmShowPlayed('${r.id}')">✓ Confirm played</button>
+            <button class="res-action-btn resolve-booking-btn" onclick="openResolveModal('${r.id}')">↪ Resolve booking</button>
           </td>
         </tr>`),
     // Upcoming shows — sorted soonest first
     ...[...upcoming].sort((a,b) => new Date(a.checkin) - new Date(b.checkin)).map(r => `
         <tr>
-          <td>${fmt(r.checkin)}</td>
+          <td>${r.postponed ? `${fmt(r.checkin)}<br><span style="font-size:11px;color:var(--text-muted)">orig. ${fmt(r.originalCheckin)}</span>` : fmt(r.checkin)}</td>
           <td>${r.property}</td>
           <td>${r.guest}${r.bandName ? ` <span style="color:var(--text-muted);font-size:12px">/ ${r.bandName}</span>` : ''}</td>
           <td>$${r.total.toLocaleString()}</td>
           <td><strong>$${Math.round(r.total * 0.20).toLocaleString()}</strong></td>
-          <td><span class="status-badge status-confirmed">Held</span></td>
+          <td>${r.postponed
+            ? `<span class="status-badge status-pending">Postponed</span>`
+            : `<span class="status-badge status-confirmed">Held</span>`}</td>
         </tr>`),
   ];
   document.getElementById('escrowTable').innerHTML = escrowRows.length
@@ -3654,14 +3895,32 @@ function renderEarnings() {
   document.getElementById('payoutTable').innerHTML = gnvHistory.length
     ? gnvHistory.map(r => {
         const isCancelled = r.status === 'cancelled';
+        const res = r.resolution;
+        // Determine badge label and class
+        let badgeClass, badgeLabel;
+        if (!isCancelled) {
+          badgeClass = 'status-completed'; badgeLabel = 'Released';
+        } else if (res === 'host-cancel') {
+          badgeClass = 'status-cancelled'; badgeLabel = 'Host canceled';
+        } else if (res === 'artist-cancel') {
+          badgeClass = 'status-cancelled'; badgeLabel = 'Artist canceled';
+        } else if (res === 'mutual') {
+          badgeClass = 'status-cancelled'; badgeLabel = 'Mutual cancel';
+        } else {
+          badgeClass = 'status-cancelled'; badgeLabel = r.cancelReason || 'Cancelled';
+        }
+        // Venue payout column
+        const venueCol = isCancelled
+          ? (r.venueRelease > 0 ? `$${r.venueRelease.toLocaleString()}` : '<span style="color:var(--text-muted)">—</span>')
+          : `$${(r.venueRelease || Math.round(r.total * 0.15)).toLocaleString()}`;
         return `
         <tr>
           <td>${fmt(r.checkin)}</td>
           <td>${r.property}</td>
           <td>${r.guest}${r.bandName ? ` <span style="color:var(--text-muted);font-size:12px">/ ${r.bandName}</span>` : ''}</td>
           <td>${isCancelled ? '<span style="color:var(--text-muted)">—</span>' : `$${r.total.toLocaleString()}`}</td>
-          <td>${isCancelled ? '<span style="color:var(--text-muted)">—</span>' : `$${Math.round(r.total * 0.20).toLocaleString()}`}</td>
-          <td><span class="status-badge ${isCancelled ? 'status-cancelled' : 'status-completed'}">${isCancelled ? 'Cancelled' : 'Released'}</span></td>
+          <td>${venueCol}</td>
+          <td><span class="status-badge ${badgeClass}">${badgeLabel}</span></td>
         </tr>`;
       }).join('')
     : '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px">No completed payouts yet</td></tr>';
