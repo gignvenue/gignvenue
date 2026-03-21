@@ -1995,7 +1995,7 @@ function openListing(id) {
     _venueMap = L.map('listingImgMap', {
       zoomControl: false, dragging: false, scrollWheelZoom: false,
       doubleClickZoom: false, touchZoom: false, keyboard: false
-    }).setView([l.lat, l.lng], 14);
+    }).setView([l.lat, l.lng], 13);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/attributions">CARTO</a>',
       maxZoom: 19
