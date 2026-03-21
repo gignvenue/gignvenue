@@ -488,20 +488,74 @@ img { display: block; }
 
 /* ── EARNINGS CHART ── */
 #earningsChart { width: 100%; }
-.chart-bars {
-  display: flex; align-items: flex-end; gap: 6px;
-  height: 120px; padding-top: 20px;
-}
-.chart-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.chart-bar {
-  width: 100%; border-radius: 4px 4px 0 0;
-  background: rgba(255,45,120,0.2);
-  transition: background 0.2s;
-  cursor: pointer;
+.chart-area { width: 100%; }
+
+.chart-plot {
   position: relative;
+  height: 140px;
+  margin-left: 40px;
 }
-.chart-bar:hover { background: var(--red); }
-.chart-bar-label { font-size: 10px; color: var(--text-muted); }
+
+/* gridlines layer */
+.chart-gridlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.chart-gl {
+  position: absolute;
+  left: -40px; right: 0;
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+}
+.chart-gl > span {
+  position: absolute;
+  left: 0; top: -8px;
+  width: 36px;
+  font-size: 9px;
+  color: var(--text-muted);
+  text-align: right;
+  line-height: 1;
+}
+
+/* bars layer */
+.chart-bars {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 100%;
+}
+.chart-bar-col {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  cursor: default;
+}
+.chart-bar {
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  overflow: hidden;
+  transition: opacity 0.15s;
+}
+.chart-bar:hover { opacity: 0.85; }
+
+/* month label row */
+.chart-label-row {
+  display: flex;
+  gap: 4px;
+  margin-left: 40px;
+  margin-top: 4px;
+}
+.chart-label-row span {
+  flex: 1;
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-muted);
+}
 
 /* ── FILTER TABS ── */
 .filter-tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
