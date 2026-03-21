@@ -1638,7 +1638,10 @@ function goToMessageWithGuest(rid) {
 // ─── LISTINGS MANAGER ─────────────────────────────────────────────────────────
 
 function renderListingsManager() {
-  document.getElementById('listingsManager').innerHTML = HOST_LISTINGS.map(l => `
+  const active   = HOST_LISTINGS.filter(l => !l.archived);
+  const archived = HOST_LISTINGS.filter(l =>  l.archived);
+
+  const activeHtml = active.map(l => `
     <div class="listing-mgr-card" id="lmgr-${l.id}">
       <img src="${l.img}" alt="${l.title}" class="listing-mgr-img" onerror="this.style.background='#1C1C1C'"/>
       <div class="listing-mgr-body">
@@ -1664,10 +1667,47 @@ function renderListingsManager() {
         <div class="lma-row">
           <button class="lma-btn lma-promote${l.promoted ? ' active' : ''}" onclick="togglePromoted('${l.id}')" title="${l.promoted ? 'Remove promotion' : 'Promote listing — boosts placement in search results'}">⚡ ${l.promoted ? 'Promoted' : 'Promote'}</button>
           <button class="lma-btn" onclick="openVenueCalendar('${l.id}')" title="Manage calendar">📅 Calendar</button>
-          <button class="lma-btn danger" onclick="deleteListing('${l.id}')" title="Delete listing">🗑️ Delete</button>
+          <button class="lma-btn danger" onclick="deleteListing('${l.id}')" title="Archive listing">📦 Archive</button>
         </div>
       </div>
     </div>`).join('');
+
+  const archivedHtml = archived.length ? `
+    <div class="lmgr-archived-section">
+      <button class="archived-toggle-btn" id="lmgrArchivedToggle" onclick="toggleArchivedListings()">
+        ▸ Archived venues (${archived.length})
+      </button>
+      <div id="lmgrArchivedList" style="display:none">
+        ${archived.map(l => `
+          <div class="listing-mgr-card listing-mgr-card--archived" id="lmgr-${l.id}">
+            <img src="${l.img}" alt="${l.title}" class="listing-mgr-img" onerror="this.style.background='#1C1C1C'" style="opacity:.45"/>
+            <div class="listing-mgr-body">
+              <div class="listing-mgr-title" style="opacity:.55">${l.title}</div>
+              <div class="listing-mgr-loc" style="opacity:.45">${l.location} · Up to ${(l.capacity||'?').toLocaleString()} guests</div>
+              <div class="listing-mgr-meta">
+                <span class="listing-mgr-price" style="opacity:.45">$${l.price.toLocaleString()} <span>/ night</span></span>
+                <span style="font-size:11px;color:var(--text-muted);margin-left:8px">Archived</span>
+              </div>
+            </div>
+            <div class="listing-mgr-actions" style="justify-content:center">
+              <div class="lma-row">
+                <button class="lma-btn primary" onclick="restoreListing('${l.id}')">↩ Restore</button>
+              </div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>` : '';
+
+  document.getElementById('listingsManager').innerHTML = activeHtml + archivedHtml;
+}
+
+function toggleArchivedListings() {
+  const list = document.getElementById('lmgrArchivedList');
+  const btn  = document.getElementById('lmgrArchivedToggle');
+  if (!list) return;
+  const showing = list.style.display !== 'none';
+  list.style.display = showing ? 'none' : '';
+  if (btn) btn.textContent = (showing ? '▸' : '▾') + ` Archived venues (${HOST_LISTINGS.filter(l => l.archived).length})`;
 }
 
 function togglePromoted(id) {
@@ -2008,19 +2048,27 @@ function deleteListing(id) {
   if (!l) return;
   _deleteTargetId = id;
   document.getElementById('deleteConfirmText').textContent =
-    `This will permanently remove "${l.title}" from your venues. This action cannot be undone.`;
+    `"${l.title}" will be hidden from your active listings. You can restore it at any time.`;
   document.getElementById('deleteConfirmOverlay').classList.remove('hidden');
   document.getElementById('deleteConfirmModal').classList.remove('hidden');
 }
 
 function confirmDelete() {
   if (!_deleteTargetId) return;
-  const idx = HOST_LISTINGS.findIndex(x => x.id === _deleteTargetId);
-  const title = HOST_LISTINGS[idx]?.title || 'Venue';
-  if (idx > -1) HOST_LISTINGS.splice(idx, 1);
+  const l = HOST_LISTINGS.find(x => x.id === _deleteTargetId);
+  if (l) { l.archived = true; l.active = false; }
+  const title = l?.title || 'Venue';
   closeDeleteModal();
   renderListingsManager();
-  showDash(`"${title}" has been deleted.`);
+  showDash(`"${title}" has been archived. You can restore it from the archived section.`);
+}
+
+function restoreListing(id) {
+  const l = HOST_LISTINGS.find(x => x.id === id);
+  if (!l) return;
+  l.archived = false;
+  renderListingsManager();
+  showDash(`"${l.title}" has been restored to your active listings.`);
 }
 
 function closeDeleteModal() {
