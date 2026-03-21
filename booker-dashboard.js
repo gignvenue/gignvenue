@@ -1450,6 +1450,8 @@ function populateProfile() {
   document.getElementById('pfYoutube').value        = profile.youtube      || '';
   document.getElementById('pfSpotify').value        = profile.spotify      || '';
   document.getElementById('pfSoundcloud').value     = profile.soundcloud   || '';
+  document.getElementById('pfSpotifyEmbed').checked    = profile.spotifyEmbed    !== false;
+  document.getElementById('pfSoundcloudEmbed').checked = profile.soundcloudEmbed !== false;
 }
 
 function saveProfile(e) {
@@ -1479,8 +1481,10 @@ function saveProfile(e) {
     facebook:     document.getElementById('pfFacebook').value.trim(),
     tiktok:       document.getElementById('pfTiktok').value.trim(),
     youtube:      document.getElementById('pfYoutube').value.trim(),
-    spotify:      document.getElementById('pfSpotify').value.trim(),
-    soundcloud:   document.getElementById('pfSoundcloud').value.trim(),
+    spotify:         document.getElementById('pfSpotify').value.trim(),
+    soundcloud:      document.getElementById('pfSoundcloud').value.trim(),
+    spotifyEmbed:    document.getElementById('pfSpotifyEmbed').checked,
+    soundcloudEmbed: document.getElementById('pfSoundcloudEmbed').checked,
   };
   const newPw = document.getElementById('pfNewPw').value;
   const conf  = document.getElementById('pfConfirmPw').value;

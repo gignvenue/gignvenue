@@ -245,30 +245,40 @@ function render() {
     if (!url) return '';
     return `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23FF385C&auto_play=false&hide_related=false&show_comments=false&show_user=true&visual=true`;
   }
-  const spotifyEmbed    = buildSpotifyEmbed(profile?.spotify);
-  const soundcloudEmbed = buildSoundCloudEmbed(profile?.soundcloud);
+  const spotifyEmbedUrl    = buildSpotifyEmbed(profile?.spotify);
+  const soundcloudEmbedUrl = buildSoundCloudEmbed(profile?.soundcloud);
+  const showSpotifyEmbed    = spotifyEmbedUrl    && profile?.spotifyEmbed    !== false;
+  const showSoundcloudEmbed = soundcloudEmbedUrl && profile?.soundcloudEmbed !== false;
 
-  const musicSection = (spotifyEmbed || soundcloudEmbed) ? `
+  const musicParts = [];
+  if (showSpotifyEmbed) {
+    musicParts.push(`<div style="margin-bottom:${showSoundcloudEmbed ? '16px' : '0'}">
+      <iframe src="${spotifyEmbedUrl}" width="100%" height="352" frameborder="0"
+        allowfullscreen allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+        loading="lazy" style="border-radius:12px;display:block"></iframe>
+    </div>`);
+  }
+  if (showSoundcloudEmbed) {
+    musicParts.push(`<div>
+      <iframe width="100%" height="300" scrolling="no" frameborder="no" allow="autoplay"
+        src="${soundcloudEmbedUrl}" style="border-radius:12px;display:block"></iframe>
+    </div>`);
+  }
+  const musicSection = musicParts.length ? `
     <div class="ap-section">
       <div class="ap-section-title">Music</div>
-      ${spotifyEmbed ? `<div style="margin-bottom:${soundcloudEmbed ? '16px' : '0'}">
-        <iframe src="${spotifyEmbed}" width="100%" height="352" frameborder="0"
-          allowfullscreen allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-          loading="lazy" style="border-radius:12px;display:block"></iframe>
-      </div>` : ''}
-      ${soundcloudEmbed ? `<div>
-        <iframe width="100%" height="300" scrolling="no" frameborder="no" allow="autoplay"
-          src="${soundcloudEmbed}" style="border-radius:12px;display:block"></iframe>
-      </div>` : ''}
+      ${musicParts.join('')}
     </div>` : '';
 
-  // Social links (Spotify + SoundCloud covered by embed players above)
+  // Social links — Spotify/SoundCloud included here when embed is off
   const socials = [
     socialBtn(profile?.instagram,  'Instagram',  '📸'),
     socialBtn(profile?.youtube,    'YouTube',    '▶️'),
     socialBtn(profile?.tiktok,     'TikTok',     '🎬'),
     socialBtn(profile?.facebook,   'Facebook',   '📘'),
     socialBtn(profile?.website,    'Website',    '🌐'),
+    (!showSpotifyEmbed    && profile?.spotify)    ? socialBtn(profile.spotify,    'Spotify',    '🎵') : '',
+    (!showSoundcloudEmbed && profile?.soundcloud) ? socialBtn(profile.soundcloud, 'SoundCloud', '☁️') : '',
   ].filter(Boolean).join('');
 
   const socialSection = socials ? `
