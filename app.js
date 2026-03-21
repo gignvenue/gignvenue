@@ -770,6 +770,44 @@ function filterByCategory(catId) {
 
 // ─── FILTER LOGIC ─────────────────────────────────────────────────────────────
 
+// ─── SAVED SEARCHES ───────────────────────────────────────────────────────────
+
+function isFilterActive() {
+  return filterState.category !== 'all'
+    || filterState.priceMax < 25000
+    || filterState.capacityMin > 0
+    || filterState.amenities.size > 0
+    || !!filterState.location
+    || !!filterState.checkin;
+}
+
+function saveCurrentSearch() {
+  const searches = (() => { try { return JSON.parse(localStorage.getItem('bb_saved_searches') || '[]'); } catch(e) { return []; } })();
+  const snap = {
+    category    : filterState.category,
+    priceMin    : filterState.priceMin,
+    priceMax    : filterState.priceMax,
+    capacityMin : filterState.capacityMin,
+    capacityMax : filterState.capacityMax,
+    amenities   : [...filterState.amenities],
+    location    : filterState.location,
+    checkin     : filterState.checkin,
+    savedAt     : Date.now(),
+  };
+  // Avoid exact duplicates
+  const isDupe = searches.some(s =>
+    s.category === snap.category && s.location === snap.location &&
+    s.priceMax === snap.priceMax && s.capacityMin === snap.capacityMin
+  );
+  if (!isDupe) {
+    searches.push(snap);
+    try { localStorage.setItem('bb_saved_searches', JSON.stringify(searches)); } catch(e) {}
+  }
+  const btn = document.getElementById('saveSearchBar')?.querySelector('.save-search-btn');
+  if (btn) { btn.textContent = '✓ Saved'; btn.disabled = true; }
+  setTimeout(() => { if (btn) { btn.textContent = 'Save this search'; btn.disabled = false; } }, 2000);
+}
+
 function applyFilters() {
   let results = LISTINGS.filter(l => {
     if (l.active === false) return false; // host has unlisted this venue
@@ -804,6 +842,8 @@ function applyFilters() {
   renderListings(sortListings(_currentResults), _currentPage);
   updateMapMarkers(results);
   document.getElementById('filterApplyBtn').textContent = 'Show venues';
+  const bar = document.getElementById('saveSearchBar');
+  if (bar) bar.style.display = isFilterActive() ? 'flex' : 'none';
 }
 
 // ─── AMENITY FILTER LIST (with search) ───────────────────────────────────────
@@ -1977,9 +2017,10 @@ function updateModalBookingTotal() {
   if (!el) return;
   el.innerHTML = `
     <div class="booking-fee-row"><span>Venue fee</span><span>$${l.price.toLocaleString()} / night</span></div>
-    <div class="booking-fee-row"><span>Booking fee <span class="fee-note">(non-refundable · due on submission)</span></span><span>$${bookingFee.toLocaleString()}</span></div>
-    <div class="booking-fee-row"><span>Deposit <span class="fee-note">(due on approval)</span></span><span>$${deposit.toLocaleString()}</span></div>
-    <div class="booking-fee-total"><span>Due on submission</span><span>$${bookingFee.toLocaleString()}</span></div>`;
+    <div class="booking-fee-row"><span>Deposit <span class="fee-note">(20% · due on approval)</span></span><span>$${deposit.toLocaleString()}</span></div>
+    <div class="booking-fee-row"><span>Booking fee <span class="fee-note">(8% · non-refundable)</span></span><span>$${bookingFee.toLocaleString()}</span></div>
+    <div class="booking-fee-total"><span>Due on approval</span><span>$${(deposit + bookingFee).toLocaleString()}</span></div>
+    <p style="font-size:11px;color:var(--text-muted);margin:8px 0 0;line-height:1.4">No payment required to submit a request.</p>`;
 }
 
 // ─── LISTING DETAIL MODAL ────────────────────────────────────────────────────

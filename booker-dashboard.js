@@ -51,6 +51,26 @@ let SAVED_VENUES = [];
   }
 })();
 
+// ─── WAITLIST ─────────────────────────────────────────────────────────────────
+
+let WAITLIST = [];
+try { WAITLIST = JSON.parse(localStorage.getItem('bb_waitlist') || '[]'); } catch(e) {}
+function saveWaitlist() { try { localStorage.setItem('bb_waitlist', JSON.stringify(WAITLIST)); } catch(e) {} }
+
+function isOnWaitlist(reqId) { return WAITLIST.some(w => w.reqId === reqId); }
+
+function toggleWaitlist(reqId, venueId, date) {
+  if (isOnWaitlist(reqId)) {
+    WAITLIST = WAITLIST.filter(w => w.reqId !== reqId);
+    showDash('Removed from waitlist.');
+  } else {
+    WAITLIST.push({ reqId, venueId, date, addedAt: Date.now() });
+    showDash('Added to waitlist — we\'ll let you know if this date opens up.');
+  }
+  saveWaitlist();
+  renderRequests(requestFilter);
+}
+
 // ─── STRIKE SYSTEM ────────────────────────────────────────────────────────────
 
 const _STRIKE_KEY = 'bb_strikes';
@@ -707,8 +727,12 @@ function renderRequests(filter) {
                <button class="res-action-btn-decline" onclick="openDeclineModal('${r.id}')">Decline this booking</button>`
             : !passed && r.status === 'approved' && r.paymentStatus === 'paid'
             ? `<button class="res-action-btn" onclick="openBookerAgreement('${r.id}')" style="color:#34d399">📄 Agreement</button>`
-            : canArchive && !isArchived
-            ? `<button class="res-action-btn req-archive-btn" onclick="archiveRequest('${r.id}')">Archive</button>`
+            : !passed && r.status === 'declined' && !isArchived
+            ? `<button class="res-action-btn req-archive-btn" onclick="archiveRequest('${r.id}')">Archive</button>
+               <button class="res-action-btn req-waitlist-btn${isOnWaitlist(r.id) ? ' wl-active' : ''}" onclick="toggleWaitlist('${r.id}','${r.venueId}','${r.date}')">${isOnWaitlist(r.id) ? '✓ On waitlist' : 'Join waitlist'}</button>`
+            : r.status === 'cancelled' && !isArchived
+            ? `<button class="res-action-btn req-archive-btn" onclick="archiveRequest('${r.id}')">Archive</button>
+               <a class="res-action-btn req-rebook-btn" href="index.html?venue=${r.venueId}">Rebook a date →</a>`
             : isArchived
             ? `<button class="res-action-btn req-archive-btn" onclick="unarchiveRequest('${r.id}')">Unarchive</button>`
             : `<button class="res-action-btn" onclick="showDash('${v?.title || 'Venue'} · ${r.date}')">View</button>`}
@@ -1342,8 +1366,43 @@ function unsaveVenue(id) {
 
 // ─── PROFILE ─────────────────────────────────────────────────────────────────
 
+// ─── SAVED SEARCHES ───────────────────────────────────────────────────────────
+
+let SAVED_SEARCHES = [];
+try { SAVED_SEARCHES = JSON.parse(localStorage.getItem('bb_saved_searches') || '[]'); } catch(e) {}
+function saveSavedSearches() { try { localStorage.setItem('bb_saved_searches', JSON.stringify(SAVED_SEARCHES)); } catch(e) {} }
+
+function deleteSavedSearch(idx) {
+  SAVED_SEARCHES.splice(idx, 1);
+  saveSavedSearches();
+  renderSavedSearches();
+}
+
+function renderSavedSearches() {
+  const el = document.getElementById('savedSearchesList');
+  if (!el) return;
+  if (!SAVED_SEARCHES.length) {
+    el.innerHTML = '<p style="font-size:13px;color:var(--text-muted);margin:0">No saved searches yet. Use filters on the browse page and click "Save this search."</p>';
+    return;
+  }
+  el.innerHTML = SAVED_SEARCHES.map((s, i) => {
+    const parts = [];
+    if (s.location) parts.push(s.location);
+    if (s.category && s.category !== 'all') parts.push(s.category);
+    if (s.priceMax && s.priceMax < 25000) parts.push(`Up to $${s.priceMax.toLocaleString()}/night`);
+    if (s.capacityMin && s.capacityMin > 0) parts.push(`${s.capacityMin.toLocaleString()}+ capacity`);
+    if (s.amenities && s.amenities.length) parts.push(`${s.amenities.length} amenity filter${s.amenities.length > 1 ? 's' : ''}`);
+    const label = parts.length ? parts.join(' · ') : 'All venues';
+    return `<div class="saved-search-row">
+      <a class="saved-search-label" href="index.html?ss=${encodeURIComponent(JSON.stringify(s))}">${label}</a>
+      <button class="saved-search-delete" onclick="deleteSavedSearch(${i})" title="Remove">✕</button>
+    </div>`;
+  }).join('');
+}
+
 function populateProfile() {
   renderProfileCards();
+  renderSavedSearches();
   const profileAvatarEl = document.getElementById('profileAvatar');
   profileAvatarEl.src     = profile.avatar || '';
   profileAvatarEl.onerror = () => {

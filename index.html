@@ -331,6 +331,10 @@
       <h1 class="listings-hero-title">Find and book live music venues for your next gig</h1>
       <p class="listings-hero-sub">For artists and venue owners</p>
     </div>
+    <div id="saveSearchBar" class="save-search-bar" style="display:none">
+      <span class="save-search-label">Filters active</span>
+      <button class="save-search-btn" onclick="saveCurrentSearch()">Save this search</button>
+    </div>
     <div class="listings-sort-bar">
       <span id="listingsCount" class="listings-count"></span>
       <select id="sortSelect" class="sort-select" onchange="setSortOrder(this.value)">

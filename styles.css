@@ -936,6 +936,13 @@ ul { list-style: none; }
 }
 .booking-reserve-btn:hover  { opacity: 0.9; }
 .booking-reserve-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+/* Save this search bar */
+.save-search-bar { display: flex; align-items: center; gap: 12px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; margin-bottom: 12px; }
+.save-search-label { font-size: 13px; color: var(--text-muted); flex: 1; }
+.save-search-btn { background: var(--red); color: #fff; border: none; border-radius: 7px; padding: 6px 14px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.save-search-btn:hover { opacity: .88; }
+.save-search-btn:disabled { opacity: .6; cursor: default; }
+
 .vrf-cancel-policy-box { background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; }
 .vrf-cancel-policy-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); margin-bottom: 7px; }
 .vrf-cancel-policy-text { font-size: 12px; color: var(--text-secondary); line-height: 1.55; max-height: 90px; overflow-y: auto; }
