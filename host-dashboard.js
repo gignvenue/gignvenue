@@ -2998,7 +2998,7 @@ function confirmShowPlayed(resId) {
 
 function downloadEarningsCSV() {
   const today = new Date();
-  const rows = [['Date','Venue','Artist / Event','Source','Gross ($)','Net / Logged ($)','Status','Notes']];
+  const rows = [['Date','Venue','Artist / Event','Source','Gross ($)','Deposit Released / Logged ($)','Status','Notes']];
 
   // GigNVenue history
   RESERVATIONS.filter(r => !r.hostGenerated && (r.status === 'completed' || r.status === 'cancelled'))
@@ -3011,7 +3011,7 @@ function downloadEarningsCSV() {
         r.bandName ? `${r.guest} / ${r.bandName}` : r.guest,
         'GigNVenue',
         cancelled ? '' : r.total,
-        cancelled ? '' : Math.round(r.total * 0.92),
+        cancelled ? '' : Math.round(r.total * 0.20),
         cancelled ? 'Cancelled' : 'Released',
         ''
       ]);
