@@ -1777,6 +1777,9 @@ function onTourRiderFileChange(event) {
 function renderTourPlanner() {
   const list = document.getElementById('tourStopsList');
   if (!list) return;
+
+  // Initialise map immediately so pin-drop is available without needing to search first
+  setTimeout(() => { initTourMap(); if (_tourMap) _tourMap.invalidateSize(); }, 80);
   list.innerHTML = TOUR_STOPS.map((stop, i) => `
     <div class="tour-stop-row" data-idx="${i}">
       <input type="text" class="tour-city-input" value="${stop.city}"
@@ -1811,15 +1814,130 @@ function removeTourStop(idx) {
 
 let _tourMap = null;
 let _tourMapLayers = [];
+let _pendingMapPin = null;
+
+async function reverseGeocode(lat, lng) {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+      { headers: { 'Accept-Language': 'en', 'User-Agent': 'GigNVenue/1.0' } }
+    );
+    const data = await res.json();
+    if (data && data.address) {
+      const city  = data.address.city || data.address.town || data.address.village || data.address.county || '';
+      const state = data.address.state || '';
+      if (city && state) return `${city}, ${state}`;
+      if (data.display_name) return data.display_name.split(',').slice(0, 2).join(',').trim();
+    }
+  } catch(e) {}
+  return '';
+}
+
+async function onTourMapClick(e) {
+  // Remove any pending unconfirmed pin
+  if (_pendingMapPin) { _pendingMapPin.remove(); _pendingMapPin = null; }
+  _tourMap.closePopup();
+
+  const { lat, lng } = e.latlng;
+
+  // Drop a pulsing placeholder pin while we reverse-geocode
+  const loadEl = document.createElement('div');
+  loadEl.style.cssText = 'width:22px;height:22px;border-radius:50%;background:rgba(255,56,92,0.35);border:2px dashed #FF385C;box-sizing:border-box';
+  _pendingMapPin = L.marker([lat, lng], {
+    icon: L.divIcon({ className:'', html: loadEl, iconSize:[22,22], iconAnchor:[11,11] })
+  }).addTo(_tourMap);
+
+  const city = await reverseGeocode(lat, lng);
+  if (!city) { _pendingMapPin.remove(); _pendingMapPin = null; return; }
+
+  // Upgrade pin to numbered style (dimmed until confirmed)
+  _pendingMapPin.remove();
+  const pinEl = document.createElement('div');
+  pinEl.style.cssText = 'background:#FF385C;color:#fff;font-size:12px;font-weight:700;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.6);opacity:0.55';
+  pinEl.textContent = TOUR_STOPS.filter(s => s.city).length + 1;
+  _pendingMapPin = L.marker([lat, lng], {
+    icon: L.divIcon({ className:'', html: pinEl, iconSize:[28,28], iconAnchor:[14,14] })
+  }).addTo(_tourMap);
+
+  window._tourPendingStop = { lat, lng, city };
+  const today = new Date().toISOString().slice(0, 10);
+
+  L.popup({ closeOnClick: false, autoClose: false })
+    .setLatLng([lat, lng])
+    .setContent(`
+      <div style="min-width:215px;padding:2px 0">
+        <div style="font-size:13px;font-weight:600;color:#111;margin-bottom:10px">📍 ${city}</div>
+        <label style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.05em">Show date</label>
+        <input type="date" id="mapStopDate" min="${today}"
+          style="display:block;width:100%;margin-top:4px;margin-bottom:12px;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box"/>
+        <div style="display:flex;gap:8px">
+          <button onclick="confirmMapStop()"
+            style="flex:1;background:#FF385C;color:#fff;border:none;border-radius:6px;padding:8px;font-size:13px;font-weight:600;cursor:pointer">
+            Add stop
+          </button>
+          <button onclick="cancelMapStop()"
+            style="flex:1;background:#eee;color:#333;border:none;border-radius:6px;padding:8px;font-size:13px;cursor:pointer">
+            Cancel
+          </button>
+        </div>
+      </div>`)
+    .openOn(_tourMap);
+}
+
+function confirmMapStop() {
+  const pending = window._tourPendingStop;
+  if (!pending) return;
+  const dateEl = document.getElementById('mapStopDate');
+  const date = dateEl ? dateEl.value : '';
+  if (!date) { if (dateEl) dateEl.style.border = '1.5px solid #FF385C'; return; }
+
+  // If the only existing stop is empty, replace it; otherwise append
+  if (TOUR_STOPS.length === 1 && !TOUR_STOPS[0].city && !TOUR_STOPS[0].date) {
+    TOUR_STOPS[0] = { city: pending.city, date, lat: pending.lat, lng: pending.lng };
+  } else {
+    if (TOUR_STOPS.length >= 10) { showDash('Maximum 10 tour stops.'); return; }
+    TOUR_STOPS.push({ city: pending.city, date, lat: pending.lat, lng: pending.lng });
+  }
+
+  _tourMap.closePopup();
+  _pendingMapPin = null;
+  window._tourPendingStop = null;
+  renderTourPlanner();
+  searchTourVenues();
+}
+
+function cancelMapStop() {
+  if (_pendingMapPin) { _pendingMapPin.remove(); _pendingMapPin = null; }
+  window._tourPendingStop = null;
+  _tourMap.closePopup();
+}
 
 function initTourMap() {
   if (_tourMap) return;
   const el = document.getElementById('tourMap');
   if (!el || !window.L) return;
-  _tourMap = L.map('tourMap', { zoomControl: true });
+
+  // Show the map wrap before initialising so Leaflet can measure the container
+  const wrap = document.getElementById('tourMapWrap');
+  if (wrap) wrap.style.display = '';
+
+  _tourMap = L.map('tourMap', { zoomControl: true }).setView([39.5, -98.35], 4);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '© OpenStreetMap © CARTO', subdomains: 'abcd', maxZoom: 19
   }).addTo(_tourMap);
+
+  // Pin-drop hint
+  const hintControl = L.control({ position: 'bottomleft' });
+  hintControl.onAdd = () => {
+    const div = L.DomUtil.create('div', '');
+    div.style.cssText = 'background:rgba(0,0,0,0.65);color:#fff;padding:5px 12px;border-radius:20px;font-size:12px;pointer-events:none;margin-bottom:4px';
+    div.textContent = 'Click anywhere on the map to add a tour stop';
+    return div;
+  };
+  hintControl.addTo(_tourMap);
+
+  // Click-to-drop-pin
+  _tourMap.on('click', onTourMapClick);
 }
 
 function updateTourMap(stops, venueGroups, routeGeometry) {
