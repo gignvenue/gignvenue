@@ -239,24 +239,24 @@ function submitDecline() {
 // Includes my requests (bookerId === user.id) and others (simulated)
 // Each request covers exactly one date — sequential nights are separate requests with individual statuses.
 const ALL_REQUESTS = [
-  { id:'req_a1a', bookerId:'other1', venueId:'l1', date:'2025-04-12', status:'pending',  eventType:'Concert',        attendance:400 },
-  { id:'req_a1b', bookerId:'other1', venueId:'l1', date:'2025-04-13', status:'pending',  eventType:'Concert',        attendance:400 },
-  { id:'req_a2',  bookerId:'other2', venueId:'l1', date:'2025-04-12', status:'pending',  eventType:'Album launch',   attendance:200 },
-  { id:'req_a3a', bookerId:'other3', venueId:'l1', date:'2025-04-19', status:'approved', eventType:'Concert',        attendance:3000 },
-  { id:'req_a3b', bookerId:'other3', venueId:'l1', date:'2025-04-20', status:'approved', eventType:'Concert',        attendance:3000 },
-  { id:'req_a4',  bookerId:'other1', venueId:'l1', date:'2025-04-26', status:'pending',  eventType:'Concert',        attendance:500 },
-  { id:'req_b1',  bookerId:'other2', venueId:'l2', date:'2025-04-05', status:'pending',  eventType:'Club night',     attendance:150 },
-  { id:'req_b2a', bookerId:'other3', venueId:'l2', date:'2025-04-05', status:'pending',  eventType:'Private event',  attendance:80 },
-  { id:'req_b2b', bookerId:'other3', venueId:'l2', date:'2025-04-06', status:'pending',  eventType:'Private event',  attendance:80 },
-  { id:'req_b3',  bookerId:'other4', venueId:'l2', date:'2025-04-12', status:'pending',  eventType:'Concert',        attendance:200 },
-  { id:'req_c1a', bookerId:'other1', venueId:'l8', date:'2025-04-18', status:'approved', eventType:'Festival set',   attendance:2000 },
-  { id:'req_c1b', bookerId:'other1', venueId:'l8', date:'2025-04-19', status:'approved', eventType:'Festival set',   attendance:2000 },
-  { id:'req_c2',  bookerId:'other2', venueId:'l8', date:'2025-04-25', status:'pending',  eventType:'Concert',        attendance:800 },
+  { id:'req_a1a', bookerId:'other1', venueId:'l1', date:'2026-04-12', status:'pending',  eventType:'Concert',        attendance:400 },
+  { id:'req_a1b', bookerId:'other1', venueId:'l1', date:'2026-04-13', status:'pending',  eventType:'Concert',        attendance:400 },
+  { id:'req_a2',  bookerId:'other2', venueId:'l1', date:'2026-04-12', status:'pending',  eventType:'Album launch',   attendance:200 },
+  { id:'req_a3a', bookerId:'other3', venueId:'l1', date:'2026-04-19', status:'approved', eventType:'Concert',        attendance:3000 },
+  { id:'req_a3b', bookerId:'other3', venueId:'l1', date:'2026-04-20', status:'approved', eventType:'Concert',        attendance:3000 },
+  { id:'req_a4',  bookerId:'other1', venueId:'l1', date:'2026-04-26', status:'pending',  eventType:'Concert',        attendance:500 },
+  { id:'req_b1',  bookerId:'other2', venueId:'l2', date:'2026-04-05', status:'pending',  eventType:'Club night',     attendance:150 },
+  { id:'req_b2a', bookerId:'other3', venueId:'l2', date:'2026-04-05', status:'pending',  eventType:'Private event',  attendance:80 },
+  { id:'req_b2b', bookerId:'other3', venueId:'l2', date:'2026-04-06', status:'pending',  eventType:'Private event',  attendance:80 },
+  { id:'req_b3',  bookerId:'other4', venueId:'l2', date:'2026-04-12', status:'pending',  eventType:'Concert',        attendance:200 },
+  { id:'req_c1a', bookerId:'other1', venueId:'l8', date:'2026-04-18', status:'approved', eventType:'Festival set',   attendance:2000 },
+  { id:'req_c1b', bookerId:'other1', venueId:'l8', date:'2026-04-19', status:'approved', eventType:'Festival set',   attendance:2000 },
+  { id:'req_c2',  bookerId:'other2', venueId:'l8', date:'2026-04-25', status:'pending',  eventType:'Concert',        attendance:800 },
   // My own requests — one date each, independent statuses
-  { id:'req_mine1',  bookerId:user.id, venueId:'l2', date:'2025-04-15', status:'pending',  eventType:'Concert / live show', attendance:180, notes:'Indie rock quartet, 90-min set. Need full backline.',   sent:'2025-03-08' },
-  { id:'req_mine2a', bookerId:user.id, venueId:'l5', date:'2025-04-22', status:'approved', eventType:'Album launch',         attendance:120, notes:'Album release party. PA system required.',            sent:'2025-03-01', paymentStatus:'unpaid', paymentDeadline: Date.now() + 47 * 3600 * 1000 },
-  { id:'req_mine2b', bookerId:user.id, venueId:'l5', date:'2025-04-23', status:'declined', eventType:'Album launch',         attendance:120, notes:'Album release party. PA system required.',            sent:'2025-03-01' },
-  { id:'req_mine3',  bookerId:user.id, venueId:'l1', date:'2025-05-10', status:'declined', eventType:'Concert / live show',  attendance:500, notes:'Large headline show. Need full production.',          sent:'2025-02-20' },
+  { id:'req_mine1',  bookerId:user.id, venueId:'l2', date:'2026-04-15', status:'pending',  eventType:'Concert / live show', attendance:180, notes:'Indie rock quartet, 90-min set. Need full backline.',   sent:'2026-03-08' },
+  { id:'req_mine2a', bookerId:user.id, venueId:'l5', date:'2026-04-22', status:'approved', eventType:'Album launch',         attendance:120, notes:'Album release party. PA system required.',            sent:'2026-03-01', paymentStatus:'unpaid', paymentDeadline: Date.now() + 47 * 3600 * 1000 },
+  { id:'req_mine2b', bookerId:user.id, venueId:'l5', date:'2026-04-23', status:'declined', eventType:'Album launch',         attendance:120, notes:'Album release party. PA system required.',            sent:'2026-03-01' },
+  { id:'req_mine3',  bookerId:user.id, venueId:'l1', date:'2026-05-10', status:'declined', eventType:'Concert / live show',  attendance:500, notes:'Large headline show. Need full production.',          sent:'2026-02-20' },
 ];
 
 // My messages with venue hosts
