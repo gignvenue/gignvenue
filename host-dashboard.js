@@ -944,7 +944,7 @@ function resRow(r, isPending, rank, isFirst, isLast, conflict, showDragHandle, i
       <td>${r.guests.toLocaleString()}</td>
       <td>$${r.total.toLocaleString()}</td>
       <td>
-        ${r.status === 'confirmed' ? `<div style="font-size:11px;margin-bottom:4px">${r.paymentStatus === 'paid' ? '<span style="color:#10B981">● Payment received</span>' : '<span style="color:#F59E0B">● Awaiting payment</span>'}</div>` : ''}
+        ${r.status === 'confirmed' && !r.hostGenerated ? `<div style="font-size:11px;margin-bottom:4px">${r.paymentStatus === 'paid' ? '<span style="color:#10B981">● Payment received</span>' : '<span style="color:#F59E0B">● Awaiting payment</span>'}</div>` : ''}
         <select class="res-status-select status-${r.status}" onchange="changeResStatus('${r.id}', this.value)">
           <option value="pending"    ${r.status==='pending'   ?'selected':''}>Pending</option>
           <option value="confirmed"  ${r.status==='confirmed' ?'selected':''}>Confirmed</option>
