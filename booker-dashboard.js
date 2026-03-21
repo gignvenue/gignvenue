@@ -1030,7 +1030,7 @@ function renderVenueSummary() {
     { key:'cancelled', label:'Cancelled', cls:'req-cancelled' },
   ]
   .filter(p => counts[p.key] > 0)
-  .map(p => `<span class="req-badge ${p.cls}">${counts[p.key]} ${p.label}</span>`)
+  .map(p => `<span class="req-badge ${p.cls}" style="cursor:pointer" onclick="goToRequestsTab('${p.key}')">${counts[p.key]} ${p.label}</span>`)
   .join('');
 
   el.innerHTML = `
