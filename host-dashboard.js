@@ -503,13 +503,20 @@ function updateConfirmedTabBadge() {
   const btn = document.getElementById('confirmedTabBtn');
   if (!btn) return;
   const now = new Date(); now.setHours(0,0,0,0);
-  const count = RESERVATIONS.filter(r => r.status === 'confirmed' && !r.hostGenerated && new Date(r.checkin + 'T00:00:00') < now).length;
+  // Count: past confirmed (need resolution) + pending_resolution + disputed
+  const needsAction = RESERVATIONS.filter(r =>
+    !r.hostGenerated && (
+      (r.status === 'confirmed' && new Date(r.checkin + 'T00:00:00') < now) ||
+      r.status === 'pending_resolution' ||
+      r.status === 'disputed'
+    )
+  ).length;
   const existing = btn.querySelector('.confirm-tab-badge');
   if (existing) existing.remove();
-  if (count > 0) {
+  if (needsAction > 0) {
     const badge = document.createElement('span');
     badge.className = 'confirm-tab-badge';
-    badge.textContent = count;
+    badge.textContent = needsAction;
     btn.appendChild(badge);
   }
 }
@@ -1109,7 +1116,11 @@ function renderReservations(status) {
 
   if (!isPending) {
     // ── Non-pending tabs: grouped by venue, dates descending ─────────────────
-    const allRows      = RESERVATIONS.filter(r => r.status === status);
+    // Confirmed tab also shows pending_resolution and disputed bookings
+    const statusMatch = status === 'confirmed'
+      ? r => ['confirmed', 'pending_resolution', 'disputed'].includes(r.status)
+      : r => r.status === status;
+    const allRows      = RESERVATIONS.filter(statusMatch);
     const rows         = status === 'cancelled' ? allRows.filter(r => !r.archived) : allRows;
     const archivedRows = status === 'cancelled' ? allRows.filter(r =>  r.archived) : [];
     if (!rows.length && !archivedRows.length) {
@@ -1124,23 +1135,29 @@ function renderReservations(status) {
       if (!groups[r.property]) groups[r.property] = [];
       groups[r.property].push(r);
     });
-    // Sort each group by checkin descending
-    Object.values(groups).forEach(g => g.sort((a, b) => a.checkin.localeCompare(b.checkin)));
+    // Sort each group: disputed first, then pending_resolution, then confirmed; within each by checkin asc
+    Object.values(groups).forEach(g => g.sort((a, b) => {
+      const order = { disputed: 0, pending_resolution: 1, confirmed: 2 };
+      const oa = order[a.status] ?? 3, ob = order[b.status] ?? 3;
+      if (oa !== ob) return oa - ob;
+      return a.checkin.localeCompare(b.checkin);
+    }));
 
     const orderedVenues = venueOrder.filter(v => groups[v]).concat(
       Object.keys(groups).filter(v => !venueOrder.includes(v))
     );
 
+    const statusLabel = s => s === 'completed' ? 'completed booking' : s === 'cancelled' ? 'cancelled booking' : 'active booking';
+
     let html = '';
     orderedVenues.forEach(venue => {
       const venueRows = groups[venue];
-      const label = status === 'confirmed' ? 'confirmed booking' : status === 'completed' ? 'completed booking' : 'cancelled booking';
       html += `
         <tr class="venue-group-header">
           <td colspan="${cols}">
             <div class="venue-group-header-inner">
               <span class="venue-group-name">${venue}</span>
-              <span class="venue-group-count">${venueRows.length} ${label}${venueRows.length > 1 ? 's' : ''}</span>
+              <span class="venue-group-count">${venueRows.length} ${statusLabel(status)}${venueRows.length > 1 ? 's' : ''}</span>
             </div>
           </td>
         </tr>`;
@@ -1259,18 +1276,32 @@ function resRow(r, isPending, rank, isFirst, isLast, conflict, showDragHandle, i
       <td>${r.guests.toLocaleString()}</td>
       <td>$${r.total.toLocaleString()}</td>
       <td>
-        ${r.status === 'confirmed' && !r.hostGenerated ? `<div style="font-size:11px;margin-bottom:4px">${r.paymentStatus === 'paid' ? '<span style="color:#10B981">● Payment received</span>' : '<span style="color:#F59E0B">● Awaiting payment</span>'}</div>` : ''}
         ${(()=>{
+          // Resolution states: show non-editable badge instead of select
+          if (r.status === 'pending_resolution') {
+            const timeStr = formatTimeRemaining(r.resolutionSetAt, r.resolutionLapseHours);
+            const resLabels = { played:'Show played off', 'host-cancel':'Host canceled', 'artist-cancel':'Artist canceled', mutual:'Mutual cancellation', postponed:'New date proposed' };
+            return `<span class="status-badge status-res-pending">${resLabels[r.resolution] || 'Resolution pending'}</span>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:3px">⏳ ${timeStr}</div>`;
+          }
+          if (r.status === 'disputed') {
+            return `<span class="status-badge status-disputed">⚠ Disputed by artist</span>
+                    ${r.disputeNotes ? `<div style="font-size:11px;color:var(--text-sec);font-style:italic;margin-top:3px;max-width:160px;white-space:normal">"${r.disputeNotes}"</div>` : ''}`;
+          }
+          // Normal statuses: show payment indicator + editable select
           const showDate = new Date(r.checkin + 'T00:00:00');
           const today = new Date(); today.setHours(0,0,0,0);
           const isPastDate = showDate < today;
+          const paymentLine = r.status === 'confirmed' && !r.hostGenerated
+            ? `<div style="font-size:11px;margin-bottom:4px">${r.paymentStatus === 'paid' ? '<span style="color:#10B981">● Payment received</span>' : '<span style="color:#F59E0B">● Awaiting payment</span>'}</div>`
+            : '';
           if (isPastDate) {
-            return `<select class="res-status-select status-${r.status}" onchange="changeResStatus('${r.id}', this.value)">
+            return paymentLine + `<select class="res-status-select status-${r.status}" onchange="changeResStatus('${r.id}', this.value)">
               <option value="completed" ${r.status==='completed'?'selected':''}>Completed</option>
               <option value="cancelled" ${r.status==='cancelled'?'selected':''}>Cancelled</option>
             </select>`;
           }
-          return `<select class="res-status-select status-${r.status}" onchange="changeResStatus('${r.id}', this.value)">
+          return paymentLine + `<select class="res-status-select status-${r.status}" onchange="changeResStatus('${r.id}', this.value)">
             <option value="pending"   ${r.status==='pending'  ?'selected':''}>Pending</option>
             <option value="confirmed" ${r.status==='confirmed'?'selected':''}>Confirmed</option>
             <option value="completed" ${r.status==='completed'?'selected':''}>Completed</option>
@@ -1281,7 +1312,19 @@ function resRow(r, isPending, rank, isFirst, isLast, conflict, showDragHandle, i
       <td>
         <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">
           <button class="res-action-btn" onclick="viewRes('${r.id}')">Details</button>
-          ${(()=>{ const sd=new Date(r.checkin+'T00:00:00'),td=new Date();td.setHours(0,0,0,0); return r.status==='confirmed'&&!r.hostGenerated&&sd<td?`<button class="res-action-btn confirm-played-btn" onclick="markPlayedOff('${r.id}')">✓ Confirm played</button>`:''; })()}
+          ${(()=>{
+            const sd = new Date(r.checkin+'T00:00:00'), td = new Date(); td.setHours(0,0,0,0);
+            if (r.status === 'confirmed' && !r.hostGenerated && sd < td) {
+              return `<button class="res-action-btn resolve-booking-btn" onclick="openResolveModal('${r.id}')">↪ Resolve booking</button>`;
+            }
+            if (r.status === 'pending_resolution') {
+              return `<span style="font-size:11px;color:var(--text-muted);padding:4px 0">Awaiting artist response</span>`;
+            }
+            if (r.status === 'disputed') {
+              return `<button class="res-action-btn res-disputed-btn" onclick="navigate(null,'earnings')">View in Earnings ↗</button>`;
+            }
+            return '';
+          })()}
           ${r.status === 'cancelled' && !r.archived ? `<button class="res-action-btn req-archive-btn" onclick="archiveReservation('${r.id}')">Archive</button>` : ''}
           ${r.archived ? `<button class="res-action-btn req-archive-btn" onclick="unarchiveReservation('${r.id}')">Unarchive</button>` : ''}
           ${(() => { const n = getBookingNote(r.id); return `<button class="res-action-btn${n ? ' res-note-active' : ''}" onclick="openNoteModal('${r.id}')" title="Private note">${n ? '📝 Note ·' + (n.tags?.length ? ' ' + n.tags[0] : '') : '+ Note'}</button>`; })()}

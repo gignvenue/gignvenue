@@ -2500,6 +2500,15 @@ img { display: block; }
   color: #F87171;
   border: 1px solid rgba(239,68,68,0.3);
 }
+.status-res-pending {
+  background: rgba(59,130,246,0.15);
+  color: #60A5FA;
+  border: 1px solid rgba(59,130,246,0.3);
+}
+.res-disputed-btn {
+  color: #F87171 !important;
+  border-color: rgba(239,68,68,0.4) !important;
+}
 .escrow-dispute-notes {
   font-size: 11px;
   color: var(--text-sec);
