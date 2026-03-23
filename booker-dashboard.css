@@ -669,3 +669,15 @@
 }
 .pending-dispute-textarea:focus { outline: none; border-color: #EF4444; }
 .pending-dispute-actions { display: flex; gap: 10px; }
+
+/* ── Played-off review stars ── */
+.pac-stars { display: flex; gap: 6px; }
+.pac-star {
+  font-size: 28px; background: none; border: none;
+  color: var(--border); cursor: pointer;
+  padding: 0; line-height: 1;
+  transition: color .1s, transform .1s;
+}
+.pac-star:hover,
+.pac-star--active { color: #F59E0B; }
+.pac-star:hover   { transform: scale(1.15); }

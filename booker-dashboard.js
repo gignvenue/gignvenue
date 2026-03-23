@@ -2376,15 +2376,47 @@ function renderPendingActions() {
   };
 
   const html = pending.map(p => {
-    let bodyText = '';
+    // For 'played' resolution — combined confirm + review prompt
     if (p.resolution === 'played') {
-      bodyText = `Your host reports this show played as planned. If that's accurate, confirm to release funds. If not, dispute and describe the issue.`;
-    } else if (p.resolution === 'host-cancel') {
-      bodyText = `Your host canceled this booking. Your full $${Math.round(p.artistRefund || 0).toLocaleString()} deposit will be returned. Confirm to acknowledge.`;
+      return `
+      <div class="pending-action-card" id="pac-${p.id}">
+        <div class="pending-action-header">
+          <span class="pending-action-icon">🎤</span>
+          <div class="pending-action-title-block">
+            <div class="pending-action-label">How was your show?</div>
+            <div class="pending-action-sub">${p.venueTitle} · ${fmtDate(p.showDate)}</div>
+          </div>
+          <span class="pending-action-badge">Response needed</span>
+        </div>
+        <div class="pending-action-body">Your host confirmed this show played as planned and your $${Math.round(p.venueRelease || 0).toLocaleString()} deposit is ready to be released to them. If that's right, leave your review below — submitting it confirms the show happened. Something's not right? Dispute it instead.</div>
+        <div class="pac-review-wrap" id="pac-review-${p.id}">
+          <div class="pac-stars" id="pac-stars-${p.id}">
+            ${[1,2,3,4,5].map(n => `<button class="pac-star" data-val="${n}" onclick="setPacStar('${p.id}',${n})" title="${n} star${n>1?'s':''}">★</button>`).join('')}
+          </div>
+          <textarea class="pending-dispute-textarea" id="pac-review-text-${p.id}" placeholder="Tell other artists about this venue… (optional)" rows="2" style="margin-top:10px"></textarea>
+          <div class="pending-action-footer" style="margin-top:10px">
+            <button class="pending-action-btn pending-action-btn--confirm" id="pac-submit-${p.id}" onclick="submitPlayedOffReview('${p.id}')" disabled>Submit review &amp; confirm show</button>
+            <button class="pending-action-btn pending-action-btn--dispute" onclick="openDisputeForm('${p.id}')">Something's wrong — Dispute</button>
+          </div>
+        </div>
+        <div class="pending-dispute-form" id="pac-dispute-${p.id}" style="display:none">
+          <textarea class="pending-dispute-textarea" id="pac-dispute-notes-${p.id}" placeholder="Describe the issue…" rows="3"></textarea>
+          <div class="pending-dispute-actions">
+            <button class="pending-action-btn pending-action-btn--dispute" onclick="submitDispute('${p.id}')">Submit dispute</button>
+            <button class="pending-action-btn pending-action-btn--cancel" onclick="document.getElementById('pac-dispute-${p.id}').style.display='none';document.getElementById('pac-review-${p.id}').style.display=''">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    // All other resolution types — simple confirm / dispute
+    let bodyText = '';
+    if (p.resolution === 'host-cancel') {
+      bodyText = `Your host canceled this booking. Your full $${Math.round(p.artistRefund || 0).toLocaleString()} — deposit plus booking fee — will be returned. Confirm to acknowledge.`;
     } else if (p.resolution === 'artist-cancel') {
-      bodyText = `Your host recorded an artist-initiated cancellation. A refund of $${Math.round(p.artistRefund || 0).toLocaleString()} will be returned per the cancellation policy. Confirm if accurate.`;
+      bodyText = `Your host recorded an artist-initiated cancellation. A refund of $${Math.round(p.artistRefund || 0).toLocaleString()} will be returned per your agreed terms. Confirm if accurate.`;
     } else if (p.resolution === 'mutual') {
-      bodyText = `Your host recorded a mutually agreed cancellation. A refund of $${Math.round(p.artistRefund || 0).toLocaleString()} will be returned per the cancellation policy. Confirm if accurate.`;
+      bodyText = `Your host recorded a mutually agreed cancellation. A refund of $${Math.round(p.artistRefund || 0).toLocaleString()} will be returned per your agreed terms. Confirm if accurate.`;
     } else if (p.resolution === 'postponed') {
       bodyText = `Your host has proposed moving this show to <strong>${fmtDate(p.pendingNewDate)}</strong>. The deposit stays held. You must actively confirm the new date — it won't auto-confirm.`;
     }
@@ -2430,13 +2462,6 @@ function confirmResolution(id) {
   renderOverview();
 }
 
-function openDisputeForm(id) {
-  const footer = document.getElementById(`pac-footer-${id}`);
-  const form   = document.getElementById(`pac-dispute-${id}`);
-  if (footer) footer.style.display = 'none';
-  if (form)   form.style.display   = '';
-}
-
 function submitDispute(id) {
   const notes = (document.getElementById(`pac-dispute-notes-${id}`)?.value || '').trim();
   try {
@@ -2449,6 +2474,52 @@ function submitDispute(id) {
   showDash('Dispute submitted — GigNVenue will review and follow up within 24 hours.');
   renderPendingActions();
   renderOverview();
+}
+
+const _pacStarSelections = {};   // { [pendingId]: starValue }
+
+function setPacStar(id, val) {
+  _pacStarSelections[id] = val;
+  document.querySelectorAll(`#pac-stars-${id} .pac-star`).forEach(btn => {
+    btn.classList.toggle('pac-star--active', parseInt(btn.dataset.val) <= val);
+  });
+  const submitBtn = document.getElementById(`pac-submit-${id}`);
+  if (submitBtn) submitBtn.disabled = false;
+}
+
+function submitPlayedOffReview(id) {
+  const stars  = _pacStarSelections[id];
+  if (!stars)  { showDash('Please select a star rating before submitting.'); return; }
+  const review = (document.getElementById(`pac-review-text-${id}`)?.value || '').trim();
+  // Save artist-side rating to bb_ratings
+  try {
+    const pending = JSON.parse(localStorage.getItem('gnv_pending_resolutions') || '[]');
+    const p       = pending.find(x => x.id === id);
+    const ratings = JSON.parse(localStorage.getItem('bb_ratings') || '[]');
+    ratings.push({
+      id:          'rat_' + Date.now(),
+      bookingId:   id,
+      raterType:   'artist',
+      raterId:     user?.id || 'artist',
+      ratedId:     p?.venueTitle || '',
+      stars,
+      review,
+      submittedAt: Date.now(),
+    });
+    localStorage.setItem('bb_ratings', JSON.stringify(ratings));
+  } catch(e) {}
+  // Confirm the resolution (releases deposit to venue)
+  confirmResolution(id);
+  showDash('Review submitted — thank you! Your deposit confirmation has been sent to the venue.');
+}
+
+function openDisputeForm(id) {
+  const footer = document.getElementById(`pac-footer-${id}`);
+  const review = document.getElementById(`pac-review-${id}`);
+  const form   = document.getElementById(`pac-dispute-${id}`);
+  if (footer) footer.style.display = 'none';
+  if (review) review.style.display = 'none';
+  if (form)   form.style.display   = '';
 }
 
 // ─── UTILS ───────────────────────────────────────────────────────────────────

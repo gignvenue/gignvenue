@@ -1427,8 +1427,6 @@ function markPlayedOff(id) {
   renderEarnings();
   const _depRelease = Math.round(r.total * 0.15); // 20% deposit minus 5% venue fee
   showDash(`✓ Show confirmed — $${_depRelease.toLocaleString()} deposit released (deposit minus 5% venue fee). Funds transfer within 24 hours.`);
-  // Prompt host to rate the artist
-  openHostRatingModal(id);
 }
 
 // ─── RESOLVE BOOKING MODAL ────────────────────────────────────────────────────
@@ -1504,7 +1502,6 @@ function updateCancelSplitPreview() {
   const r = RESERVATIONS.find(x => x.id === _resolveTargetId);
   if (!r) return;
   const deposit = r.total * 0.20;
-  const fee     = r.total * 0.05;
 
   const customWrap = document.getElementById('cancelSplitCustomWrap');
   const isCustom   = customWrap && customWrap.style.display !== 'none';
@@ -1519,17 +1516,15 @@ function updateCancelSplitPreview() {
   }
   if (vPct === null || vPct === undefined) return;
 
-  const aPct        = 100 - vPct;
+  const aPct         = 100 - vPct;
   const artistRefund = Math.round(deposit * aPct / 100);
-  const venueShare   = Math.round(deposit * vPct / 100);
-  const gnvFee       = Math.min(Math.round(fee), venueShare);
-  const venuePayout  = Math.max(0, venueShare - Math.round(fee));
+  const venuePayout  = Math.round(deposit * vPct / 100);  // no fee deduction on cancellations
 
   const preview = document.getElementById('cancelSplitPreview');
   if (preview) preview.style.display = 'block';
   const el = id => document.getElementById(id);
-  if (el('cancelPreviewArtist')) el('cancelPreviewArtist').textContent = `−$${artistRefund.toLocaleString()} returned to artist (${aPct}%)`;
-  if (el('cancelPreviewFee'))    el('cancelPreviewFee').textContent    = gnvFee > 0 ? `−$${gnvFee.toLocaleString()}` : 'Waived — venue share too small';
+  if (el('cancelPreviewArtist')) el('cancelPreviewArtist').textContent = `$${artistRefund.toLocaleString()} returned to artist (${aPct}%)`;
+  if (el('cancelPreviewFee'))    el('cancelPreviewFee').textContent    = 'No fee — GigNVenue only charges on successful shows';
   if (el('cancelPreviewVenue')) {
     el('cancelPreviewVenue').textContent  = `$${venuePayout.toLocaleString()}`;
     el('cancelPreviewVenue').className    = `resolve-detail-amount${venuePayout === 0 ? ' resolve-detail-amount--zero' : ''}`;
@@ -1566,9 +1561,10 @@ function selectResolutionType(type) {
   const confirmBtn = document.getElementById('resolveConfirmBtn');
   confirmBtn.disabled = false;
 
+  const fullArtistRefund = Math.round(deposit + fee);  // deposit + booking fee on host-cancel
   const confirmLabels = {
     'played':        'Confirm — release $' + venueNet.toLocaleString() + ' to you',
-    'host-cancel':   'Confirm — refund artist $' + Math.round(deposit).toLocaleString(),
+    'host-cancel':   'Confirm — refund artist $' + fullArtistRefund.toLocaleString() + ' in full',
     'artist-cancel': 'Confirm — apply cancellation terms',
     'mutual':        'Confirm — apply cancellation terms',
     'postponed':     'Confirm — move to new date',
@@ -1594,18 +1590,22 @@ function selectResolutionType(type) {
   } else if (type === 'host-cancel') {
     detailsEl.innerHTML = `
       <div class="resolve-detail-row">
-        <span class="resolve-detail-label">Artist deposit refund</span>
-        <span>$${Math.round(deposit).toLocaleString()} — full 20% returned to artist</span>
+        <span class="resolve-detail-label">Artist deposit</span>
+        <span>$${Math.round(deposit).toLocaleString()} — full 20% returned</span>
       </div>
       <div class="resolve-detail-row">
-        <span class="resolve-detail-label">Your venue fee</span>
-        <span class="resolve-detail-muted">Waived — no venue fee charged on host cancellations</span>
+        <span class="resolve-detail-label">Artist booking fee</span>
+        <span>$${Math.round(fee).toLocaleString()} — also refunded (host canceled)</span>
       </div>
       <div class="resolve-detail-row resolve-detail-total">
+        <span class="resolve-detail-label">Total returned to artist</span>
+        <span class="resolve-detail-amount">$${fullArtistRefund.toLocaleString()}</span>
+      </div>
+      <div class="resolve-detail-row">
         <span class="resolve-detail-label">Released to you</span>
         <span class="resolve-detail-amount resolve-detail-amount--zero">$0</span>
       </div>
-      <p class="resolve-detail-note">GigNVenue retains the booking fee already collected from the artist. The artist's deposit is returned in full.</p>`;
+      <p class="resolve-detail-note">Because the venue canceled, GigNVenue refunds the artist's booking fee in full. No fee is charged to you.</p>`;
 
   } else if (type === 'artist-cancel' || type === 'mutual') {
     _cancelVenuePct = null;
@@ -1684,14 +1684,14 @@ function submitResolution() {
     r.artistRefund = 0;
   } else if (_resolveType === 'host-cancel') {
     r.venueRelease = 0;
-    r.artistRefund = Math.round(deposit);
+    r.artistRefund = Math.round(deposit + fee);   // deposit + booking fee — host canceled, GigNVenue absorbs the fee
   } else if (_resolveType === 'artist-cancel' || _resolveType === 'mutual') {
     if (_cancelVenuePct === null || _cancelVenuePct === undefined) {
       showDash('Please select a deposit split before confirming.'); return;
     }
     const artistPct    = 100 - _cancelVenuePct;
     r.artistRefund     = Math.round(deposit * artistPct / 100);
-    r.venueRelease     = Math.max(0, Math.round(deposit * _cancelVenuePct / 100 - fee));
+    r.venueRelease     = Math.round(deposit * _cancelVenuePct / 100);   // no fee on cancellations
   } else if (_resolveType === 'postponed') {
     const newDateInput = document.getElementById('postponeNewDate');
     const newDate = newDateInput?.value;
