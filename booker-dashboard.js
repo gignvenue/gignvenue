@@ -368,6 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
   populateTopbarAvatar();
   populateVenueSelect();
   renderOverview();
+  renderPendingActions();
   renderRequests('all');
   renderMessages();
   renderCalendar();
@@ -394,6 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Live-update when a request is submitted in another tab / the main site
   window.addEventListener('storage', e => {
     if (e.key === 'bb_site_requests') ingestAndRefresh();
+    if (e.key === 'gnv_pending_resolutions') renderPendingActions();
     if (e.key === 'bb_saved_venues') {
       // Heart toggled on browse page (possibly in another tab) — sync immediately
       try { SAVED_VENUES = JSON.parse(e.newValue || '[]'); } catch(err) {}
@@ -2334,6 +2336,104 @@ function checkCompletedRatingPrompts() {
     r.paymentStatus === 'paid'
   );
   return completed.filter(r => !BB_RATINGS.some(rt => rt.raterType === 'artist' && rt.bookingId === r.id));
+}
+
+// ─── PENDING RESOLUTIONS (artist-side) ───────────────────────────────────────
+
+function renderPendingActions() {
+  const wrap = document.getElementById('pendingActionsWrap');
+  if (!wrap) return;
+
+  let pending = [];
+  try {
+    const all = JSON.parse(localStorage.getItem('gnv_pending_resolutions') || '[]');
+    pending = all.filter(p => ALL_REQUESTS.find(x => x.id === p.id && x.bookerId === user.id));
+  } catch(e) {}
+
+  if (!pending.length) { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
+
+  const resLabels = {
+    'played':        'Show played as planned',
+    'host-cancel':   'Host canceled this booking',
+    'artist-cancel': 'Artist-initiated cancellation',
+    'mutual':        'Mutual cancellation',
+    'postponed':     'New show date proposed',
+  };
+
+  const html = pending.map(p => {
+    let bodyText = '';
+    if (p.resolution === 'played') {
+      bodyText = `Your host reports this show played as planned. If that's accurate, confirm to release funds. If not, dispute and describe the issue.`;
+    } else if (p.resolution === 'host-cancel') {
+      bodyText = `Your host canceled this booking. Your full $${Math.round(p.artistRefund || 0).toLocaleString()} deposit will be returned. Confirm to acknowledge.`;
+    } else if (p.resolution === 'artist-cancel') {
+      bodyText = `Your host recorded an artist-initiated cancellation. A refund of $${Math.round(p.artistRefund || 0).toLocaleString()} will be returned per the cancellation policy. Confirm if accurate.`;
+    } else if (p.resolution === 'mutual') {
+      bodyText = `Your host recorded a mutually agreed cancellation. A refund of $${Math.round(p.artistRefund || 0).toLocaleString()} will be returned per the cancellation policy. Confirm if accurate.`;
+    } else if (p.resolution === 'postponed') {
+      bodyText = `Your host has proposed moving this show to <strong>${fmtDate(p.pendingNewDate)}</strong>. The deposit stays held. You must actively confirm the new date — it won't auto-confirm.`;
+    }
+    return `
+      <div class="pending-action-card" id="pac-${p.id}">
+        <div class="pending-action-header">
+          <span class="pending-action-icon">⏳</span>
+          <div class="pending-action-title-block">
+            <div class="pending-action-label">${resLabels[p.resolution] || 'Action required'}</div>
+            <div class="pending-action-sub">${p.venueTitle} · ${fmtDate(p.showDate)}</div>
+          </div>
+          <span class="pending-action-badge">Response needed</span>
+        </div>
+        <div class="pending-action-body">${bodyText}</div>
+        <div class="pending-action-footer" id="pac-footer-${p.id}">
+          <button class="pending-action-btn pending-action-btn--confirm" onclick="confirmResolution('${p.id}')">✓ Confirm</button>
+          <button class="pending-action-btn pending-action-btn--dispute" onclick="openDisputeForm('${p.id}')">Dispute</button>
+        </div>
+        <div class="pending-dispute-form" id="pac-dispute-${p.id}" style="display:none">
+          <textarea class="pending-dispute-textarea" id="pac-dispute-notes-${p.id}" placeholder="Describe the issue…" rows="3"></textarea>
+          <div class="pending-dispute-actions">
+            <button class="pending-action-btn pending-action-btn--dispute" onclick="submitDispute('${p.id}')">Submit dispute</button>
+            <button class="pending-action-btn pending-action-btn--cancel" onclick="document.getElementById('pac-dispute-${p.id}').style.display='none';document.getElementById('pac-footer-${p.id}').style.display=''">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  wrap.innerHTML = html;
+  wrap.style.display = 'block';
+}
+
+function confirmResolution(id) {
+  try {
+    const responses = JSON.parse(localStorage.getItem('gnv_resolution_responses') || '[]');
+    responses.push({ id, action: 'confirmed', notes: '', respondedAt: Date.now(), bookerId: user.id });
+    localStorage.setItem('gnv_resolution_responses', JSON.stringify(responses));
+    const pending = JSON.parse(localStorage.getItem('gnv_pending_resolutions') || '[]');
+    localStorage.setItem('gnv_pending_resolutions', JSON.stringify(pending.filter(p => p.id !== id)));
+  } catch(e) {}
+  showDash('Response sent — the host has been notified.');
+  renderPendingActions();
+  renderOverview();
+}
+
+function openDisputeForm(id) {
+  const footer = document.getElementById(`pac-footer-${id}`);
+  const form   = document.getElementById(`pac-dispute-${id}`);
+  if (footer) footer.style.display = 'none';
+  if (form)   form.style.display   = '';
+}
+
+function submitDispute(id) {
+  const notes = (document.getElementById(`pac-dispute-notes-${id}`)?.value || '').trim();
+  try {
+    const responses = JSON.parse(localStorage.getItem('gnv_resolution_responses') || '[]');
+    responses.push({ id, action: 'disputed', notes, respondedAt: Date.now(), bookerId: user.id });
+    localStorage.setItem('gnv_resolution_responses', JSON.stringify(responses));
+    const pending = JSON.parse(localStorage.getItem('gnv_pending_resolutions') || '[]');
+    localStorage.setItem('gnv_pending_resolutions', JSON.stringify(pending.filter(p => p.id !== id)));
+  } catch(e) {}
+  showDash('Dispute submitted — GigNVenue will review and follow up within 24 hours.');
+  renderPendingActions();
+  renderOverview();
 }
 
 // ─── UTILS ───────────────────────────────────────────────────────────────────

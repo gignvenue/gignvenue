@@ -412,6 +412,9 @@ document.addEventListener('DOMContentLoaded', () => {
   loadDateStatuses();
   seedManualEarnings();
   autoCompleteReservations();
+  syncResolutionStates();       // re-apply pending/disputed states that survived page reload
+  checkLapsedResolutions();     // auto-confirm any that passed their lapse window
+  ingestResolutionResponses();  // apply any artist confirms/disputes
   syncCalendarFromBookings();
   populateSidebarUser();
   populateTopbarAvatar();
@@ -1365,6 +1368,7 @@ function markPlayedOff(id) {
 
 let _resolveTargetId = null;
 let _resolveType     = null;
+let _cancelVenuePct  = null;   // set by split selector for artist-cancel / mutual
 
 function parseCancelPolicy(policyText, daysUntilShow) {
   // Extract "more than X days before" thresholds — policies follow consistent patterns
@@ -1409,7 +1413,65 @@ function closeResolveModal() {
   document.getElementById('resolveOverlay').classList.remove('open');
   document.getElementById('resolveModal').classList.remove('open');
   _resolveTargetId = null;
-  _resolveType = null;
+  _resolveType     = null;
+  _cancelVenuePct  = null;
+}
+
+function setCancelSplit(venuePct) {
+  const customWrap = document.getElementById('cancelSplitCustomWrap');
+  document.querySelectorAll('.resolve-split-btn').forEach(b => b.classList.remove('active'));
+  if (venuePct === 'custom') {
+    document.querySelector('.resolve-split-btn[data-vpct="custom"]')?.classList.add('active');
+    if (customWrap) customWrap.style.display = 'flex';
+    _cancelVenuePct = null;
+    updateCancelSplitPreview();
+    return;
+  }
+  _cancelVenuePct = venuePct;
+  document.querySelector(`.resolve-split-btn[data-vpct="${venuePct}"]`)?.classList.add('active');
+  if (customWrap) customWrap.style.display = 'none';
+  updateCancelSplitPreview();
+}
+
+function updateCancelSplitPreview() {
+  const r = RESERVATIONS.find(x => x.id === _resolveTargetId);
+  if (!r) return;
+  const deposit = r.total * 0.20;
+  const fee     = r.total * 0.05;
+
+  const customWrap = document.getElementById('cancelSplitCustomWrap');
+  const isCustom   = customWrap && customWrap.style.display !== 'none';
+  let vPct;
+  if (isCustom) {
+    vPct = Math.min(100, Math.max(0, parseFloat(document.getElementById('cancelVenuePct')?.value) || 0));
+    const artistDisplay = document.getElementById('cancelArtistPctDisplay');
+    if (artistDisplay) artistDisplay.textContent = Math.round(100 - vPct);
+    _cancelVenuePct = vPct;
+  } else {
+    vPct = _cancelVenuePct;
+  }
+  if (vPct === null || vPct === undefined) return;
+
+  const aPct        = 100 - vPct;
+  const artistRefund = Math.round(deposit * aPct / 100);
+  const venueShare   = Math.round(deposit * vPct / 100);
+  const gnvFee       = Math.min(Math.round(fee), venueShare);
+  const venuePayout  = Math.max(0, venueShare - Math.round(fee));
+
+  const preview = document.getElementById('cancelSplitPreview');
+  if (preview) preview.style.display = 'block';
+  const el = id => document.getElementById(id);
+  if (el('cancelPreviewArtist')) el('cancelPreviewArtist').textContent = `−$${artistRefund.toLocaleString()} returned to artist (${aPct}%)`;
+  if (el('cancelPreviewFee'))    el('cancelPreviewFee').textContent    = gnvFee > 0 ? `−$${gnvFee.toLocaleString()}` : 'Waived — venue share too small';
+  if (el('cancelPreviewVenue')) {
+    el('cancelPreviewVenue').textContent  = `$${venuePayout.toLocaleString()}`;
+    el('cancelPreviewVenue').className    = `resolve-detail-amount${venuePayout === 0 ? ' resolve-detail-amount--zero' : ''}`;
+  }
+  const confirmBtn = document.getElementById('resolveConfirmBtn');
+  if (confirmBtn) {
+    confirmBtn.disabled    = false;
+    confirmBtn.textContent = `Confirm — $${venuePayout.toLocaleString()} to you · $${artistRefund.toLocaleString()} to artist`;
+  }
 }
 
 function selectResolutionType(type) {
@@ -1479,36 +1541,50 @@ function selectResolutionType(type) {
       <p class="resolve-detail-note">GigNVenue retains the booking fee already collected from the artist. The artist's deposit is returned in full.</p>`;
 
   } else if (type === 'artist-cancel' || type === 'mutual') {
-    const parsed        = parseCancelPolicy(policy, daysUntilShow);
-    const artistRefund  = Math.round(deposit * parsed.refundPct / 100);
-    const remaining     = deposit - artistRefund;
-    const gnvFee        = Math.min(Math.round(fee), Math.round(remaining));
-    const venuePayout   = Math.max(0, Math.round(remaining - fee));
-
+    _cancelVenuePct = null;
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Select a deposit split above';
     detailsEl.innerHTML = `
+      ${policy ? `
       <div class="resolve-policy-block">
-        <div class="resolve-policy-label">Your cancellation policy</div>
-        <div class="resolve-policy-text">${policy || 'No cancellation policy set for this venue.'}</div>
-        <div class="resolve-policy-applied">↳ ${parsed.explanation}</div>
-      </div>
+        <div class="resolve-policy-label">Your cancellation policy (for reference)</div>
+        <div class="resolve-policy-text">${policy}</div>
+      </div>` : ''}
       <div class="resolve-detail-row">
         <span class="resolve-detail-label">Deposit held</span>
-        <span>$${Math.round(deposit).toLocaleString()}</span>
+        <span>$${Math.round(deposit).toLocaleString()} (20% of nightly rate)</span>
       </div>
-      <div class="resolve-detail-row">
-        <span class="resolve-detail-label">Artist refund (${parsed.refundPct}%)</span>
-        <span class="resolve-detail-muted">−$${artistRefund.toLocaleString()} returned to artist</span>
+      <div class="resolve-split-header">How should the deposit be split? <span class="resolve-split-sub">Venue / Artist</span></div>
+      <div class="resolve-split-presets">
+        <button class="resolve-split-btn" data-vpct="100" onclick="setCancelSplit(100)">100 / 0<span>Venue keeps all</span></button>
+        <button class="resolve-split-btn" data-vpct="75"  onclick="setCancelSplit(75)">75 / 25</button>
+        <button class="resolve-split-btn" data-vpct="50"  onclick="setCancelSplit(50)">50 / 50</button>
+        <button class="resolve-split-btn" data-vpct="25"  onclick="setCancelSplit(25)">25 / 75</button>
+        <button class="resolve-split-btn" data-vpct="0"   onclick="setCancelSplit(0)">0 / 100<span>Full artist refund</span></button>
+        <button class="resolve-split-btn" data-vpct="custom" onclick="setCancelSplit('custom')">Custom</button>
       </div>
-      ${gnvFee > 0 ? `
-      <div class="resolve-detail-row">
-        <span class="resolve-detail-label">GigNVenue fee (5%)</span>
-        <span class="resolve-detail-muted">−$${gnvFee.toLocaleString()}</span>
-      </div>` : ''}
-      <div class="resolve-detail-row resolve-detail-total">
-        <span class="resolve-detail-label">Released to you</span>
-        <span class="resolve-detail-amount${venuePayout === 0 ? ' resolve-detail-amount--zero' : ''}">$${venuePayout.toLocaleString()}</span>
+      <div id="cancelSplitCustomWrap" style="display:none;margin-top:12px;gap:10px;align-items:center">
+        <label class="resolve-detail-label">Venue %</label>
+        <input type="number" id="cancelVenuePct" min="0" max="100" step="1" value="50"
+          style="width:72px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:14px;color:var(--text)"
+          oninput="updateCancelSplitPreview()"/>
+        <span class="resolve-detail-label">/ Artist: <span id="cancelArtistPctDisplay">50</span>%</span>
       </div>
-      ${type === 'mutual' ? '<p class="resolve-detail-note">Mutually agreed cancellation — the same cancellation policy terms apply as for an artist-initiated cancellation.</p>' : ''}`;
+      <div id="cancelSplitPreview" style="display:none;margin-top:16px;border-top:1px solid var(--border-light);padding-top:14px">
+        <div class="resolve-detail-row">
+          <span class="resolve-detail-label">Artist refund</span>
+          <span class="resolve-detail-muted" id="cancelPreviewArtist"></span>
+        </div>
+        <div class="resolve-detail-row">
+          <span class="resolve-detail-label">GigNVenue fee (5%)</span>
+          <span class="resolve-detail-muted" id="cancelPreviewFee"></span>
+        </div>
+        <div class="resolve-detail-row resolve-detail-total">
+          <span class="resolve-detail-label">Released to you</span>
+          <span id="cancelPreviewVenue" class="resolve-detail-amount"></span>
+        </div>
+      </div>
+      ${type === 'mutual' ? '<p class="resolve-detail-note" style="margin-top:12px">Mutually agreed cancellation — select the split that reflects your contract terms.</p>' : ''}`;
 
   } else if (type === 'postponed') {
     const minDate = new Date(today);
@@ -1533,56 +1609,22 @@ function submitResolution() {
   const r = RESERVATIONS.find(x => x.id === _resolveTargetId);
   if (!r) return;
 
-  const deposit       = r.total * 0.20;
-  const fee           = r.total * 0.05;
-  const showDate      = new Date(r.checkin + 'T00:00:00');
-  const today         = new Date(); today.setHours(0,0,0,0);
-  const daysUntilShow = Math.floor((showDate - today) / (1000 * 60 * 60 * 24));
-  const venue         = HOST_LISTINGS.find(l => l.title === r.property);
-  const policy        = venue?.cancellationPolicy || '';
-
-  function refreshAll() {
-    syncCalendarFromBookings(); renderCalendar();
-    renderReservations(currentResFilter); updateConfirmedTabBadge();
-    renderOverview(); renderEarnings();
-  }
+  const deposit = r.total * 0.20;
+  const fee     = r.total * 0.05;
 
   if (_resolveType === 'played') {
-    closeResolveModal();
-    markPlayedOff(_resolveTargetId);   // handles state, renders, toast, rating prompt
-
+    r.venueRelease = Math.round(deposit - fee);
+    r.artistRefund = 0;
   } else if (_resolveType === 'host-cancel') {
-    r.status      = 'cancelled';
-    r.cancelledBy = 'host';
-    r.cancelReason = 'Host canceled';
-    r.resolution  = 'host-cancel';
-    r.artistRefund = Math.round(deposit);
     r.venueRelease = 0;
-    closeResolveModal();
-    refreshAll();
-    showDash(`Booking canceled — $${Math.round(deposit).toLocaleString()} deposit refunded to artist.`);
-
+    r.artistRefund = Math.round(deposit);
   } else if (_resolveType === 'artist-cancel' || _resolveType === 'mutual') {
-    const parsed      = parseCancelPolicy(policy, daysUntilShow);
-    const artistRefund = Math.round(deposit * parsed.refundPct / 100);
-    const remaining   = deposit - artistRefund;
-    const venuePayout = Math.max(0, Math.round(remaining - fee));
-    r.status      = 'cancelled';
-    r.cancelledBy = _resolveType === 'mutual' ? 'mutual' : 'artist';
-    r.cancelReason = _resolveType === 'mutual' ? 'Mutually agreed cancellation' : 'Artist canceled';
-    r.resolution  = _resolveType;
-    r.artistRefund = artistRefund;
-    r.venueRelease = venuePayout;
-    closeResolveModal();
-    refreshAll();
-    const who  = _resolveType === 'mutual' ? 'Mutual cancellation' : 'Artist cancellation';
-    const msg  = [
-      who + ' recorded.',
-      artistRefund > 0 ? `$${artistRefund.toLocaleString()} returned to artist.` : 'No artist refund.',
-      venuePayout > 0  ? `$${venuePayout.toLocaleString()} released to you.`    : 'No venue payout.',
-    ].join(' ');
-    showDash(msg);
-
+    if (_cancelVenuePct === null || _cancelVenuePct === undefined) {
+      showDash('Please select a deposit split before confirming.'); return;
+    }
+    const artistPct    = 100 - _cancelVenuePct;
+    r.artistRefund     = Math.round(deposit * artistPct / 100);
+    r.venueRelease     = Math.max(0, Math.round(deposit * _cancelVenuePct / 100 - fee));
   } else if (_resolveType === 'postponed') {
     const newDateInput = document.getElementById('postponeNewDate');
     const newDate = newDateInput?.value;
@@ -1590,14 +1632,195 @@ function submitResolution() {
     if (newDate <= new Date().toISOString().slice(0, 10)) {
       showDash('New date must be in the future.'); return;
     }
+    r.pendingNewDate  = newDate;
     r.originalCheckin = r.originalCheckin || r.checkin;
-    r.checkin   = newDate;
-    r.postponed = true;
-    r.postponedAt = Date.now();
-    closeResolveModal();
-    refreshAll();
-    showDash(`Show postponed to ${fmt(newDate)}. Deposit held until the new show plays off.`);
+    r.venueRelease    = 0;
+    r.artistRefund    = 0;
   }
+
+  r.status               = 'pending_resolution';
+  r.resolution           = _resolveType;
+  r.resolutionSetAt      = Date.now();
+  r.resolutionLapseHours = _resolveType === 'played' ? 24 : _resolveType === 'postponed' ? null : 48;
+
+  saveResolutionState(r);
+  writePendingResolutionBridge(r);
+  // TODO: trigger push notification to artist when notification system is live — resolution type + amounts + lapse window are all on `r`
+  closeResolveModal();
+  syncCalendarFromBookings(); renderCalendar();
+  renderReservations(currentResFilter); updateConfirmedTabBadge();
+  renderOverview(); renderEarnings();
+
+  const lapseText = r.resolutionLapseHours
+    ? ` Auto-confirmed in ${r.resolutionLapseHours}h if no artist response.` : '';
+  const msgs = {
+    'played':        `Resolution sent — show played off. $${r.venueRelease.toLocaleString()} pending release.${lapseText}`,
+    'host-cancel':   `Cancellation sent — $${r.artistRefund.toLocaleString()} deposit refund pending artist confirmation.${lapseText}`,
+    'artist-cancel': `Cancellation terms sent to artist.${lapseText}`,
+    'mutual':        `Mutual cancellation terms sent to artist.${lapseText}`,
+    'postponed':     `New date proposal sent — awaiting artist confirmation. No auto-lapse; artist must actively confirm.`,
+  };
+  showDash(msgs[_resolveType] || 'Resolution pending artist response.');
+}
+
+// ─── RESOLUTION STATE MACHINE ─────────────────────────────────────────────────
+
+function saveResolutionState(r) {
+  try {
+    const map = JSON.parse(localStorage.getItem('gnv_resolution_states') || '{}');
+    map[r.id] = {
+      status:               r.status,
+      resolution:           r.resolution,
+      resolutionSetAt:      r.resolutionSetAt,
+      resolutionLapseHours: r.resolutionLapseHours,
+      venueRelease:         r.venueRelease,
+      artistRefund:         r.artistRefund,
+      pendingNewDate:       r.pendingNewDate    || null,
+      originalCheckin:      r.originalCheckin   || null,
+      disputeNotes:         r.disputeNotes      || null,
+      disputedAt:           r.disputedAt        || null,
+      disputedBy:           r.disputedBy        || null,
+    };
+    localStorage.setItem('gnv_resolution_states', JSON.stringify(map));
+  } catch(e) {}
+}
+
+function clearResolutionState(id) {
+  try {
+    const map = JSON.parse(localStorage.getItem('gnv_resolution_states') || '{}');
+    delete map[id];
+    localStorage.setItem('gnv_resolution_states', JSON.stringify(map));
+  } catch(e) {}
+}
+
+// Re-apply persisted resolution states after RESERVATIONS array is re-initialised on page load
+function syncResolutionStates() {
+  try {
+    const map = JSON.parse(localStorage.getItem('gnv_resolution_states') || '{}');
+    Object.entries(map).forEach(([id, state]) => {
+      const r = RESERVATIONS.find(x => x.id === id);
+      if (r) Object.assign(r, state);
+    });
+  } catch(e) {}
+}
+
+function writePendingResolutionBridge(r) {
+  try {
+    const list = JSON.parse(localStorage.getItem('gnv_pending_resolutions') || '[]');
+    const idx  = list.findIndex(p => p.id === r.id);
+    const entry = {
+      id:              r.id,
+      venueTitle:      r.property,
+      artistName:      r.bandName ? `${r.guest} / ${r.bandName}` : r.guest,
+      showDate:        r.checkin,
+      resolution:      r.resolution,
+      resolutionSetAt: r.resolutionSetAt,
+      lapseHours:      r.resolutionLapseHours,
+      venueRelease:    r.venueRelease,
+      artistRefund:    r.artistRefund,
+      pendingNewDate:  r.pendingNewDate || null,
+    };
+    if (idx >= 0) list[idx] = entry; else list.push(entry);
+    localStorage.setItem('gnv_pending_resolutions', JSON.stringify(list));
+  } catch(e) {}
+}
+
+function removePendingResolutionBridge(id) {
+  try {
+    const list = JSON.parse(localStorage.getItem('gnv_pending_resolutions') || '[]');
+    localStorage.setItem('gnv_pending_resolutions', JSON.stringify(list.filter(p => p.id !== id)));
+  } catch(e) {}
+}
+
+function formatTimeRemaining(resolutionSetAt, lapseHours) {
+  if (!resolutionSetAt || !lapseHours) return 'Awaiting artist response';
+  const remaining = (resolutionSetAt + lapseHours * 3600000) - Date.now();
+  if (remaining <= 0) return 'Lapse window passed — will auto-confirm on next load';
+  const hrs  = Math.floor(remaining / 3600000);
+  const mins = Math.floor((remaining % 3600000) / 60000);
+  return hrs > 0 ? `${hrs}h ${mins}m remaining` : `${mins}m remaining`;
+}
+
+function applyResolutionFinal(r, trigger) {
+  if (r.resolution === 'played') {
+    r.status      = 'completed';
+    r.playedOffAt = Date.now();
+    r.resolvedAt  = Date.now();
+    r.resolvedBy  = trigger;
+  } else if (r.resolution === 'postponed') {
+    r.originalCheckin = r.originalCheckin || r.checkin;
+    r.checkin     = r.pendingNewDate;
+    r.status      = 'confirmed';
+    r.postponed   = true;
+    r.postponedAt = Date.now();
+    r.resolvedAt  = Date.now();
+    r.resolvedBy  = trigger;
+  } else {
+    r.status      = 'cancelled';
+    r.resolvedAt  = Date.now();
+    r.resolvedBy  = trigger;
+    if (r.resolution === 'host-cancel') {
+      r.cancelledBy  = 'host';
+      r.cancelReason = 'Host canceled';
+    } else if (r.resolution === 'artist-cancel') {
+      r.cancelledBy  = 'artist';
+      r.cancelReason = 'Artist canceled';
+    } else if (r.resolution === 'mutual') {
+      r.cancelledBy  = 'mutual';
+      r.cancelReason = 'Mutually agreed cancellation';
+    }
+  }
+  removePendingResolutionBridge(r.id);
+  clearResolutionState(r.id);
+  syncCalendarFromBookings(); renderCalendar();
+  renderReservations(currentResFilter); updateConfirmedTabBadge();
+  renderOverview(); renderEarnings();
+  if (r.resolution === 'played') openHostRatingModal(r.id);
+}
+
+function checkLapsedResolutions() {
+  const now = Date.now();
+  let anyLapsed = false;
+  RESERVATIONS.forEach(r => {
+    if (r.status !== 'pending_resolution') return;
+    if (r.resolution === 'postponed') return;   // no auto-lapse for postponed
+    if (!r.resolutionSetAt || !r.resolutionLapseHours) return;
+    if (now - r.resolutionSetAt >= r.resolutionLapseHours * 3600000) {
+      applyResolutionFinal(r, 'lapsed');
+      anyLapsed = true;
+    }
+  });
+  if (anyLapsed) showDash('A pending resolution was auto-confirmed after the review window elapsed.');
+}
+
+function ingestResolutionResponses() {
+  try {
+    const responses = JSON.parse(localStorage.getItem('gnv_resolution_responses') || '[]');
+    let changed = false;
+    responses.forEach(resp => {
+      if (resp.processed) return;
+      const r = RESERVATIONS.find(x => x.id === resp.id);
+      if (!r || r.status !== 'pending_resolution') { resp.processed = true; changed = true; return; }
+      if (resp.action === 'confirmed') {
+        applyResolutionFinal(r, 'artist_confirmed');
+        showDash(`Artist confirmed the resolution for ${r.property} · ${fmt(r.checkin)}.`);
+      } else if (resp.action === 'disputed') {
+        r.status       = 'disputed';
+        r.disputeNotes = resp.notes || '';
+        r.disputedAt   = resp.respondedAt;
+        r.disputedBy   = 'artist';
+        saveResolutionState(r);
+        removePendingResolutionBridge(r.id);
+        syncCalendarFromBookings(); renderCalendar();
+        renderReservations(currentResFilter); updateConfirmedTabBadge();
+        renderOverview(); renderEarnings();
+        showDash(`⚠ Artist disputed the resolution for ${r.property}. Notes visible in Earnings → Deposits in escrow.`);
+      }
+      resp.processed = true;
+      changed = true;
+    });
+    if (changed) localStorage.setItem('gnv_resolution_responses', JSON.stringify(responses));
+  } catch(e) {}
 }
 
 // ─── RATINGS ─────────────────────────────────────────────────────────────────
@@ -3805,12 +4028,15 @@ function renderEarnings() {
   const allTimeLabel = src === 'gnv' ? 'GigNVenue bookings only' : src === 'self' ? 'Self-managed only' : 'GigNVenue + self-managed';
 
   // GigNVenue confirmed bookings with deposit in escrow
-  const todayIso     = today.toISOString().slice(0, 10);
-  const allEscrow    = RESERVATIONS.filter(r => !r.hostGenerated && r.status === 'confirmed');
-  const awaitingConf = allEscrow.filter(r => r.checkin < todayIso);
-  const upcoming     = allEscrow.filter(r => r.checkin >= todayIso);
-  const escrowTotal  = allEscrow.reduce((sum, r) => sum + r.total * 0.20, 0);
-  const nextUp       = [...upcoming].sort((a,b) => new Date(a.checkin) - new Date(b.checkin))[0];
+  const todayIso        = today.toISOString().slice(0, 10);
+  const allEscrow       = RESERVATIONS.filter(r => !r.hostGenerated && ['confirmed','pending_resolution','disputed'].includes(r.status));
+  const needsResolution = allEscrow.filter(r => r.status === 'confirmed' && r.checkin < todayIso);
+  const pendingConf     = allEscrow.filter(r => r.status === 'pending_resolution');
+  const disputedEscrow  = allEscrow.filter(r => r.status === 'disputed');
+  const upcoming        = allEscrow.filter(r => r.status === 'confirmed' && r.checkin >= todayIso);
+
+  const escrowTotal     = allEscrow.reduce((sum, r) => sum + r.total * 0.20, 0);
+  const nextUp          = [...upcoming].sort((a,b) => new Date(a.checkin) - new Date(b.checkin))[0];
 
   const gnvDimmed = src === 'self';  // escrow/next-release are GigNVenue-only, dim when self-managed filter active
 
@@ -3818,8 +4044,8 @@ function renderEarnings() {
     { icon:'💰', label:'Total earned (all time)', value:`$${totalAllTime.toLocaleString()}`,  delta: allTimeLabel, deltaClass:'delta-up', color:'#FF2D78' },
     { icon:'📅', label:`This year (${yr})`,        value:`$${totalThisYear.toLocaleString()}`, delta:`${monthRange} · ${sourceLabel}`, deltaClass:'delta-up', color:'#3B82F6' },
     { icon:'🏦', label:'Deposits in escrow',        value: gnvDimmed ? '—' : `$${Math.round(escrowTotal).toLocaleString()}`,
-      delta: gnvDimmed ? 'GigNVenue bookings only' : `${allEscrow.length} show${allEscrow.length!==1?'s':''}${awaitingConf.length ? ` · ${awaitingConf.length} need confirmation` : ''}`,
-      deltaClass: gnvDimmed ? 'delta-neutral' : awaitingConf.length ? 'delta-pending' : 'delta-neutral', color:'#10B981', dim: gnvDimmed },
+      delta: gnvDimmed ? 'GigNVenue bookings only' : `${allEscrow.length} show${allEscrow.length!==1?'s':''}${needsResolution.length ? ` · ${needsResolution.length} need resolution` : ''}${pendingConf.length ? ` · ${pendingConf.length} pending` : ''}${disputedEscrow.length ? ` · ${disputedEscrow.length} disputed` : ''}`,
+      deltaClass: gnvDimmed ? 'delta-neutral' : disputedEscrow.length ? 'delta-disputed' : (needsResolution.length || pendingConf.length) ? 'delta-pending' : 'delta-neutral', color:'#10B981', dim: gnvDimmed },
     { icon:'📊', label:'Next deposit release',
       value: gnvDimmed ? '—' : nextUp ? `$${Math.round(nextUp.total*0.20).toLocaleString()}` : '—',
       delta: gnvDimmed ? 'GigNVenue bookings only' : nextUp ? `after ${fmt(nextUp.checkin)}` : 'No upcoming shows',
@@ -3833,21 +4059,53 @@ function renderEarnings() {
       <span class="stat-card-delta ${s.deltaClass}">${s.deltaClass==='delta-up'?'▲ ':''}${s.delta}</span>
     </div>`).join('');
 
-  // Deposits in escrow table
+  // Deposits in escrow table — 4 sections
   const escrowRows = [
-    // Shows needing resolution (show date passed) — sorted most recent first
-    ...[...awaitingConf].sort((a,b) => new Date(b.checkin) - new Date(a.checkin)).map(r => `
+    // Section 1: Needs resolution (confirmed, show date passed)
+    ...(needsResolution.length ? [`<tr class="escrow-section-header"><td colspan="6">Needs resolution</td></tr>`] : []),
+    ...[...needsResolution].sort((a,b) => new Date(b.checkin) - new Date(a.checkin)).map(r => `
         <tr style="background:rgba(245,158,11,0.05)">
           <td>${fmt(r.checkin)}</td>
           <td>${r.property}</td>
           <td>${r.guest}${r.bandName ? ` <span style="color:var(--text-muted);font-size:12px">/ ${r.bandName}</span>` : ''}</td>
           <td>$${r.total.toLocaleString()}</td>
           <td><strong>$${Math.round(r.total * 0.20).toLocaleString()}</strong></td>
+          <td><button class="res-action-btn resolve-booking-btn" onclick="openResolveModal('${r.id}')">↪ Resolve booking</button></td>
+        </tr>`),
+    // Section 2: Pending artist confirmation
+    ...(pendingConf.length ? [`<tr class="escrow-section-header"><td colspan="6">Pending artist confirmation</td></tr>`] : []),
+    ...[...pendingConf].sort((a,b) => a.resolutionSetAt - b.resolutionSetAt).map(r => {
+      const resLabels = { 'played':'Show played off','host-cancel':'Host canceled','artist-cancel':'Artist canceled','mutual':'Mutual cancellation','postponed':'New date proposed' };
+      const timeStr   = formatTimeRemaining(r.resolutionSetAt, r.resolutionLapseHours);
+      return `
+        <tr style="background:rgba(59,130,246,0.04)">
+          <td>${fmt(r.checkin)}${r.pendingNewDate ? `<br><span style="font-size:11px;color:#60A5FA">→ ${fmt(r.pendingNewDate)}</span>` : ''}</td>
+          <td>${r.property}</td>
+          <td>${r.guest}${r.bandName ? ` <span style="color:var(--text-muted);font-size:12px">/ ${r.bandName}</span>` : ''}</td>
+          <td>$${r.total.toLocaleString()}</td>
+          <td><strong>$${Math.round(r.total * 0.20).toLocaleString()}</strong></td>
           <td>
-            <button class="res-action-btn resolve-booking-btn" onclick="openResolveModal('${r.id}')">↪ Resolve booking</button>
+            <span class="escrow-pending-badge">${resLabels[r.resolution] || 'Pending'}</span>
+            <div class="escrow-time-remaining">${timeStr}</div>
+          </td>
+        </tr>`;
+    }),
+    // Section 3: Disputed
+    ...(disputedEscrow.length ? [`<tr class="escrow-section-header escrow-section-header--disputed"><td colspan="6">Disputed by artist</td></tr>`] : []),
+    ...[...disputedEscrow].map(r => `
+        <tr style="background:rgba(239,68,68,0.05)">
+          <td>${fmt(r.checkin)}</td>
+          <td>${r.property}</td>
+          <td>${r.guest}${r.bandName ? ` <span style="color:var(--text-muted);font-size:12px">/ ${r.bandName}</span>` : ''}</td>
+          <td>$${r.total.toLocaleString()}</td>
+          <td><strong>$${Math.round(r.total * 0.20).toLocaleString()}</strong></td>
+          <td>
+            <span class="status-badge status-disputed">Disputed</span>
+            ${r.disputeNotes ? `<div class="escrow-dispute-notes">"${r.disputeNotes}"</div>` : ''}
           </td>
         </tr>`),
-    // Upcoming shows — sorted soonest first
+    // Section 4: Upcoming shows
+    ...(upcoming.length ? [`<tr class="escrow-section-header escrow-section-header--upcoming"><td colspan="6">Upcoming shows</td></tr>`] : []),
     ...[...upcoming].sort((a,b) => new Date(a.checkin) - new Date(b.checkin)).map(r => `
         <tr>
           <td>${r.postponed ? `${fmt(r.checkin)}<br><span style="font-size:11px;color:var(--text-muted)">orig. ${fmt(r.originalCheckin)}</span>` : fmt(r.checkin)}</td>

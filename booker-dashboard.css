@@ -604,3 +604,68 @@
 .booking-fee-row .fee-note { font-size: 11px; color: var(--text-muted); }
 .booking-fee-total { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; padding: 10px 0 0; margin-top: 6px; border-top: 1px solid var(--border); color: var(--text); }
 .booking-no-charge { text-align: center; font-size: 11px; color: var(--text-muted); margin: 8px 0 0; line-height: 1.4; }
+
+/* ── Pending resolution action cards (booker overview) ── */
+#pendingActionsWrap { margin-bottom: 16px; }
+.pending-action-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(245,158,11,0.4);
+  border-radius: var(--r);
+  padding: 18px 20px 16px;
+  margin-bottom: 12px;
+}
+.pending-action-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.pending-action-icon { font-size: 22px; flex-shrink: 0; }
+.pending-action-title-block { flex: 1; min-width: 0; }
+.pending-action-label { font-size: 14px; font-weight: 700; color: var(--text); }
+.pending-action-sub  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.pending-action-badge {
+  font-size: 11px; font-weight: 700;
+  padding: 3px 9px; border-radius: 999px;
+  background: rgba(245,158,11,0.15);
+  color: #F59E0B;
+  border: 1px solid rgba(245,158,11,0.35);
+  white-space: nowrap; flex-shrink: 0;
+}
+.pending-action-body {
+  font-size: 13px; color: var(--text-sec);
+  line-height: 1.55; margin-bottom: 14px;
+}
+.pending-action-footer { display: flex; gap: 10px; flex-wrap: wrap; }
+.pending-action-btn {
+  padding: 8px 18px; border-radius: 8px;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none;
+}
+.pending-action-btn--confirm { background: #10B981; color: #fff; }
+.pending-action-btn--confirm:hover { opacity: .88; }
+.pending-action-btn--dispute {
+  background: rgba(239,68,68,0.12);
+  color: #F87171;
+  border: 1px solid rgba(239,68,68,0.3);
+}
+.pending-action-btn--dispute:hover { background: rgba(239,68,68,0.2); }
+.pending-action-btn--cancel {
+  background: var(--bg-elevated); color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+.pending-action-btn--cancel:hover { color: var(--text); }
+.pending-dispute-form { margin-top: 12px; }
+.pending-dispute-textarea {
+  width: 100%; box-sizing: border-box;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px; color: var(--text);
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 10px;
+}
+.pending-dispute-textarea:focus { outline: none; border-color: #EF4444; }
+.pending-dispute-actions { display: flex; gap: 10px; }
