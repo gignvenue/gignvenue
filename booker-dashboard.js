@@ -739,7 +739,21 @@ function renderRequests(filter) {
       <td style="font-weight:600;color:var(--text)">${v?.price ? '$' + v.price.toLocaleString() : '—'}</td>
       <td>
         <span class="req-badge req-${dispStatus}">${passed ? 'Date passed' : capitalize(r.status)}</span>
-        ${!passed && r.status === 'approved' && r.paymentStatus === 'unpaid' ? `<span class="req-badge req-payment-due">Payment due</span>` : ''}
+        ${!passed && r.status === 'approved' && r.paymentStatus === 'unpaid' ? (() => {
+          const remaining = r.paymentDeadline ? r.paymentDeadline - Date.now() : null;
+          let countdownHtml = '';
+          if (remaining !== null) {
+            if (remaining <= 0) {
+              countdownHtml = '<div style="font-size:11px;color:#EF4444;margin-top:3px">⚠ Window expired — booking may be cancelled</div>';
+            } else {
+              const hrs  = Math.floor(remaining / 3600000);
+              const mins = Math.floor((remaining % 3600000) / 60000);
+              const urgentColor = remaining < 3600000 ? '#EF4444' : '#F59E0B';
+              countdownHtml = `<div style="font-size:11px;color:${urgentColor};margin-top:3px">⏱ ${hrs}h ${mins}m to complete payment</div>`;
+            }
+          }
+          return `<span class="req-badge req-payment-due">Payment due</span>${countdownHtml}`;
+        })() : ''}
         ${r.status === 'cancelled' && r.cancelReason === 'Another booking confirmed for this date'
           ? `<span class="req-badge req-date-conflict" title="You confirmed a booking at another venue for this date">Date conflict</span>`
           : r.status === 'cancelled' && r.cancelledBy

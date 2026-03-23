@@ -1302,7 +1302,22 @@ function resRow(r, isPending, rank, isFirst, isLast, conflict, showDragHandle, i
           const today = new Date(); today.setHours(0,0,0,0);
           const isPastDate = showDate < today;
           const paymentLine = r.status === 'confirmed' && !r.hostGenerated
-            ? `<div style="font-size:11px;margin-bottom:4px">${r.paymentStatus === 'paid' ? '<span style="color:#10B981">● Payment received</span>' : '<span style="color:#F59E0B">● Awaiting payment</span>'}</div>`
+            ? `<div style="font-size:11px;margin-bottom:4px">${r.paymentStatus === 'paid' ? '<span style="color:#10B981">● Payment received</span>' : (() => {
+                const deadline = r.confirmedAt ? r.confirmedAt + 48 * 3600000 : null;
+                const remaining = deadline ? deadline - Date.now() : null;
+                let countdownHtml = '';
+                if (remaining !== null) {
+                  if (remaining <= 0) {
+                    countdownHtml = '<div style="font-size:11px;color:#EF4444;margin-top:2px">⚠ Payment window expired</div>';
+                  } else {
+                    const hrs  = Math.floor(remaining / 3600000);
+                    const mins = Math.floor((remaining % 3600000) / 60000);
+                    const urgentColor = remaining < 3600000 ? '#EF4444' : '#F59E0B';
+                    countdownHtml = `<div style="font-size:11px;color:${urgentColor};margin-top:2px">⏱ ${hrs}h ${mins}m to pay</div>`;
+                  }
+                }
+                return '<span style="color:#F59E0B">● Awaiting payment</span>' + countdownHtml;
+              })()}</div>`
             : '';
           if (isPastDate) {
             return paymentLine + `<select class="res-status-select status-${r.status}" onchange="changeResStatus('${r.id}', this.value)">
