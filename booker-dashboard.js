@@ -2346,8 +2346,9 @@ function renderPendingActions() {
 
   let pending = [];
   try {
-    const all = JSON.parse(localStorage.getItem('gnv_pending_resolutions') || '[]');
-    pending = all.filter(p => ALL_REQUESTS.find(x => x.id === p.id && x.bookerId === user.id));
+    // Show all pending resolutions in the bridge — in prototype all localStorage is per-user.
+    // TODO: filter by bookerId once Supabase is in place.
+    pending = JSON.parse(localStorage.getItem('gnv_pending_resolutions') || '[]');
   } catch(e) {}
 
   if (!pending.length) { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }

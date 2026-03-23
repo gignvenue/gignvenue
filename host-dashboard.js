@@ -38,6 +38,14 @@ const RESERVATIONS = [
   { id:'r7', guest:'Marcus Webb',                                    guestImg:'https://randomuser.me/api/portraits/men/44.jpg',  property:'The Neon Stage',    propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:'2026-06-05', checkout:'2026-06-05', guests:280, total:7200, status:'pending',   submittedAt: Date.now() - 1 * 24 * 60 * 60 * 1000, eventType:'Concert / live show', notes:'' },
   { id:'r9', guest:'Leon Hayes',     bandName:'Static Frequency',   guestImg:'https://randomuser.me/api/portraits/men/52.jpg',  property:'The Neon Stage',    propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:'2026-06-05', checkout:'2026-06-05', guests:260, total:6800, status:'pending',   submittedAt: Date.now() - 1 * 24 * 60 * 60 * 1000, eventType:'Concert / live show', notes:'Electronic rock — we run backing tracks from Ableton. Need 2 IEM sends and a reliable monitor mix.' },
   { id:'r8', guest:'Jade Rivera',    bandName:'Solar Drift',         guestImg:'https://randomuser.me/api/portraits/women/33.jpg', property:'The Neon Stage',   propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:'2026-06-06', checkout:'2026-06-06', guests:310, total:7800, status:'pending',   submittedAt: Date.now() - 3 * 24 * 60 * 60 * 1000, eventType:'Festival set', notes:'4-piece band, high energy. Full backline required. We have our own lighting director — will need a DMX port.' },
+  // ── Demo: resolution flow showcase ───────────────────────────────────────────
+  // r10: past confirmed, paid — shows "↪ Resolve booking" button
+  { id:'r10', guest:'Nadia Voss',    bandName:'Lunar Drift',         guestImg:'https://randomuser.me/api/portraits/women/26.jpg', property:'The Neon Stage',    propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:'2026-03-15', checkout:'2026-03-15', guests:290, total:7600, status:'confirmed',          paymentStatus:'paid', paidAt:new Date('2026-03-06').getTime(), confirmedAt:new Date('2026-03-05').getTime(), submittedAt:new Date('2026-02-28').getTime(), eventType:'Concert / live show', notes:'Alt-rock quartet. Full backline requested. Will bring own merch table setup.' },
+  // r11: pending_resolution (played) — blue badge + countdown; resolutionSetAt recalculates on each page load so countdown is always ~18h
+  { id:'r11', guest:'Felix Hart',    bandName:'Cassette Wolves',     guestImg:'https://randomuser.me/api/portraits/men/18.jpg',   property:'Velvet Lounge',     propertyImg:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=120&q=60', checkin:'2026-03-10', checkout:'2026-03-10', guests:170, total:5800, status:'pending_resolution', paymentStatus:'paid', paidAt:new Date('2026-02-26').getTime(), confirmedAt:new Date('2026-02-25').getTime(), submittedAt:new Date('2026-02-20').getTime(), eventType:'Album launch',         notes:'Indie pop duo. Minimal setup — 2 vocals, DI bass, loop pedal.', resolution:'played', resolutionSetAt: Date.now() - 6*3600000, resolutionLapseHours:24, venueRelease:Math.round(5800*0.15), artistRefund:0 },
+  // r12: disputed — red badge with artist dispute note
+  { id:'r12', guest:'Tara Blaine',                                   guestImg:'https://randomuser.me/api/portraits/women/41.jpg', property:'Rooftop Sessions',  propertyImg:'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=120&q=60',  checkin:'2026-03-05', checkout:'2026-03-05', guests:90,  total:2800, status:'disputed',           paymentStatus:'paid', paidAt:new Date('2026-02-21').getTime(), confirmedAt:new Date('2026-02-20').getTime(), submittedAt:new Date('2026-02-15').getTime(), eventType:'Private showcase',     notes:'Solo artist. Acoustic setup only.', resolution:'artist-cancel', artistRefund:Math.round(2800*0.10), venueRelease:Math.max(0,Math.round(2800*0.10-2800*0.05)), resolutionSetAt:new Date('2026-03-17').getTime(), resolutionLapseHours:48, disputeNotes:'I never agreed to cancel — the venue told me the date was no longer available.', disputedAt:new Date('2026-03-18').getTime(), disputedBy:'artist' },
+  // ─────────────────────────────────────────────────────────────────────────────
   { id:'r4', guest:'David Kim',      bandName:'Iron Circuit',        guestImg:'https://randomuser.me/api/portraits/men/21.jpg',  property:'The Neon Stage',    propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:'2025-11-10', checkout:'2025-11-10', guests:450, total:9800, status:'completed', submittedAt: new Date('2025-10-28').getTime() },
   { id:'r5', guest:'Sofia Morales',                                  guestImg:'https://randomuser.me/api/portraits/women/77.jpg',property:'Velvet Lounge',     propertyImg:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=120&q=60', checkin:'2025-12-20', checkout:'2025-12-20', guests:200, total:5200, status:'completed', submittedAt: new Date('2025-12-05').getTime() },
   { id:'r6',  guest:'Tom Bradley',          guestImg:'https://randomuser.me/api/portraits/men/68.jpg',   property:'Rooftop Sessions', propertyImg:'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=120&q=60', checkin:'2026-02-28', checkout:'2026-02-28', guests:80,  total:2400, status:'cancelled', submittedAt: new Date('2026-02-10').getTime() },
@@ -411,6 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
   calVenueId = HOST_LISTINGS[0]?.id || '';
   loadDateStatuses();
   seedManualEarnings();
+  seedDemoResolutions();
   autoCompleteReservations();
   syncResolutionStates();       // re-apply pending/disputed states that survived page reload
   checkLapsedResolutions();     // auto-confirm any that passed their lapse window
@@ -3909,6 +3918,37 @@ function getAllLoggedEarnings() {
     });
   });
   return { allTime, thisYear };
+}
+
+function seedDemoResolutions() {
+  // Seeds resolution states for r11 (pending_resolution) and r12 (disputed) into localStorage
+  // so they survive page reloads and the artist side sees the pending action card.
+  // Resets cleanly each time the demo user completes the flow (states are cleared on resolution).
+  try {
+    const r11 = RESERVATIONS.find(x => x.id === 'r11');
+    const r12 = RESERVATIONS.find(x => x.id === 'r12');
+    const map = JSON.parse(localStorage.getItem('gnv_resolution_states') || '{}');
+    let changed = false;
+
+    if (r11 && !map['r11']) {
+      map['r11'] = { status:r11.status, resolution:r11.resolution, resolutionSetAt:r11.resolutionSetAt, resolutionLapseHours:r11.resolutionLapseHours, venueRelease:r11.venueRelease, artistRefund:r11.artistRefund, pendingNewDate:null, originalCheckin:null, disputeNotes:null, disputedAt:null, disputedBy:null };
+      changed = true;
+    }
+    if (r12 && !map['r12']) {
+      map['r12'] = { status:r12.status, resolution:r12.resolution, resolutionSetAt:r12.resolutionSetAt, resolutionLapseHours:r12.resolutionLapseHours, venueRelease:r12.venueRelease, artistRefund:r12.artistRefund, pendingNewDate:null, originalCheckin:null, disputeNotes:r12.disputeNotes, disputedAt:r12.disputedAt, disputedBy:r12.disputedBy };
+      changed = true;
+    }
+    if (changed) localStorage.setItem('gnv_resolution_states', JSON.stringify(map));
+
+    // Seed pending bridge for r11 so artist dashboard shows the action card
+    if (r11 && r11.status === 'pending_resolution') {
+      const bridges = JSON.parse(localStorage.getItem('gnv_pending_resolutions') || '[]');
+      if (!bridges.find(p => p.id === 'r11')) {
+        bridges.push({ id:'r11', venueTitle:r11.property, artistName:`${r11.guest} / ${r11.bandName}`, showDate:r11.checkin, resolution:r11.resolution, resolutionSetAt:r11.resolutionSetAt, lapseHours:r11.resolutionLapseHours, venueRelease:r11.venueRelease, artistRefund:r11.artistRefund, pendingNewDate:null });
+        localStorage.setItem('gnv_pending_resolutions', JSON.stringify(bridges));
+      }
+    }
+  } catch(e) {}
 }
 
 function seedManualEarnings() {
