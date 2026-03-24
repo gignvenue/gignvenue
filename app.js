@@ -1698,8 +1698,7 @@ function updateModalBookingTotal() {
     <div class="booking-fee-row"><span>Venue fee <sup style="color:var(--red);font-size:9px">*</sup></span><span>$${nightlyRate.toLocaleString()} / night</span></div>
     <div class="booking-fee-row"><span>Deposit <span class="fee-note">(20% · held; released post-show)</span></span><span>$${deposit.toLocaleString()}</span></div>
     <div class="booking-fee-row"><span>Artist booking fee <span class="fee-note">(5% · non-refundable)</span></span><span>$${bookingFee.toLocaleString()}</span></div>
-    <div class="booking-fee-total"><span>Due on approval</span><span>$${(deposit + bookingFee).toLocaleString()}</span></div>
-    <p style="font-size:11px;color:var(--text-muted);margin:8px 0 0;line-height:1.4">No payment required to submit a request. The amount shown is due within 48 hours of venue approval.</p>`;
+    <div class="booking-fee-total"><span>Due on approval</span><span>$${(deposit + bookingFee).toLocaleString()}</span></div>`;
 }
 
 // ─── LISTING DETAIL MODAL ────────────────────────────────────────────────────
@@ -1925,9 +1924,9 @@ function openListing(id) {
         </select>
       </div>
       <div class="vrf-field">
-        <label class="vrf-label">Expected attendance</label>
+        <label class="vrf-label">Expected attendance <span style="color:var(--red)">*</span></label>
         <input type="number" id="vrfAttendance" class="vrf-input" min="1" max="${l.capacity}"
-               placeholder="Up to ${l.capacity.toLocaleString()}"
+               placeholder="Up to ${l.capacity.toLocaleString()}" required
                oninput="vrfAttendanceCheck(this,${l.capacity})"/>
         <span id="vrfAttendanceErr" class="vrf-error" style="display:none">Capacity is ${l.capacity.toLocaleString()}</span>
       </div>
