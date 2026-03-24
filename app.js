@@ -1503,6 +1503,13 @@ function submitVenueRequest() {
     return;
   }
 
+  const attendance = parseInt(document.getElementById('vrfAttendance')?.value) || 0;
+  if (!attendance) { showToast('Please enter your expected attendance.'); return; }
+  if (l.capacity && attendance > l.capacity) {
+    showToast(`Attendance cannot exceed venue capacity of ${l.capacity.toLocaleString()}.`);
+    return;
+  }
+
   const bookerVenueId = LISTING_TO_BOOKER_VENUE[l.id];
   if (!bookerVenueId) {
     showToast('Online booking is not yet available for this venue.');
@@ -1535,13 +1542,6 @@ function submitVenueRequest() {
       }
     }
   } catch(e) {}
-
-  const attendance = parseInt(document.getElementById('vrfAttendance')?.value) || 0;
-  if (!attendance) { showToast('Please enter your expected attendance.'); return; }
-  if (l.capacity && attendance > l.capacity) {
-    showToast(`Attendance cannot exceed venue capacity of ${l.capacity.toLocaleString()}.`);
-    return;
-  }
 
   // Block duplicate: same artist, same venue, same date — checks both request stores
   try {
