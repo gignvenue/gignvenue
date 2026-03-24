@@ -1825,13 +1825,11 @@ function renderModalCal() {
       : disabled ? '' : `onclick="modalCalPick('${iso}')"`;
     const title = hasMyReq       ? ` title="Your request — click to view in your dashboard"`
                 : status === 'pending'   ? ' title="Pending — requests still available"'
-                : isUnavailable && actName ? ` title="${actName}"`
-                : isUnavailable          ? ' title="Unavailable"' : '';
+                : isUnavailable && actName ? ` title="${actName}"` : '';
     html += `<div class="${cls}"${title}${clickAttr}>
       <span class="mcp-num">${d}</span>
       ${nightlyPrice ? `<span class="mcp-price">$${nightlyPrice >= 1000 ? Math.round(nightlyPrice/100)/10 + 'k' : nightlyPrice}</span>` : ''}
       ${isUnavailable && !hasMyReq && actName ? `<span class="mcp-badge mcp-badge-booked mcp-badge-act" title="${actName}">${actName}</span>` : ''}
-      ${isUnavailable && !hasMyReq && !actName ? '<span class="mcp-badge mcp-badge-booked">Unavailable</span>' : ''}
       ${status === 'pending' && !disabled && !hasMyReq ? '<span class="mcp-badge mcp-badge-pending">Pending</span>' : ''}
       ${hasMyReq ? `<span class="mcp-badge mcp-badge-my-req-${myReqStatus}">YOUR REQ</span>` : ''}
     </div>`;
@@ -2040,6 +2038,19 @@ function updateModalDateDisplay() {
   const el = document.getElementById('modalCalDateField');
   if (!el) return;
   el.textContent = modalCal.date ? fmtIso(modalCal.date, { month:'short', day:'numeric', year:'numeric' }) : 'Select a date';
+
+  // Update featured price: specific rate on selection, range when no date chosen
+  const l = appState.selectedListing;
+  const priceEl = document.getElementById('modalSelectedPrice');
+  if (priceEl && l) {
+    if (modalCal.date) {
+      priceEl.textContent = formatPrice(resolveNightlyRate(l, modalCal.date));
+    } else {
+      const vals = l.weekdayRates ? Object.values(l.weekdayRates) : [l.price];
+      const lo = Math.min(...vals), hi = Math.max(...vals);
+      priceEl.textContent = lo === hi ? formatPrice(lo) : `${formatPrice(lo)} – ${formatPrice(hi)}`;
+    }
+  }
 }
 
 function updateModalBookingTotal() {
@@ -2051,11 +2062,11 @@ function updateModalBookingTotal() {
   const el = document.getElementById('modalBookingBreakdown');
   if (!el) return;
   el.innerHTML = `
-    <div class="booking-fee-row"><span>Venue fee</span><span>$${nightlyRate.toLocaleString()} / night</span></div>
+    <div class="booking-fee-row"><span>Venue fee <sup style="color:var(--red);font-size:9px">*</sup></span><span>$${nightlyRate.toLocaleString()} / night</span></div>
     <div class="booking-fee-row"><span>Deposit <span class="fee-note">(20% · held; released post-show)</span></span><span>$${deposit.toLocaleString()}</span></div>
     <div class="booking-fee-row"><span>Artist booking fee <span class="fee-note">(5% · non-refundable)</span></span><span>$${bookingFee.toLocaleString()}</span></div>
     <div class="booking-fee-total"><span>Due on approval</span><span>$${(deposit + bookingFee).toLocaleString()}</span></div>
-    <p style="font-size:11px;color:var(--text-muted);margin:8px 0 0;line-height:1.4">No payment required to submit a request. Venue pays a separate 5% fee from their deposit release.</p>`;
+    <p style="font-size:11px;color:var(--text-muted);margin:8px 0 0;line-height:1.4">No payment required to submit a request. The amount shown is due within 48 hours of venue approval.</p>`;
 }
 
 // ─── LISTING DETAIL MODAL ────────────────────────────────────────────────────
@@ -2204,6 +2215,12 @@ function openListing(id) {
 
   const deposit    = Math.round(l.price * 0.20);
   const bookingFee = Math.round(l.price * 0.05);
+  const _rateVals  = l.weekdayRates ? Object.values(l.weekdayRates) : [l.price];
+  const _minRate   = Math.min(..._rateVals);
+  const _maxRate   = Math.max(..._rateVals);
+  const priceRangeHtml = _minRate === _maxRate
+    ? formatPrice(_minRate)
+    : `${formatPrice(_minRate)} – ${formatPrice(_maxRate)}`;
   const initDateLabel = modalCal.date
     ? fmtIso(modalCal.date, { month:'short', day:'numeric', year:'numeric' })
     : 'Select a date';
@@ -2237,7 +2254,8 @@ function openListing(id) {
 
   document.getElementById('bookingCard').innerHTML = `
     ${_existingBanner}
-    <div class="booking-price"><strong>${formatPrice(l.price)}</strong> <span>/ ${l.priceUnit}</span></div>
+    <div class="booking-price"><strong id="modalSelectedPrice">${priceRangeHtml}</strong> <span>/ ${l.priceUnit}</span><sup style="color:var(--red);font-size:10px;margin-left:2px;cursor:default" title="Venue's starting price before conversation, confirmation, and contractualization.">*</sup></div>
+    <p style="font-size:11px;color:var(--text-muted);margin:-6px 0 10px;line-height:1.4">* Starting price — final rate confirmed with the venue before contractualization.</p>
 
     <div class="mcp-date-row">
       <div class="mcp-date-field" style="flex:1">
@@ -2307,12 +2325,12 @@ function openListing(id) {
         ? `<button class="msg-venue-btn" onclick="messageVenue(${JSON.stringify(l.title)})"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Message venue first</button>`
         : `<button class="msg-venue-btn msg-venue-btn-disabled" disabled title="Log in to send messages"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Log in to message venue</button>`}
     <div id="modalBookingBreakdown">
-      <div class="booking-fee-row"><span>Venue fee</span><span>${formatPrice(l.price)} / night</span></div>
+      <div class="booking-fee-row"><span>Venue fee <sup style="color:var(--red);font-size:9px">*</sup></span><span>${formatPrice(l.price)} / night</span></div>
       <div class="booking-fee-row"><span>Deposit <span class="fee-note">(20% · held; released post-show)</span></span><span>${formatPrice(deposit)}</span></div>
       <div class="booking-fee-row"><span>Artist booking fee <span class="fee-note">(5% · non-refundable)</span></span><span>$${bookingFee.toLocaleString()}</span></div>
       <div class="booking-fee-total"><span>Due on approval</span><span>$${(deposit + bookingFee).toLocaleString()}</span></div>
     </div>
-    <p class="booking-no-charge">No payment required to submit a request. Venue pays a separate 5% fee from their deposit release.</p>`;
+    <p class="booking-no-charge">No payment required to submit a request. The amount shown is due within 48 hours of venue approval.</p>`;
 
   renderModalCal();
 

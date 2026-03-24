@@ -509,7 +509,7 @@ function closeSidebar() { document.getElementById('sidebar').classList.remove('o
 // ─── OVERVIEW ─────────────────────────────────────────────────────────────────
 
 function updateConfirmedTabBadge() {
-  const btn = document.getElementById('confirmedTabBtn');
+  const btn = document.getElementById('completedTabBtn');
   if (!btn) return;
   const now = new Date(); now.setHours(0,0,0,0);
   // Count: past confirmed (need resolution) + pending_resolution + disputed
@@ -539,7 +539,8 @@ function renderOverview() {
   updateConfirmedTabBadge();
   renderActionItems();
 
-  document.getElementById('checkinList').innerHTML = RESERVATIONS.filter(r => r.status === 'confirmed').slice(0,3).map(r => {
+  const _now = new Date(); _now.setHours(0,0,0,0);
+  document.getElementById('checkinList').innerHTML = RESERVATIONS.filter(r => r.status === 'confirmed' && new Date(r.checkin+'T00:00:00') >= _now).slice(0,3).map(r => {
     const d = new Date(r.checkin);
     const label = d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
     return `
@@ -572,7 +573,8 @@ function renderVenueConfirmedCards() {
   const activeCount = HOST_LISTINGS.filter(l => l.active).length;
 
   const venueCards = HOST_LISTINGS.map(l => {
-    const venueConfirmed = RESERVATIONS.filter(r => r.status === 'confirmed' && r.property === l.title);
+    const _vcNow = new Date(); _vcNow.setHours(0,0,0,0);
+    const venueConfirmed = RESERVATIONS.filter(r => r.status === 'confirmed' && r.property === l.title && new Date(r.checkin+'T00:00:00') >= _vcNow);
     const newCount = venueConfirmed.filter(r => r.confirmedAt && (now - r.confirmedAt) < cutoff).length;
     return `
       <div class="venue-confirmed-card stat-card-link" onclick="goToConfirmedTab()">
@@ -1125,9 +1127,13 @@ function renderReservations(status) {
 
   if (!isPending) {
     // ── Non-pending tabs: grouped by venue, dates descending ─────────────────
-    // Confirmed tab also shows pending_resolution and disputed bookings
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    const isUpcoming = r => new Date(r.checkin + 'T00:00:00') >= now;
     const statusMatch = status === 'confirmed'
-      ? r => ['confirmed', 'pending_resolution', 'disputed'].includes(r.status)
+      ? r => r.status === 'confirmed' && isUpcoming(r)
+      : status === 'completed'
+      ? r => (r.status === 'confirmed' && !isUpcoming(r)) ||
+             ['pending_resolution', 'disputed', 'completed'].includes(r.status)
       : r => r.status === status;
     const allRows      = RESERVATIONS.filter(statusMatch);
     const rows         = status === 'cancelled' ? allRows.filter(r => !r.archived) : allRows;
@@ -1144,10 +1150,15 @@ function renderReservations(status) {
       if (!groups[r.property]) groups[r.property] = [];
       groups[r.property].push(r);
     });
-    // Sort each group: disputed first, then pending_resolution, then confirmed; within each by checkin asc
+    // Sort: needs resolution first, then pending_resolution, disputed, completed; within each by checkin asc
     Object.values(groups).forEach(g => g.sort((a, b) => {
-      const order = { disputed: 0, pending_resolution: 1, confirmed: 2 };
-      const oa = order[a.status] ?? 3, ob = order[b.status] ?? 3;
+      const rowOrder = r => {
+        if (r.status === 'confirmed') return 0;         // past confirmed = needs resolution
+        if (r.status === 'pending_resolution') return 1;
+        if (r.status === 'disputed') return 2;
+        return 3;                                        // completed = history
+      };
+      const oa = rowOrder(a), ob = rowOrder(b);
       if (oa !== ob) return oa - ob;
       return a.checkin.localeCompare(b.checkin);
     }));
@@ -1345,7 +1356,7 @@ function resRow(r, isPending, rank, isFirst, isLast, conflict, showDragHandle, i
               return `<span style="font-size:11px;color:var(--text-muted);padding:4px 0">Awaiting artist response</span>`;
             }
             if (r.status === 'disputed') {
-              return `<button class="res-action-btn res-disputed-btn" onclick="navigate(null,'earnings')">View in Earnings ↗</button>`;
+              return `<span style="font-size:11px;color:#EF4444;padding:4px 0;display:block">⚠ Disputed — GigNVenue reviewing</span>`;
             }
             return '';
           })()}
@@ -1524,7 +1535,6 @@ function updateCancelSplitPreview() {
   if (preview) preview.style.display = 'block';
   const el = id => document.getElementById(id);
   if (el('cancelPreviewArtist')) el('cancelPreviewArtist').textContent = `$${artistRefund.toLocaleString()} returned to artist (${aPct}%)`;
-  if (el('cancelPreviewFee'))    el('cancelPreviewFee').textContent    = 'No fee — GigNVenue only charges on successful shows';
   if (el('cancelPreviewVenue')) {
     el('cancelPreviewVenue').textContent  = `$${venuePayout.toLocaleString()}`;
     el('cancelPreviewVenue').className    = `resolve-detail-amount${venuePayout === 0 ? ' resolve-detail-amount--zero' : ''}`;
@@ -1641,10 +1651,6 @@ function selectResolutionType(type) {
         <div class="resolve-detail-row">
           <span class="resolve-detail-label">Artist refund</span>
           <span class="resolve-detail-muted" id="cancelPreviewArtist"></span>
-        </div>
-        <div class="resolve-detail-row">
-          <span class="resolve-detail-label">GigNVenue fee (5%)</span>
-          <span class="resolve-detail-muted" id="cancelPreviewFee"></span>
         </div>
         <div class="resolve-detail-row resolve-detail-total">
           <span class="resolve-detail-label">Released to you</span>
@@ -2178,7 +2184,7 @@ function viewRes(id) {
           <span>$${deposit.toLocaleString()}</span>
         </div>
         <div class="rd-fin-row" style="margin-top:4px">
-          <span>Remaining balance <span class="rd-fin-note">— settled per your contract terms</span></span>
+          <span>Remaining balance <span class="rd-fin-note">— settled per your contract terms with the artist</span></span>
           <span>$${remaining.toLocaleString()}</span>
         </div>
         ${r.status === 'confirmed' || r.status === 'completed' ? `
@@ -2657,7 +2663,7 @@ function updateDepositCalc(prefix) {
   const remaining = price - deposit;
   el.innerHTML = `
     <span class="deposit-calc-row">Deposit charged on approval: <strong>$${deposit.toLocaleString()}</strong> <span class="deposit-calc-note">(20% — held by GigNVenue; $${Math.round(price * 0.15).toLocaleString()} released to you after the show, after 5% venue fee)</span></span>
-    <span class="deposit-calc-row">Remaining balance: <strong>$${remaining.toLocaleString()}</strong> <span class="deposit-calc-note">(settled per your contract terms)</span></span>
+    <span class="deposit-calc-row">Remaining balance: <strong>$${remaining.toLocaleString()}</strong> <span class="deposit-calc-note">(settled per your contract terms with the artist)</span></span>
     <span class="deposit-calc-row deposit-calc-note" style="margin-top:4px">⏱ Artist has 48 hours after approval to complete their deposit payment — if unpaid, the booking is automatically cancelled.</span>`;
 }
 
@@ -4026,21 +4032,24 @@ function confirmShowPlayed(resId) {
 
 function downloadEarningsCSV() {
   const today = new Date();
-  const rows = [['Date','Venue','Artist / Event','Source','Gross ($)','Deposit Released / Logged ($)','Status','Notes']];
+  const rows = [['Date','Venue','Artist / Event','Source','Nightly Rate ($)','GigNVenue Fee 5% ($)','Net Payout ($)','Status','Notes']];
 
   // GigNVenue history
   RESERVATIONS.filter(r => !r.hostGenerated && (r.status === 'completed' || r.status === 'cancelled'))
     .sort((a,b) => a.checkin.localeCompare(b.checkin))
     .forEach(r => {
       const cancelled = r.status === 'cancelled';
+      const netPayout = cancelled ? '' : (r.venueRelease || Math.round(r.total * 0.15));
+      const fee       = cancelled ? '' : Math.round(r.total * 0.05);
       rows.push([
         r.checkin,
         r.property,
         r.bandName ? `${r.guest} / ${r.bandName}` : r.guest,
         'GigNVenue',
         cancelled ? '' : r.total,
-        cancelled ? '' : Math.round(r.total * 0.20),
-        cancelled ? 'Cancelled' : 'Released',
+        fee,
+        netPayout,
+        cancelled ? (r.resolution === 'host-cancel' ? 'Host canceled' : r.resolution === 'artist-cancel' ? 'Artist canceled' : r.resolution === 'mutual' ? 'Mutual cancel' : 'Cancelled') : 'Released',
         ''
       ]);
     });
@@ -4057,6 +4066,7 @@ function downloadEarningsCSV() {
         r.guest,
         'Self-managed',
         entry?.earnings || '',
+        '',
         entry?.earnings || '',
         entry?.earnings ? 'Logged' : 'Not logged',
         entry?.earningsNotes || ''
@@ -4073,6 +4083,165 @@ function downloadEarningsCSV() {
   a.download = `gignvenue-earnings-${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// ─── ICAL EXPORT ─────────────────────────────────────────────────────────────
+
+function downloadCalendarICS(venueId) {
+  const vid  = venueId || calVenueId;
+  const venue = HOST_LISTINGS.find(l => l.id === vid);
+  if (!venue) return;
+
+  const stamp = new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+/,'') + 'Z';
+
+  function toICSDate(iso) {
+    return iso.replace(/-/g,'');
+  }
+
+  const events = [];
+
+  // GigNVenue confirmed bookings for this venue
+  RESERVATIONS
+    .filter(r => !r.hostGenerated && r.property === venue.title && ['confirmed','pending_resolution','completed'].includes(r.status))
+    .forEach(r => {
+      const dtStart = toICSDate(r.checkin);
+      const nextDay = new Date(r.checkin + 'T00:00:00');
+      nextDay.setDate(nextDay.getDate() + 1);
+      const dtEndNext = nextDay.toISOString().slice(0,10).replace(/-/g,'');
+      const summary   = r.bandName ? `${r.bandName} @ ${venue.title}` : `${r.guest} @ ${venue.title}`;
+      const status    = r.status === 'completed' ? 'CONFIRMED' : 'TENTATIVE';
+      events.push(
+        'BEGIN:VEVENT',
+        `UID:gnv-${r.id}@gignvenue.com`,
+        `DTSTAMP:${stamp}`,
+        `DTSTART;VALUE=DATE:${dtStart}`,
+        `DTEND;VALUE=DATE:${dtEndNext}`,
+        `SUMMARY:${summary}`,
+        `DESCRIPTION:GigNVenue booking — Nightly rate $${r.total.toLocaleString()}`,
+        `STATUS:${status}`,
+        'TRANSP:OPAQUE',
+        'END:VEVENT'
+      );
+    });
+
+  // Manual calendar entries for this venue
+  Object.entries(MANUAL_CAL_ENTRIES[vid] || {}).forEach(([iso, entry]) => {
+    const nextDay = new Date(iso + 'T00:00:00');
+    nextDay.setDate(nextDay.getDate() + 1);
+    const dtEndNext = nextDay.toISOString().slice(0,10).replace(/-/g,'');
+    let summary, status;
+    if (entry.status === 'blocked') {
+      summary = `Blocked — ${venue.title}`;
+      status  = 'CONFIRMED';
+    } else {
+      summary = entry.bandName ? `${entry.bandName} @ ${venue.title}` : `Show @ ${venue.title}`;
+      status  = entry.status === 'booked' ? 'CONFIRMED' : 'TENTATIVE';
+    }
+    events.push(
+      'BEGIN:VEVENT',
+      `UID:gnv-manual-${vid}-${iso}@gignvenue.com`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART;VALUE=DATE:${toICSDate(iso)}`,
+      `DTEND;VALUE=DATE:${dtEndNext}`,
+      `SUMMARY:${summary}`,
+      `STATUS:${status}`,
+      'TRANSP:OPAQUE',
+      'END:VEVENT'
+    );
+  });
+
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//GigNVenue//Calendar Export//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    `X-WR-CALNAME:${venue.title} — GigNVenue`,
+    ...events,
+    'END:VCALENDAR'
+  ].join('\r\n');
+
+  const blob = new Blob([ics], { type:'text/calendar' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `${venue.title.replace(/\s+/g,'-').toLowerCase()}-gignvenue.ics`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── ICAL IMPORT ─────────────────────────────────────────────────────────────
+
+let _icsImportEvents = [];
+
+function triggerICSImport() {
+  const input = document.getElementById('icsFileInput');
+  if (input) input.click();
+}
+
+function handleICSFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    _icsImportEvents = parseICS(e.target.result);
+    input.value = '';
+    if (!_icsImportEvents.length) { showDash('No events found in that file.'); return; }
+    renderICSPreviewModal();
+  };
+  reader.readAsText(file);
+}
+
+function parseICS(text) {
+  const events = [];
+  const blocks = text.split('BEGIN:VEVENT');
+  blocks.slice(1).forEach(block => {
+    const get = key => {
+      const m = block.match(new RegExp(`${key}[^:]*:([^\r\n]+)`));
+      return m ? m[1].trim() : '';
+    };
+    // DATE-only or datetime start
+    const dtRaw = get('DTSTART');
+    const iso   = dtRaw.replace(/T.*$/, '').replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
+    const summary = get('SUMMARY').replace(/\\,/g,',').replace(/\\n/g,' ');
+    if (iso && /^\d{4}-\d{2}-\d{2}$/.test(iso)) events.push({ iso, summary });
+  });
+  return events;
+}
+
+function renderICSPreviewModal() {
+  const venue  = HOST_LISTINGS.find(l => l.id === calVenueId);
+  const count  = _icsImportEvents.length;
+  const rows   = _icsImportEvents.slice(0, 8).map(ev =>
+    `<tr><td style="padding:4px 8px;font-size:13px">${ev.iso}</td><td style="padding:4px 8px;font-size:13px;color:var(--text-muted)">${ev.summary || '—'}</td></tr>`
+  ).join('');
+  const more   = count > 8 ? `<p style="font-size:12px;color:var(--text-muted);margin-top:8px">…and ${count - 8} more</p>` : '';
+
+  document.getElementById('icsPreviewVenue').textContent  = venue?.title || '';
+  document.getElementById('icsPreviewCount').textContent  = count;
+  document.getElementById('icsPreviewRows').innerHTML     = rows;
+  document.getElementById('icsPreviewMore').innerHTML     = more;
+  document.getElementById('icsPreviewModal').style.display = 'flex';
+}
+
+function closeICSPreviewModal() {
+  document.getElementById('icsPreviewModal').style.display = 'none';
+  _icsImportEvents = [];
+}
+
+function confirmICSImport() {
+  const vid = calVenueId;
+  if (!MANUAL_CAL_ENTRIES[vid]) MANUAL_CAL_ENTRIES[vid] = {};
+  let imported = 0, skipped = 0;
+  _icsImportEvents.forEach(ev => {
+    if (MANUAL_CAL_ENTRIES[vid][ev.iso]) { skipped++; return; } // don't overwrite existing
+    MANUAL_CAL_ENTRIES[vid][ev.iso] = { status: 'blocked', bandName: ev.summary || '', publicAct: false };
+    imported++;
+  });
+  saveManualEntries();
+  renderCal();
+  closeICSPreviewModal();
+  showDash(`${imported} date${imported !== 1 ? 's' : ''} imported as blocked${skipped ? ` · ${skipped} skipped (already set)` : ''}.`);
 }
 
 let _earningsYear   = new Date().getFullYear();
@@ -4348,6 +4517,16 @@ function populateProfile() {
   _applyVisToggle('email', !!user.showEmail);
   _applyVisToggle('phone', !!user.showPhone);
 
+  const savedUrl = localStorage.getItem('gnv_cal_feed_url') || '';
+  const urlField = document.getElementById('pfCalFeedUrl');
+  if (urlField) urlField.value = savedUrl;
+}
+
+function saveCalFeedUrl() {
+  const url = (document.getElementById('pfCalFeedUrl')?.value || '').trim();
+  localStorage.setItem('gnv_cal_feed_url', url);
+  const msg = document.getElementById('calFeedSaveMsg');
+  if (msg) { msg.style.display = 'inline'; setTimeout(() => msg.style.display = 'none', 3000); }
 }
 
 function _applyVisToggle(field, shown) {

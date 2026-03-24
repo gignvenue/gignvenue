@@ -356,7 +356,7 @@ let calYear = _calInit.getFullYear(), calMonth = _calInit.getMonth();
 let calSelectedDate = null;
 let calSelectedVenueId = ALL_VENUES[0].id;
 let activeThread = null;
-let requestFilter = 'all';
+let requestFilter = 'pending';
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 
@@ -369,7 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
   populateVenueSelect();
   renderOverview();
   renderPendingActions();
-  renderRequests('all');
+  renderRequests('pending');
   renderMessages();
   renderCalendar();
   renderVenueSummary();
@@ -395,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Live-update when a request is submitted in another tab / the main site
   window.addEventListener('storage', e => {
     if (e.key === 'bb_site_requests') ingestAndRefresh();
-    if (e.key === 'gnv_pending_resolutions') renderPendingActions();
+    if (e.key === 'gnv_pending_resolutions') { renderPendingActions(); if (requestFilter === 'completed') renderPendingActions('completedActionsArea'); updateBadges(); }
     if (e.key === 'bb_saved_venues') {
       // Heart toggled on browse page (possibly in another tab) — sync immediately
       try { SAVED_VENUES = JSON.parse(e.newValue || '[]'); } catch(err) {}
@@ -490,6 +490,20 @@ function updateBadges() {
   document.getElementById('msgBadge').textContent    = unread     || '';
   document.getElementById('savedBadge').textContent  = saved      || '';
   document.getElementById('topbarBadge').textContent = unread     || '';
+  // Badge on Completed tab for pending resolution actions
+  const completedBtn = document.getElementById('completedTabBtnBooker');
+  if (completedBtn) {
+    let pendingCount = 0;
+    try { pendingCount = JSON.parse(localStorage.getItem('gnv_pending_resolutions') || '[]').length; } catch(e) {}
+    const existing = completedBtn.querySelector('.confirm-tab-badge');
+    if (existing) existing.remove();
+    if (pendingCount > 0) {
+      const badge = document.createElement('span');
+      badge.className = 'confirm-tab-badge';
+      badge.textContent = pendingCount;
+      completedBtn.appendChild(badge);
+    }
+  }
 }
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
@@ -689,25 +703,32 @@ function renderRequests(filter) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   let reqs = ALL_REQUESTS.filter(r => r.bookerId === user.id);
 
-  if (ENABLE_DATE_PASSED) {
-    if (filter === 'cancelled') {
-      // Actual cancellations + pending requests whose date has passed (no other resolution)
-      reqs = reqs.filter(r => r.status === 'cancelled' || datePassed(r));
-    } else if (filter === 'all') {
-      // show everything
+  // Completed actions area — show pending resolution cards only on completed tab
+  const completedArea = document.getElementById('completedActionsArea');
+  if (completedArea) {
+    if (filter === 'completed') {
+      completedArea.style.display = '';
+      renderPendingActions('completedActionsArea');
     } else {
-      // Approved and declined keep their own tabs regardless of date; only pending hides when past
-      reqs = reqs.filter(r => r.status === filter && !datePassed(r));
-    }
-  } else {
-    if (filter === 'cancelled') {
-      reqs = reqs.filter(r => r.status === 'cancelled');
-    } else if (filter !== 'all') {
-      reqs = reqs.filter(r => r.status === filter);
+      completedArea.style.display = 'none';
+      completedArea.innerHTML = '';
     }
   }
 
-  const canArchive = filter === 'cancelled' || filter === 'declined';
+  if (filter === 'pending') {
+    reqs = reqs.filter(r => r.status === 'pending' && !datePassed(r));
+  } else if (filter === 'approved') {
+    // Upcoming approved shows only (date >= today)
+    reqs = reqs.filter(r => r.status === 'approved' && new Date(r.date + 'T00:00:00') >= today);
+  } else if (filter === 'completed') {
+    // Past-date approved shows (show has happened or should have)
+    reqs = reqs.filter(r => r.status === 'approved' && new Date(r.date + 'T00:00:00') < today);
+  } else if (filter === 'cancelled') {
+    // Cancelled + declined + date-passed pending
+    reqs = reqs.filter(r => r.status === 'cancelled' || r.status === 'declined' || datePassed(r));
+  }
+
+  const canArchive = filter === 'cancelled';
   const active   = canArchive ? reqs.filter(r => !r.archived) : reqs;
   const archived = canArchive ? reqs.filter(r =>  r.archived) : [];
 
@@ -721,6 +742,8 @@ function renderRequests(filter) {
   const makeRow = (r, isArchived = false) => {
     const v          = ALL_VENUES.find(vv => vv.id === r.venueId);
     const passed     = ENABLE_DATE_PASSED && datePassed(r);
+    const isBooked   = r.status === 'approved' && r.paymentStatus === 'paid';
+    const isCompleted = filter === 'completed';
     const dispStatus = passed ? 'date_passed' : r.status;
     return `<tr${isArchived ? ' class="archived-entry"' : ''}>
       <td>
@@ -738,8 +761,18 @@ function renderRequests(filter) {
       <td>${r.attendance ? Number(r.attendance).toLocaleString() : '—'}</td>
       <td style="font-weight:600;color:var(--text)">${v?.price ? '$' + v.price.toLocaleString() : '—'}</td>
       <td>
-        <span class="req-badge req-${dispStatus}">${passed ? 'Date passed' : capitalize(r.status)}</span>
-        ${!passed && r.status === 'approved' && r.paymentStatus === 'unpaid' ? (() => {
+        ${isCompleted
+          ? isBooked
+            ? `<span class="req-badge req-approved" style="background:rgba(16,185,129,0.12);color:#34d399;border-color:rgba(16,185,129,0.3)">Booked</span>
+               <div style="font-size:11px;color:var(--text-muted);margin-top:3px">Show date passed</div>`
+            : `<span class="req-badge req-approved">Approved</span>
+               <div style="font-size:11px;color:#EF4444;margin-top:3px">Never paid · Show date passed</div>`
+          : passed
+          ? `<span class="req-badge req-date_passed">Date passed</span>`
+          : isBooked
+          ? `<span class="req-badge req-approved" style="background:rgba(16,185,129,0.12);color:#34d399;border-color:rgba(16,185,129,0.3)">Booked</span>`
+          : `<span class="req-badge req-${dispStatus}">${capitalize(r.status)}</span>`}
+        ${!isCompleted && !passed && r.status === 'approved' && r.paymentStatus === 'unpaid' ? (() => {
           const remaining = r.paymentDeadline ? r.paymentDeadline - Date.now() : null;
           let countdownHtml = '';
           if (remaining !== null) {
@@ -759,7 +792,7 @@ function renderRequests(filter) {
           : r.status === 'cancelled' && r.cancelledBy
           ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px">by ${r.cancelledBy}</div>`
           : ''}
-        ${v && !passed && r.status !== 'cancelled' ? (() => { const dep=Math.round(v.price*0.20); const fee=Math.round(v.price*0.05); return `<div style="font-size:11px;color:var(--text-muted);margin-top:5px">Deposit $${dep.toLocaleString()} · Fee $${fee.toLocaleString()} · <strong style="color:var(--text)">Total $${(dep+fee).toLocaleString()}</strong></div>`; })() : ''}
+        ${v && !passed && !isCompleted && r.status !== 'cancelled' ? (() => { const dep=Math.round(v.price*0.20); const fee=Math.round(v.price*0.05); return `<div style="font-size:11px;color:var(--text-muted);margin-top:5px">Deposit $${dep.toLocaleString()} · Fee $${fee.toLocaleString()} · <strong style="color:var(--text)">Total $${(dep+fee).toLocaleString()}</strong></div>`; })() : ''}
       </td>
       <td style="font-size:12px;color:var(--text-muted)">${r.sent ? fmtDate(r.sent) : '—'}</td>
       <td>
@@ -769,9 +802,14 @@ function renderRequests(filter) {
             : !passed && r.status === 'approved' && r.paymentStatus === 'unpaid'
             ? `<button class="res-action-btn res-action-btn-pay" onclick="openPaymentModal('${r.id}')">Complete payment</button>
                <button class="res-action-btn-decline" onclick="openDeclineModal('${r.id}')">Decline this booking</button>`
-            : !passed && r.status === 'approved' && r.paymentStatus === 'paid'
+            : !passed && isBooked && !isCompleted
+            ? `<button class="res-action-btn" onclick="openBookerAgreement('${r.id}')" style="color:#34d399">📄 Agreement</button>
+               <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Coordinate directly with the venue</div>`
+            : isCompleted && isBooked
             ? `<button class="res-action-btn" onclick="openBookerAgreement('${r.id}')" style="color:#34d399">📄 Agreement</button>`
-            : !passed && r.status === 'declined' && !isArchived
+            : isCompleted
+            ? `<a class="res-action-btn req-rebook-btn" href="index.html?venue=${r.venueId}">Rebook →</a>`
+            : r.status === 'declined' && !isArchived
             ? `<button class="res-action-btn req-archive-btn" onclick="archiveRequest('${r.id}')">Archive</button>
                <button class="res-action-btn req-waitlist-btn${isOnWaitlist(r.id) ? ' wl-active' : ''}" onclick="toggleWaitlist('${r.id}','${r.venueId}','${r.date}')">${isOnWaitlist(r.id) ? '✓ On waitlist' : 'Join waitlist'}</button>`
             : r.status === 'cancelled' && !isArchived
@@ -2354,8 +2392,8 @@ function checkCompletedRatingPrompts() {
 
 // ─── PENDING RESOLUTIONS (artist-side) ───────────────────────────────────────
 
-function renderPendingActions() {
-  const wrap = document.getElementById('pendingActionsWrap');
+function renderPendingActions(targetId = 'pendingActionsWrap') {
+  const wrap = document.getElementById(targetId);
   if (!wrap) return;
 
   let pending = [];
@@ -2459,6 +2497,9 @@ function confirmResolution(id) {
   } catch(e) {}
   showDash('Response sent — the host has been notified.');
   renderPendingActions();
+  if (requestFilter === 'completed') renderPendingActions('completedActionsArea');
+  renderRequests(requestFilter);
+  updateBadges();
   renderOverview();
 }
 
@@ -2473,6 +2514,9 @@ function submitDispute(id) {
   } catch(e) {}
   showDash('Dispute submitted — GigNVenue will review and follow up within 24 hours.');
   renderPendingActions();
+  if (requestFilter === 'completed') renderPendingActions('completedActionsArea');
+  renderRequests(requestFilter);
+  updateBadges();
   renderOverview();
 }
 

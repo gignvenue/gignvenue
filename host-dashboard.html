@@ -42,7 +42,8 @@
       Messages
       <span class="sidebar-badge sidebar-badge-msg" id="msgBadge">3</span>
     </a>
-    <a href="#" class="sidebar-link" data-section="analytics" onclick="navigate(event,'analytics');renderAnalytics()">
+    <!-- Analytics nav hidden — feature deferred for robust build before launch -->
+    <a href="#" class="sidebar-link" data-section="analytics" onclick="navigate(event,'analytics');renderAnalytics()" style="display:none">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 3h4v18H3zm7 8h4v10h-4zm7-5h4v15h-4z"/></svg>
       Analytics
     </a>
@@ -169,7 +170,7 @@
       <div class="filter-tabs" id="resTabs">
         <button class="filter-tab active" onclick="filterRes(event,'pending')">Pending</button>
         <button class="filter-tab" id="confirmedTabBtn" onclick="filterRes(event,'confirmed')">Confirmed</button>
-        <button class="filter-tab" onclick="filterRes(event,'completed')">Completed</button>
+        <button class="filter-tab" id="completedTabBtn" onclick="filterRes(event,'completed')">Completed</button>
         <button class="filter-tab" onclick="filterRes(event,'cancelled')">Cancelled</button>
       </div>
       <div class="reservations-table-wrap">
@@ -203,10 +204,15 @@
     <section class="section" id="section-calendar">
       <div class="section-header">
         <h1 class="section-title">Availability Calendar</h1>
-        <div class="cal-nav-btns">
-          <button onclick="prevCalMonth()">‹ Prev</button>
-          <strong id="calMonthLabel" style="color:var(--text-sec)"></strong>
-          <button onclick="nextCalMonth()">Next ›</button>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <button class="res-action-btn" onclick="downloadCalendarICS()" title="Export this venue's calendar as an .ics file for Google Calendar, Apple Calendar, or Outlook">⬇ Export .ics</button>
+          <button class="res-action-btn" onclick="triggerICSImport()" title="Import blocked dates from an external calendar .ics file">⬆ Import .ics</button>
+          <input type="file" id="icsFileInput" accept=".ics,text/calendar" style="display:none" onchange="handleICSFile(this)"/>
+          <div class="cal-nav-btns">
+            <button onclick="prevCalMonth()">‹ Prev</button>
+            <strong id="calMonthLabel" style="color:var(--text-sec)"></strong>
+            <button onclick="nextCalMonth()">Next ›</button>
+          </div>
         </div>
       </div>
       <div id="calVenueTabs" class="cal-venue-tabs"></div>
@@ -231,8 +237,8 @@
       </div>
     </section>
 
-    <!-- ANALYTICS -->
-    <section class="section" id="section-analytics">
+    <!-- ANALYTICS — hidden, deferred for robust build; re-enable by removing style="display:none" below and on sidebar link -->
+    <section class="section" id="section-analytics" style="display:none">
       <div class="section-header">
         <h1 class="section-title">Analytics</h1>
       </div>
@@ -349,6 +355,21 @@
         <div class="analytics-pin-settings-card">
           <h2>Analytics PIN</h2>
           <div id="analyticsPinSettings"></div>
+        </div>
+
+        <!-- Calendar Sync -->
+        <div class="analytics-pin-settings-card">
+          <h2>Calendar Sync</h2>
+          <p style="font-size:13px;color:var(--text-muted);margin:0 0 16px">Paste a live iCal feed URL from your venue management software or Google Calendar. GigNVenue will use this to keep your availability in sync automatically — available with the upcoming Pro sync feature.</p>
+          <div class="p-field" style="margin-bottom:12px">
+            <label>External calendar feed URL</label>
+            <input type="url" id="pfCalFeedUrl" placeholder="webcal:// or https://calendar.google.com/..."/>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <button class="profile-save-btn" style="font-size:13px;padding:7px 18px" onclick="saveCalFeedUrl()">Save URL</button>
+            <span id="calFeedSaveMsg" style="font-size:13px;color:#10B981;display:none">Saved — live sync coming soon.</span>
+          </div>
+          <p style="font-size:12px;color:var(--text-muted);margin-top:12px">In the meantime, use the <strong>Export .ics</strong> and <strong>Import .ics</strong> buttons on your Availability Calendar to manually sync with external calendars.</p>
         </div>
       </div>
     </section>
@@ -493,7 +514,7 @@
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div class="host-faq-a">
-            <p>Yes. Click the "Export CSV" button at the top of your Earnings section to download a spreadsheet of all your earnings — both GigNVenue payouts and self-managed show records. The file includes date, venue, artist, source, gross amount, net amount, status, and any notes you've logged. It's formatted for easy import into accounting software or tax preparation tools.</p>
+            <p>Yes. Click the "Export CSV" button at the top of your Earnings section to download a spreadsheet of all your earnings — both GigNVenue payouts and self-managed show records. The file includes date, venue, artist, source, nightly rate, GigNVenue platform fee (5% — a deductible business expense), net payout, status, and any notes you've logged. It's formatted for easy import into accounting software or tax preparation tools.</p>
           </div>
         </div>
 
@@ -870,6 +891,32 @@
      LOG EARNINGS MODAL
 ══════════════════════════════════════════ -->
 <div class="modal-overlay hidden" id="logEarningsOverlay" onclick="closeLogEarningsModal()"></div>
+<!-- ICS IMPORT PREVIEW MODAL -->
+<div class="new-listing-modal" id="icsPreviewModal" style="max-width:500px;display:none">
+  <div class="nlm-header">
+    <button onclick="closeICSPreviewModal()">✕</button>
+    <h2>Import calendar events</h2>
+  </div>
+  <div class="nlm-body">
+    <p style="font-size:14px;color:var(--text-muted);margin:0 0 16px">
+      Found <strong id="icsPreviewCount">0</strong> events. They will be added as blocked dates to <strong id="icsPreviewVenue"></strong>. Dates that are already set will not be overwritten.
+    </p>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:4px">
+      <thead><tr>
+        <th style="text-align:left;font-size:12px;color:var(--text-muted);padding:4px 8px;border-bottom:1px solid var(--border)">Date</th>
+        <th style="text-align:left;font-size:12px;color:var(--text-muted);padding:4px 8px;border-bottom:1px solid var(--border)">Event name</th>
+      </tr></thead>
+      <tbody id="icsPreviewRows"></tbody>
+    </table>
+    <div id="icsPreviewMore"></div>
+    <p style="font-size:12px;color:var(--text-muted);margin-top:16px">These dates will be marked as blocked on your calendar. You can adjust any individual date afterward from the calendar day panel.</p>
+  </div>
+  <div class="nlm-footer" style="display:flex;gap:12px;justify-content:flex-end;padding:16px 24px">
+    <button class="profile-cancel-btn" onclick="closeICSPreviewModal()">Cancel</button>
+    <button class="profile-save-btn" onclick="confirmICSImport()">Import blocked dates</button>
+  </div>
+</div>
+
 <div class="new-listing-modal hidden" id="logEarningsModal" style="max-width:440px">
   <div class="nlm-header">
     <button onclick="closeLogEarningsModal()">✕</button>

@@ -131,12 +131,12 @@
         <a href="index.html" class="btn-add-listing">+ New request</a>
       </div>
       <div class="filter-tabs">
-        <button class="filter-tab active" onclick="filterRequests(event,'all')">All</button>
-        <button class="filter-tab" onclick="filterRequests(event,'pending')">Pending</button>
+        <button class="filter-tab active" onclick="filterRequests(event,'pending')">Pending</button>
         <button class="filter-tab" onclick="filterRequests(event,'approved')">Approved</button>
-        <button class="filter-tab" onclick="filterRequests(event,'declined')">Declined</button>
+        <button class="filter-tab" id="completedTabBtnBooker" onclick="filterRequests(event,'completed')">Completed</button>
         <button class="filter-tab" onclick="filterRequests(event,'cancelled')">Cancelled</button>
       </div>
+      <div id="completedActionsArea" style="display:none;margin-bottom:16px"></div>
       <div style="overflow-x:auto">
         <table class="req-table">
           <thead>
