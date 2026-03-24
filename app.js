@@ -540,11 +540,11 @@ function renderListings(listings, page = 1) {
     // Re-attach card → pin hover listeners on fresh render
     grid.addEventListener('mouseover', e => {
       const card = e.target.closest('.listing-card');
-      if (card) setActiveMapPin(parseInt(card.dataset.id) || card.dataset.id, true);
+      if (card) setActiveMapPin(card.dataset.id, true);
     });
     grid.addEventListener('mouseout', e => {
       const card = e.target.closest('.listing-card');
-      if (card) setActiveMapPin(parseInt(card.dataset.id) || card.dataset.id, false);
+      if (card) setActiveMapPin(card.dataset.id, false);
     });
   } else {
     // Append only the new page's cards
@@ -573,7 +573,7 @@ function renderCard(l) {
   const inWL = appState.wishlist.has(l.id);
   const dots = l.images.map((_,i) => `<span class="listing-dot${i===idx?' active':''}"></span>`).join('');
   return `
-    <article class="listing-card" data-id="${l.id}" onclick="openListing(${l.id})">
+    <article class="listing-card" data-id="${l.id}" onclick="openListing('${l.id}')">
       <div class="listing-images" data-id="${l.id}">
         ${getEffectiveBadge(l) ? `<div class="listing-badge">${getEffectiveBadge(l)}</div>` : ''}
         ${l.promoted ? `<div class="listing-promoted">Promoted</div>` : ''}
