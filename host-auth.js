@@ -37,10 +37,13 @@ const Auth = (() => {
     return _hostRecord;
   }
 
-  // Call at top of login/signup pages — redirects to dashboard if already logged in
+  // Call at top of login/signup pages — redirects to dashboard if already logged in as a host.
+  // A user with only a booker account is allowed through so they can sign up as a host too.
   async function requireGuest(redirectTo = 'host-dashboard.html') {
     const { data: { session } } = await gnvClient.auth.getSession();
-    if (session) window.location.href = redirectTo;
+    if (!session) return;
+    const record = await _fetchHost(session.user.id);
+    if (record) window.location.href = redirectTo;
   }
 
   async function login(email, password) {

@@ -43,9 +43,13 @@
       return _artistRecord;
     },
 
+    // Redirects to dashboard only if already logged in with a booker (artist) account.
+    // A user with only a host account is allowed through so they can sign up as a booker too.
     async requireGuest(redirectTo = 'booker-dashboard.html') {
       const { data: { session } } = await gnvClient.auth.getSession();
-      if (session) window.location.href = redirectTo;
+      if (!session) return;
+      const record = await _fetchArtist(session.user.id);
+      if (record) window.location.href = redirectTo;
     },
 
     async login(email, password) {
