@@ -137,7 +137,7 @@ function mapVenueRow(row) {
 async function loadVenues() {
   const { data, error } = await gnvClient
     .from('venues')
-    .select('*, ST_X(location::geometry) as lng, ST_Y(location::geometry) as lat')
+    .select('*')
     .eq('active', true)
     .eq('archived', false)
     .order('created_at', { ascending: true });
