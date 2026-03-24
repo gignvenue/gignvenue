@@ -1,101 +1,107 @@
 /* ============================================
-   HOST AUTH — shared across all pages
-   Uses localStorage to simulate a session.
+   HOST AUTH — Supabase-backed
+   Public API matches the old localStorage version
+   so host-dashboard.js needs no changes.
    ============================================ */
 
 const Auth = (() => {
-  const USERS_KEY   = 'gnv_host_users';
-  const SESSION_KEY = 'gnv_host_session';
+  'use strict';
 
-  /* ── seed a demo account on first load ── */
-  function _seed() {
-    if (getUsers().length) return;
-    const demo = {
-      id        : 'u_demo',
-      firstName : 'Sarah',
-      lastName  : 'Johnson',
-      email     : 'sarah@example.com',
-      password  : 'Password1',          // plain-text only for demo
-      avatar    : 'https://randomuser.me/api/portraits/women/44.jpg',
-      joined    : '2020-03-15',
-      superhost : true,
-      phone     : '+1 (310) 555-0192',
-      bio       : 'Passionate traveler and host. Love connecting with guests from all over the world.',
-    };
-    saveUsers([demo]);
+  // In-memory cache — populated by requireAuth / login
+  let _hostRecord = null;
+
+  async function _fetchHost(authId) {
+    const { data } = await supabase
+      .from('hosts')
+      .select('*')
+      .eq('auth_id', authId)
+      .single();
+    return data || null;
   }
 
-  function getUsers()          { return JSON.parse(localStorage.getItem(USERS_KEY) || '[]'); }
-  function saveUsers(arr)      { localStorage.setItem(USERS_KEY, JSON.stringify(arr)); }
-  function getSession()        { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }
-  function saveSession(user)   { localStorage.setItem(SESSION_KEY, JSON.stringify(user)); }
-  function clearSession()      { localStorage.removeItem(SESSION_KEY); }
+  // ── Public API ────────────────────────────────────────────────────────────
 
-  function currentUser() { return getSession(); }
-
-  function requireAuth(redirectTo = 'host-login.html') {
-    if (!currentUser()) { window.location.href = redirectTo; }
+  async function currentUser() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+    if (!_hostRecord) _hostRecord = await _fetchHost(session.user.id);
+    return _hostRecord;
   }
 
-  function requireGuest(redirectTo = 'host-dashboard.html') {
-    if (currentUser()) { window.location.href = redirectTo; }
+  // Call at top of protected pages — redirects to login if no session
+  async function requireAuth(redirectTo = 'host-login.html') {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = redirectTo; return null; }
+    _hostRecord = await _fetchHost(session.user.id);
+    if (!_hostRecord) { window.location.href = redirectTo; return null; }
+    return _hostRecord;
   }
 
-  function login(email, password) {
-    _seed();
-    const users = getUsers();
-    const user  = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
-    if (!user) return { ok: false, error: 'Incorrect email or password.' };
-    const { password: _pw, ...safe } = user;
-    saveSession(safe);
-    return { ok: true, user: safe };
+  // Call at top of login/signup pages — redirects to dashboard if already logged in
+  async function requireGuest(redirectTo = 'host-dashboard.html') {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) window.location.href = redirectTo;
   }
 
-  function signup(firstName, lastName, email, password) {
-    _seed();
-    const users = getUsers();
-    if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
-      return { ok: false, error: 'An account with that email already exists.' };
+  async function login(email, password) {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { ok: false, error: 'Incorrect email or password.' };
+    _hostRecord = await _fetchHost(data.user.id);
+    if (!_hostRecord) return { ok: false, error: 'Account not found. Please sign up.' };
+    return { ok: true, user: _hostRecord };
+  }
+
+  async function signup(firstName, lastName, email, password) {
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) {
+      if (error.message.toLowerCase().includes('already')) {
+        return { ok: false, error: 'An account with that email already exists.' };
+      }
+      return { ok: false, error: error.message };
     }
-    const newUser = {
-      id        : 'u_' + Date.now(),
-      firstName,
-      lastName,
-      email,
-      password,
-      avatar    : `https://api.dicebear.com/7.x/initials/svg?seed=${firstName}${lastName}`,
-      joined    : new Date().toISOString().slice(0, 10),
-      superhost : false,
-      phone     : '',
-      bio       : '',
-    };
-    users.push(newUser);
-    saveUsers(users);
-    const { password: _pw, ...safe } = newUser;
-    saveSession(safe);
-    return { ok: true, user: safe };
+
+    // Create host profile row linked to the new auth user
+    const { data: host, error: insertErr } = await supabase
+      .from('hosts')
+      .insert({
+        auth_id:      data.user.id,
+        email,
+        display_name: `${firstName} ${lastName}`,
+      })
+      .select()
+      .single();
+
+    if (insertErr) return { ok: false, error: 'Could not create your account. Please try again.' };
+    _hostRecord = host;
+    return { ok: true, user: host };
   }
 
-  function logout(redirectTo = 'index.html') {
-    clearSession();
+  async function logout(redirectTo = 'index.html') {
+    await supabase.auth.signOut();
+    _hostRecord = null;
     window.location.href = redirectTo;
   }
 
-  function updateProfile(updates) {
-    const session = getSession();
-    if (!session) return;
-    const users   = getUsers();
-    const idx     = users.findIndex(u => u.id === session.id);
-    if (idx === -1) return;
-    Object.assign(users[idx], updates);
-    saveUsers(users);
-    const { password: _pw, ...safe } = users[idx];
-    saveSession(safe);
-    return safe;
+  async function updateProfile(updates) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+    const { data, error } = await supabase
+      .from('hosts')
+      .update(updates)
+      .eq('auth_id', session.user.id)
+      .select()
+      .single();
+    if (error) return null;
+    _hostRecord = data;
+    return data;
   }
 
-  /* call once on page load to seed the demo account */
-  _seed();
+  async function sendPasswordReset(email) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/host-login.html',
+    });
+    return { ok: !error, error: error?.message };
+  }
 
-  return { login, signup, logout, currentUser, requireAuth, requireGuest, updateProfile };
+  return { login, signup, logout, currentUser, requireAuth, requireGuest, updateProfile, sendPasswordReset };
 })();

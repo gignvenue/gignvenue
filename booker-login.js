@@ -29,7 +29,7 @@ function switchTab(tab) {
 
 // ─── LOGIN ─────────────────────────────────────────────────────────────────────
 
-function handleLogin(e) {
+async function handleLogin(e) {
   e.preventDefault();
   clearErrors();
 
@@ -51,21 +51,19 @@ function handleLogin(e) {
   btn.disabled = true;
   btn.innerHTML = `<svg class="spin" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity=".25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg> Logging in…`;
 
-  setTimeout(() => {
-    const result = BookerAuth.login(email, pw);
-    if (result.ok) {
-      window.location.href = 'booker-dashboard.html';
-    } else {
-      setErr('loginFormErr', result.error);
-      btn.disabled = false;
-      btn.textContent = 'Log in';
-    }
-  }, 600);
+  const result = await BookerAuth.login(email, pw);
+  if (result.ok) {
+    window.location.href = 'booker-dashboard.html';
+  } else {
+    setErr('loginFormErr', result.error);
+    btn.disabled = false;
+    btn.textContent = 'Log in';
+  }
 }
 
 // ─── SIGNUP ────────────────────────────────────────────────────────────────────
 
-function handleSignup(e) {
+async function handleSignup(e) {
   e.preventDefault();
   clearErrors();
 
@@ -91,23 +89,23 @@ function handleSignup(e) {
   btn.disabled = true;
   btn.textContent = 'Creating account…';
 
-  setTimeout(() => {
-    const result = BookerAuth.signup(first, last, email, pw, artist, genre);
-    if (result.ok) {
-      window.location.href = 'booker-dashboard.html';
-    } else {
-      setErr('signupFormErr', result.error);
-      btn.disabled = false;
-      btn.textContent = 'Create account';
-    }
-  }, 600);
+  const result = await BookerAuth.signup(first, last, email, pw, artist, genre);
+  if (result.ok) {
+    window.location.href = 'booker-dashboard.html';
+  } else {
+    setErr('signupFormErr', result.error);
+    btn.disabled = false;
+    btn.textContent = 'Create account';
+  }
 }
 
 // ─── FORGOT PASSWORD ────────────────────────────────────────────────────────────
 
-function handleForgot() {
+async function handleForgot() {
   const email = document.getElementById('forgotEmail').value.trim();
   if (!email) return;
+  await BookerAuth.sendPasswordReset(email);
+  // Always show success — don't reveal whether email exists
   document.getElementById('forgotSuccess').classList.remove('hidden');
 }
 

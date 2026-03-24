@@ -101,7 +101,7 @@ async function handleLogin(e) {
   // Simulate network latency
   await delay(900);
 
-  const result = Auth.login(email, password);
+  const result = await Auth.login(email, password);
   setLoading(btn, false);
 
   if (!result.ok) {
@@ -157,7 +157,7 @@ async function handleSignup(e) {
   setLoading(btn, true);
   await delay(1000);
 
-  const result = Auth.signup(first, last, email, password);
+  const result = await Auth.signup(first, last, email, password);
   setLoading(btn, false);
 
   if (!result.ok) {
@@ -172,12 +172,14 @@ async function handleSignup(e) {
 
 // ─── FORGOT PASSWORD ─────────────────────────────────────────────────────────
 
-function handleForgot() {
+async function handleForgot() {
   const email = document.getElementById('forgotEmail').value.trim();
   if (!validateEmail(email)) {
     document.getElementById('forgotEmail').classList.add('error');
     return;
   }
+  await Auth.sendPasswordReset(email);
+  // Always show success — don't reveal whether email exists
   document.getElementById('forgotSuccess').classList.remove('hidden');
 }
 
