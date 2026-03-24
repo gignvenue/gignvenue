@@ -1473,7 +1473,7 @@ function renderSavedVenues() {
         <img src="${v.img}" alt="${v.title}" class="saved-card-img" onerror="this.style.background='#1C1C1C'"/>
         <div class="saved-card-body">
           <div class="saved-card-title">${v.title}</div>
-          <div class="saved-card-loc">${v.location} · Up to ${v.capacity.toLocaleString()} guests</div>
+          <div class="saved-card-loc">${v.location} · Cap. ${v.capacity.toLocaleString()}</div>
           <div class="saved-card-meta">
             <span class="saved-card-price">$${v.price.toLocaleString()} <span>/ night</span></span>
           </div>

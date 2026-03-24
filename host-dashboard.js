@@ -546,8 +546,8 @@ function renderOverview() {
     return `
       <div class="checkin-item">
         <img src="${r.propertyImg}" alt="" class="checkin-img" onerror="this.style.background='#1C1C1C'"/>
-        <div class="checkin-info"><strong>${r.guest}</strong><span>${r.property} · ${r.guests.toLocaleString()} guests</span></div>
-        <div class="checkin-date">${label}<small>Check-in</small></div>
+        <div class="checkin-info"><strong>${r.guest}</strong><span>${r.property} · ${r.guests.toLocaleString()} expected</span></div>
+        <div class="checkin-date">${label}<small>Show date</small></div>
       </div>`;
   }).join('');
 
@@ -2503,7 +2503,7 @@ function renderListingsManager() {
       <img src="${l.img}" alt="${l.title}" class="listing-mgr-img" onerror="this.style.background='#1C1C1C'"/>
       <div class="listing-mgr-body">
         <div class="listing-mgr-title">${l.title}</div>
-        <div class="listing-mgr-loc">${l.location} · Up to ${(l.capacity||'?').toLocaleString()} guests</div>
+        <div class="listing-mgr-loc">${l.location} · Cap. ${(l.capacity||'?').toLocaleString()}</div>
         <div class="listing-mgr-meta">
           <span class="listing-mgr-price">$${l.price.toLocaleString()} <span>/ night</span></span>
         </div>
@@ -2540,7 +2540,7 @@ function renderListingsManager() {
             <img src="${l.img}" alt="${l.title}" class="listing-mgr-img" onerror="this.style.background='#1C1C1C'" style="opacity:.45"/>
             <div class="listing-mgr-body">
               <div class="listing-mgr-title" style="opacity:.55">${l.title}</div>
-              <div class="listing-mgr-loc" style="opacity:.45">${l.location} · Up to ${(l.capacity||'?').toLocaleString()} guests</div>
+              <div class="listing-mgr-loc" style="opacity:.45">${l.location} · Cap. ${(l.capacity||'?').toLocaleString()}</div>
               <div class="listing-mgr-meta">
                 <span class="listing-mgr-price" style="opacity:.45">$${l.price.toLocaleString()} <span>/ night</span></span>
                 <span style="font-size:11px;color:var(--text-muted);margin-left:8px">Archived</span>

@@ -1580,12 +1580,8 @@ function changeGuests(type, delta) {
   document.getElementById(`${type}Count`).textContent = appState.guests[type];
 }
 function saveGuests() {
-  const t = appState.guests.adults + appState.guests.children;
-  let txt = t ? `${t} guest${t>1?'s':''}` : 'Add guests';
-  const ex = [];
-  if (appState.guests.infants) ex.push(`${appState.guests.infants} infant${appState.guests.infants>1?'s':''}`);
-  if (appState.guests.pets)    ex.push(`${appState.guests.pets} pet${appState.guests.pets>1?'s':''}`);
-  if (ex.length) txt += ', '+ex.join(', ');
+  const t = appState.guests.adults;
+  const txt = t ? `${t.toLocaleString()} fan${t>1?'s':''}` : 'Add fans';
   document.querySelector('.search-pill-guests').textContent = txt;
   closeGuestPicker();
 }

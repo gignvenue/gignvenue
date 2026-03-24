@@ -96,7 +96,7 @@
     {
       label: 'Tour Planner',
       keywords: ['tour','tour planner','multi-city','multiple cities','route','stops','tour dates'],
-      answer: 'The <strong>Tour Planner</strong> in your dashboard lets you add multiple stops — city + date — for an upcoming tour. For each stop, GigNVenue shows available venues in that area. Select the ones you want and submit booking requests to all of them in one go.',
+      answer: '<strong>Tour Planner is coming soon.</strong> It will let you add multiple stops — city + date — for an upcoming tour, browse available venues for each stop, and submit booking requests to all of them in one go. For now, browse venues city by city and submit individual requests. Use the "Suggest a venue" option to nominate a space in any market you\'re touring.',
     },
 
     /* ── Host: approvals & holds ── */

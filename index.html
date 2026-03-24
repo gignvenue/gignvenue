@@ -436,31 +436,15 @@
 <div class="guestpicker-overlay" id="guestpickerOverlay">
   <div class="guestpicker-modal">
     <div class="guestpicker-header">
-      <h3>Expected attendance</h3>
+      <h3>Expected fans</h3>
       <button onclick="closeGuestPicker()">✕</button>
     </div>
     <div class="guest-row">
-      <div><strong>Adults</strong><p>General admission</p></div>
+      <div><strong>Fans</strong><p>Expected audience size</p></div>
       <div class="counter-btns">
         <button onclick="changeGuests('adults',-1)">−</button>
         <span id="adultsCount">0</span>
         <button onclick="changeGuests('adults',1)">+</button>
-      </div>
-    </div>
-    <div class="guest-row">
-      <div><strong>VIP guests</strong><p>Premium access</p></div>
-      <div class="counter-btns">
-        <button onclick="changeGuests('children',-1)">−</button>
-        <span id="childrenCount">0</span>
-        <button onclick="changeGuests('children',1)">+</button>
-      </div>
-    </div>
-    <div class="guest-row">
-      <div><strong>Crew / Staff</strong><p>Production crew</p></div>
-      <div class="counter-btns">
-        <button onclick="changeGuests('infants',-1)">−</button>
-        <span id="infantsCount">0</span>
-        <button onclick="changeGuests('infants',1)">+</button>
       </div>
     </div>
     <button class="gp-save" onclick="saveGuests()">Confirm</button>
