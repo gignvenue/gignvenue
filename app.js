@@ -2168,19 +2168,21 @@ function openListing(id) {
     pricingEl.innerHTML = '';
   }
 
-  // Venue-specific cancellation policy
+  // GigNVenue platform cancellation policy (left info panel)
   const cancelEl = document.getElementById('listingModalCancellation');
   if (cancelEl) {
-    if (l.cancellationPolicy) {
-      cancelEl.innerHTML = `
-        <div class="listing-modal-divider"></div>
-        <div class="listing-modal-cancel-policy" id="venueCancelPolicySection">
-          <h3>Cancellation policy</h3>
-          <p>${l.cancellationPolicy.replace(/\n/g, '<br>')}</p>
-        </div>`;
-    } else {
-      cancelEl.innerHTML = '';
-    }
+    cancelEl.innerHTML = `
+      <div class="listing-modal-divider"></div>
+      <div class="listing-modal-cancel-policy" id="venueCancelPolicySection">
+        <h3>GigNVenue cancellation policy</h3>
+        <ul style="margin:8px 0 0 0;padding-left:18px;font-size:14px;line-height:1.7;color:var(--text-muted,#555)">
+          <li>Cancel before payment — no charge. The booking fee is only collected at payment.</li>
+          <li>Cancel after payment — refund eligibility is governed by the venue's cancellation policy, which you review and accept before booking.</li>
+          <li>If the venue cancels a confirmed booking — your full deposit is returned.</li>
+          <li>The 5% GigNVenue booking fee is non-refundable in all cases.</li>
+        </ul>
+        <p style="margin:10px 0 0;font-size:13px"><a href="terms.html#cancellation" target="_blank" style="color:#FF2D78">Full cancellation terms ↗</a></p>
+      </div>`;
   }
 
   // All amenities the venue has

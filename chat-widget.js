@@ -19,7 +19,7 @@
     {
       label: 'Is it free to browse?',
       keywords: ['free','cost','browse','search','sign up','create account','fee to browse','fee to join','subscription'],
-      answer: 'Browsing venues and submitting booking requests is always free. GigNVenue charges artists a 5% booking fee only when a booking is confirmed. Venue hosts pay a 5% booking fee deducted from their post-show deposit release — so no upfront cost for venues either.',
+      answer: 'Browsing venues and submitting booking requests is always free. GigNVenue charges artists a 5% booking fee on the listed nightly rate when they book. Venue hosts pay their own 5% only after a show successfully plays off — they retain 95% of their nightly rate. No upfront cost for venues, ever.',
     },
 
     /* ── Booking requests (artist) ── */
@@ -48,12 +48,12 @@
     {
       label: 'What is the deposit?',
       keywords: ['deposit','20%','hold','security','refund','where does deposit go'],
-      answer: 'The deposit is <strong>20% of the venue\'s nightly rate</strong>. It\'s collected when you confirm your booking and held securely until after your event. Within 24 hours of the show playing off, the deposit is released to the venue (minus the venue\'s 5% booking fee). The deposit is a security hold — it protects both you and the venue.',
+      answer: 'The deposit is <strong>20% of the venue\'s listed nightly rate</strong>. It\'s collected when you book and held securely until after your event. Within 24 hours of the show playing off, the deposit is released to the venue — GigNVenue\'s 5% platform fee (on the nightly rate) is collected at that point. The deposit is a security hold that protects both you and the venue.',
     },
     {
       label: 'What is the booking fee?',
       keywords: ['booking fee','fee','percent','8%','charge','platform fee','service fee','non-refundable'],
-      answer: 'Artists pay a <strong>5% booking fee</strong> at confirmation — non-refundable, covers payment processing and platform support. Venue hosts pay their own <strong>5% booking fee</strong>, deducted from the deposit release after the show. Cost is shared 50/50 between both sides. No listing fee, no upfront charges.',
+      answer: 'Artists pay a <strong>5% booking fee</strong> on the listed nightly rate — non-refundable, covers payment processing and platform support. Venue hosts retain 95% of their nightly rate — GigNVenue\'s 5% share is only earned once we deliver a booked night and a played-off show. No listing fee, no upfront charges for venues.',
     },
 
     /* ── Declined / cancelled (artist) ── */
@@ -115,7 +115,7 @@
     {
       label: 'When do I receive the deposit? (host)',
       keywords: ['receive deposit','when paid','payout','when do i get','deposit release','host payment'],
-      answer: 'The artist\'s 20% deposit is collected and held by GigNVenue at booking confirmation. It\'s <strong>released to you within 24 hours</strong> of you marking the show as played off — minus the 5% venue booking fee deducted at that point. For a $1,000 night: $200 deposit held, $150 released to you, $50 is the venue\'s platform fee.',
+      answer: 'The artist\'s 20% deposit is collected and held by GigNVenue when they book. It\'s <strong>released to you within 24 hours</strong> of you marking the show as played off. On a $1,000 night, your cost is $50 — that\'s it. Your $800 nightly rate is collected directly from the artist on your own terms. Then the deposit lands in your account too — making you whole with nothing but income. GigNVenue handles the $50 fee from the deposit automatically; you never write a check. The fee is also flagged as a deductible business expense in your exported earnings CSV.',
     },
     {
       label: 'Artist misses payment window',
