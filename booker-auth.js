@@ -43,13 +43,9 @@
       return _artistRecord;
     },
 
-    // Redirects to dashboard only if already logged in with a booker (artist) account.
-    // A user with only a host account is allowed through so they can sign up as a booker too.
     async requireGuest(redirectTo = 'booker-dashboard.html') {
       const { data: { session } } = await gnvClient.auth.getSession();
-      if (!session) return;
-      const record = await _fetchArtist(session.user.id);
-      if (record) window.location.href = redirectTo;
+      if (session) window.location.href = redirectTo;
     },
 
     async login(email, password) {
@@ -64,9 +60,19 @@
       const { data, error } = await gnvClient.auth.signUp({ email, password });
       if (error) {
         if (error.message.toLowerCase().includes('already')) {
-          return { ok: false, error: 'An account with this email already exists.' };
+          return { ok: false, error: 'An account with this email already exists. Please log in.' };
         }
         return { ok: false, error: error.message };
+      }
+
+      // Block same email being used on both sides — each role requires its own account
+      const { data: existingArtist } = await gnvClient.from('artists').select('id').eq('auth_id', data.user.id).maybeSingle();
+      if (existingArtist) return { ok: false, error: 'An account with this email already exists. Please log in.' };
+
+      const { data: existingHost } = await gnvClient.from('hosts').select('id').eq('auth_id', data.user.id).maybeSingle();
+      if (existingHost) {
+        await gnvClient.auth.signOut();
+        return { ok: false, error: 'That email is already registered as a host account. Please use a different email for your artist account.' };
       }
 
       // Create artist profile row
