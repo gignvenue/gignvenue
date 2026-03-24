@@ -326,7 +326,10 @@ function resolveNightlyRate(l, iso) {
 
 // Normalize venue IDs — the booker dashboard uses 'l1'-style strings; app.js uses numbers
 function normalizeVenueId(id) {
+  // Legacy: 'l1'-style localStorage IDs from demo branch
   if (typeof id === 'string' && /^l\d+$/.test(id)) return parseInt(id.slice(1));
+  // UUIDs — return as-is (parseInt would corrupt them)
+  if (typeof id === 'string' && id.includes('-')) return id;
   const n = parseInt(id);
   return isNaN(n) ? id : n;
 }
@@ -577,7 +580,7 @@ function renderCard(l) {
       <div class="listing-images" data-id="${l.id}">
         ${getEffectiveBadge(l) ? `<div class="listing-badge">${getEffectiveBadge(l)}</div>` : ''}
         ${l.promoted ? `<div class="listing-promoted">Promoted</div>` : ''}
-        <button class="listing-wishlist${inWL?' active':''}" onclick="toggleWishlist(event,${l.id})" aria-label="Save venue">
+        <button class="listing-wishlist${inWL?' active':''}" onclick="toggleWishlist(event,'${l.id}')" aria-label="Save venue">
           <svg viewBox="0 0 32 32" width="20" height="20"
                fill="${inWL?'#FF2D78':'none'}" stroke="${inWL?'none':'white'}" stroke-width="2">
             <path d="M16 28c7-4.733 14-10 14-17a6.98 6.98 0 0 0-7-7c-1.8 0-3.58.68-4.95 2.05L16 8.1l-2.05-2.05a6.98 6.98 0 0 0-9.9 0C2.61 7.42 2 9.21 2 11c0 7 7 12.267 14 17z"/>
@@ -585,8 +588,8 @@ function renderCard(l) {
         </button>
         <img src="${l.images[idx]}" alt="${l.title}" class="listing-img" loading="lazy"
              onerror="this.src='https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=800'"/>
-        <button class="listing-arrow listing-arrow-prev" onclick="prevImage(event,${l.id})">‹</button>
-        <button class="listing-arrow listing-arrow-next" onclick="nextImage(event,${l.id})">›</button>
+        <button class="listing-arrow listing-arrow-prev" onclick="prevImage(event,'${l.id}')">‹</button>
+        <button class="listing-arrow listing-arrow-next" onclick="nextImage(event,'${l.id}')">›</button>
         <div class="listing-dots">${dots}</div>
         <div class="listing-capacity-badge">👥 ${l.capacity >= 1000 ? (l.capacity/1000).toFixed(1)+'K' : l.capacity} cap</div>
       </div>
