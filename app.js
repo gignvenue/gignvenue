@@ -94,438 +94,59 @@ function amenityIcon(id) {
 }
 
 // ─── LISTINGS / VENUES ────────────────────────────────────────────────────────
+// Populated at runtime from Supabase. Kept as a mutable array so the rest of
+// the app (filters, map, modals) can reference it synchronously after load.
 
-const LISTINGS = [
-  {
-    id: 1,
-    title: 'The Neon Stage',
-    location: '6801 Hollywood Blvd, Hollywood, CA',
-    subtitle: 'Hosted by Sarah M.',
-    dates: 'Available now',
-    price: 2100,
-    weekdayRates: {0:1800,1:1800,2:1800,3:1800,4:2100,5:2800,6:2400},
-    priceUnit: 'night',
-    capacity: 500,
-    badge: null,
-    category: 'clubs',
-    lat: 34.0928, lng: -118.3287,
-    images: [
-      'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=800&q=80',
-      'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80',
-      'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&q=80',
-      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80',
-    ],
-    amenities: ['pro_sound','stage','stage_lights','bar','vip_area','green_room'],
-    amenityDescs: {
-      pro_sound:    'State-of-the-art PA with front fills and side hangs',
-      stage:        '40ft wide elevated stage with full wing access',
-      stage_lights: 'Full moving-head rig with haze and follow spots',
-      green_room:   'Private dressing suite with private bathroom and hospitality',
+let LISTINGS = [];
+
+function mapVenueRow(row) {
+  return {
+    id:                 row.id,
+    title:              row.title,
+    location:           [row.address, row.city, row.state].filter(Boolean).join(', '),
+    description:        row.description        || '',
+    price:              row.base_price,
+    weekdayRates:       row.weekday_rates       || null,
+    dateOverrides:      null,
+    priceUnit:          'night',
+    capacity:           row.capacity,
+    category:           row.category,
+    active:             row.active,
+    archived:           row.archived            || false,
+    promoted:           row.promoted            || false,
+    rating:             row.rating              || null,
+    reviews:            row.review_count        || 0,
+    images:             row.photos              || [],
+    amenities:          row.amenities           || [],
+    amenityDescs:       row.amenity_descs       || {},
+    featuredAmenities:  row.featured_amenities  || [],
+    highlights:         row.highlights          || [],
+    cancellationPolicy: row.cancellation_policy || '',
+    timezone:           row.timezone            || 'UTC',
+    lat:                row.lat,
+    lng:                row.lng,
+    host: {
+      name:      row.host_display_name || 'Venue Host',
+      years:     row.host_years        || 1,
+      superhost: row.superhost         || false,
+      img:       row.host_img          || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(row.title)}&backgroundColor=3B82F6&textColor=ffffff`,
     },
-    featuredAmenities: ['pro_sound', 'stage_lights', 'green_room'],
-    cancellationPolicy: 'Cancellations more than 30 days before the event date are eligible for a full deposit refund. Cancellations within 30 days but more than 7 days before the event date will forfeit 50% of the deposit. Cancellations within 7 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
-    host: { name:'Sarah Johnson', years:5, superhost:true, img:'https://randomuser.me/api/portraits/women/44.jpg' },
-    description: 'Iconic Hollywood venue with state-of-the-art sound and lights. A boutique 500-capacity club with impeccable acoustics, professional stage, full backline, and a dedicated green room that keeps artists comfortable.',
-    highlights: [
-      { title:'Pro sound system', desc:'State-of-the-art PA with front fills and side hangs' },
-      { title:'Full production', desc:'Stage lighting rig, LED wash, and backline available' },
-      { title:'Green room included', desc:'Private artist lounge with hospitality' },
-    ],
-  },
-  {
-    id: 2,
-    title: 'Velvet Lounge',
-    location: '218 Bedford Ave, Brooklyn, NY',
-    subtitle: 'Hosted by James K.',
-    dates: 'Available now',
-    price: 1300,
-    weekdayRates: {0:1200,1:1100,2:1100,3:1100,4:1300,5:1800,6:1600},
-    priceUnit: 'night',
-    capacity: 200,
-    badge: null,
-    category: 'jazz',
-    lat: 40.7173, lng: -73.9573,
-    images: [
-      'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80',
-      'https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=800&q=80',
-      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80',
-      'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80',
-    ],
-    amenities: ['pro_sound','piano','bar','seated','accessibility'],
-    cancellationPolicy: 'Cancellations more than 21 days before the event date are eligible for a full deposit refund. Cancellations within 21 days but more than 7 days before the event date will forfeit 50% of the deposit. Cancellations within 7 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
-    host: { name:'James K.', years:5, superhost:false, img:'https://api.dicebear.com/7.x/initials/svg?seed=James%20K&backgroundColor=3B82F6&textColor=ffffff' },
-    description: 'Intimate jazz club with incredible acoustics and cozy vibes. A beloved Brooklyn institution offering a 200-capacity room with impeccable sound, a baby grand piano, and a warm atmosphere that makes every act sound their best.',
-    highlights: [
-      { title:'Intimate atmosphere', desc:'200-cap room with perfect sightlines from every seat' },
-      { title:'Baby grand piano', desc:'In-tune house piano available for all bookings' },
-      { title:'Exceptional acoustics', desc:'Naturally tuned room beloved by jazz artists' },
-    ],
-  },
-  {
-    id: 3,
-    title: 'Rooftop Sessions',
-    location: '432 W 45th St, New York, NY',
-    subtitle: 'Hosted by Maria L.',
-    dates: 'Available now',
-    price: 3500,
-    priceUnit: 'night',
-    capacity: 120,
-    badge: null,
-    category: 'rooftops',
-    active: false,
-    lat: 40.7614, lng: -73.9937,
-    images: [
-      'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&q=80',
-      'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=800&q=80',
-      'https://images.unsplash.com/photo-1544006659-f0b21884ce1d?w=800&q=80',
-      'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80',
-    ],
-    amenities: ['pro_sound','outdoor','rooftop','bar','vip_area','security'],
-    cancellationPolicy: 'Cancellations more than 30 days before the event date are eligible for a full deposit refund. Cancellations within 30 days but more than 7 days before the event date will forfeit 50% of the deposit. Cancellations within 7 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
-    host: { name:'Maria L.', years:3, superhost:false, img:'https://api.dicebear.com/7.x/initials/svg?seed=Maria%20L&backgroundColor=8B5CF6&textColor=ffffff' },
-    description: 'Open-air rooftop with stunning skyline views and premium sound. A boutique 120-cap rooftop above Midtown Manhattan — perfect for intimate concerts, album launches, and private events with NYC\'s skyline as the backdrop.',
-    highlights: [
-      { title:'Skyline views', desc:'Panoramic NYC backdrop for unforgettable shows' },
-      { title:'Intimate capacity', desc:'120-guest max for exclusive, premium events' },
-      { title:'Premium outdoor sound', desc:'Weather-rated PA system, all-season ready' },
-    ],
-  },
-  {
-    id: 4,
-    title: 'The Midnight Rooftop',
-    location: '230 W 39th St, New York, NY',
-    subtitle: 'Hosted by Skyline Spaces',
-    dates: 'Year-round',
-    price: 3600,
-    priceUnit: 'night',
-    capacity: 250,
-    rating: 4.88,
-    reviews: 341,
-    badge: null,
-    category: 'rooftops',
-    lat: 40.7505, lng: -73.9934,
-    images: [
-      'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80',
-      'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=800&q=80',
-      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80',
-      'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&q=80',
-    ],
-    amenities: ['pro_sound','stage_lights','bar','vip_area','outdoor','rooftop','seated','standing','catering','private_bar','wifi','accessibility'],
-    cancellationPolicy: 'Cancellations more than 30 days before the event date are eligible for a full deposit refund. Cancellations within 30 days but more than 7 days before the event date will forfeit 50% of the deposit. Cancellations within 7 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
-    host: { name:'Skyline Spaces', years:3, superhost:false, img:'https://randomuser.me/api/portraits/women/62.jpg' },
-    description: 'Perched 40 stories above Manhattan with the full skyline as your backdrop. Intimate 250-cap rooftop with a retractable cover, professional sound, and full bar service. Perfect for album launches, private showcases, and brand events.',
-    highlights: [
-      { title:'Manhattan skyline views', desc:'360° panoramic backdrop for your show' },
-      { title:'Intimate capacity', desc:'250-guest max for exclusive events' },
-      { title:'Retractable cover', desc:'Weatherproof for year-round bookings' },
-    ],
-  },
-  {
-    id: 5,
-    title: 'Blue Note Underground',
-    location: '623 Frenchmen St, New Orleans, LA',
-    subtitle: 'Hosted by Harlan J.',
-    dates: 'Available Mar 20+',
-    price: 1400,
-    priceUnit: 'night',
-    capacity: 180,
-    rating: 4.95,
-    reviews: 487,
-    badge: 'Top venue',
-    category: 'jazz',
-    lat: 29.9511, lng: -90.0715,
-    images: [
-      'https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=800&q=80',
-      'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80',
-      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80',
-      'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=800&q=80',
-    ],
-    amenities: ['piano','pro_sound','stage','monitors','bar','seated','green_room','recording','catering','rider_honored','wifi','accessibility'],
-    cancellationPolicy: 'Cancellations more than 21 days before the event date are eligible for a full deposit refund. Cancellations within 21 days but more than 7 days before the event date will forfeit 50% of the deposit. Cancellations within 7 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
-    host: { name:'Harlan J.', years:12, superhost:true, img:'https://randomuser.me/api/portraits/men/28.jpg' },
-    description: 'A Bourbon Street institution with 70 years of jazz history. Steinway grand piano, vintage Neve console for direct recording, and an atmosphere that has hosted legends from Louis Armstrong to Wynton Marsalis. Every show feels like history.',
-    highlights: [
-      { title:'Steinway Grand Piano', desc:'Vintage 9-ft concert grand, tuned weekly' },
-      { title:'Recording ready', desc:'Neve console captures every performance' },
-      { title:'70 years of history', desc:'New Orleans\' most storied jazz venue' },
-    ],
-  },
-  {
-    id: 6,
-    title: 'Coachella Stage II Replica',
-    location: '81800 Avenue 51, Indio, CA',
-    subtitle: 'Hosted by Desert Events Co.',
-    dates: 'Apr – Oct only',
-    price: 8500,
-    priceUnit: 'night',
-    capacity: 5000,
-    rating: 4.91,
-    reviews: 44,
-    badge: 'Iconic',
-    category: 'festival',
-    lat: 33.6823, lng: -116.2370,
-    images: [
-      'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80',
-      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80',
-      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80',
-      'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&q=80',
-    ],
-    amenities: ['pro_sound','stage','backline','stage_lights','led_wall','fog_machine','bar','vip_area','outdoor','standing','parking','load_in','box_office','security'],
-    cancellationPolicy: 'Cancellations more than 60 days before the event date are eligible for a full deposit refund. Cancellations within 60 days but more than 14 days before the event date will forfeit 50% of the deposit. Cancellations within 14 days of the event date forfeit the deposit in full. Due to the scale of production and infrastructure required, no exceptions can be made. The GigNVenue booking fee is non-refundable in all cases.',
-    host: { name:'Desert Events Co.', years:7, superhost:true, img:'https://randomuser.me/api/portraits/men/53.jpg' },
-    description: 'A purpose-built outdoor festival ground in the Coachella Valley. 5,000-cap main stage with full Clair Brothers PA, LED horizon wall, and desert sunset views that are unlike anything else on earth.',
-    highlights: [
-      { title:'Clair Brothers PA', desc:'Festival-grade main stage sound system' },
-      { title:'Iconic desert location', desc:'Coachella Valley sunsets as your backdrop' },
-      { title:'Full festival infrastructure', desc:'Load-in docks, golf carts, and ground power' },
-    ],
-  },
-  {
-    id: 7,
-    title: 'The Chicago Shrine',
-    location: '3730 N Clark St, Chicago, IL',
-    subtitle: 'Hosted by Lakeshore Music Group',
-    dates: 'Year-round',
-    price: 3200,
-    priceUnit: 'night',
-    capacity: 1500,
-    rating: 4.96,
-    reviews: 291,
-    badge: 'Top venue',
-    category: 'clubs',
-    lat: 41.8957, lng: -87.6298,
-    images: [
-      'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=800&q=80',
-      'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80',
-      'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=800&q=80',
-      'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&q=80',
-    ],
-    amenities: ['pro_sound','stage','stage_lights','laser_show','led_wall','bar','vip_area','green_room','standing','seated','coat_check','security','wifi','accessibility','box_office'],
-    cancellationPolicy: 'Cancellations more than 30 days before the event date are eligible for a full deposit refund. Cancellations within 30 days but more than 7 days before the event date will forfeit 50% of the deposit. Cancellations within 7 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
-    host: { name:'Lakeshore Music Group', years:8, superhost:true, img:'https://randomuser.me/api/portraits/women/11.jpg' },
-    description: 'A former Uptown church converted into Chicago\'s most storied multi-room music complex. The main hall\'s soaring arched ceilings and original stonework create an acoustic environment that artists request by name — raw, resonant, and unlike anything else in the Midwest.',
-    highlights: [
-      { title:'Historic church conversion', desc:'Stunning early 1900s architecture intact' },
-      { title:'Multi-room complex', desc:'3 separate spaces, 90 to 1,500 cap' },
-      { title:'Chicago institution', desc:'Home stage for artists who define the city' },
-    ],
-  },
-  {
-    id: 8,
-    title: 'The Ryman Stage',
-    location: '116 5th Ave N, Nashville, TN',
-    subtitle: 'Hosted by Ryman Heritage',
-    dates: 'Available select dates',
-    price: 6800,
-    priceUnit: 'night',
-    capacity: 2362,
-    rating: 4.99,
-    reviews: 103,
-    badge: 'Iconic',
-    category: 'theaters',
-    lat: 36.1612, lng: -86.7765,
-    images: [
-      'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&q=80',
-      'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&q=80',
-      'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80',
-      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80',
-    ],
-    amenities: ['pro_sound','stage','monitors','piano','stage_lights','projection','bar','seated','green_room','recording','coat_check','accessibility','box_office','load_in'],
-    cancellationPolicy: 'Due to the historic and high-demand nature of this venue, cancellations more than 60 days before the event date are eligible for a full deposit refund. Cancellations within 60 days but more than 14 days before the event will forfeit 50% of the deposit. Cancellations within 14 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
-    host: { name:'Ryman Heritage', years:15, superhost:true, img:'https://randomuser.me/api/portraits/men/77.jpg' },
-    description: 'The "Mother Church of Country Music" and one of the most recognizable stages on earth. Stunning 1892 architecture, pristine acoustics built over 130 years, and a history of performances that reads like a who\'s-who of American music.',
-    highlights: [
-      { title:'Mother Church of Country Music', desc:'130 years of legendary performances' },
-      { title:'Unmatched acoustics', desc:'1892 architecture perfected over a century' },
-      { title:'Historic seated theatre', desc:'Original church pews for 2,362 guests' },
-    ],
-  },
-  {
-    id: 9,
-    title: 'Red Rocks Amphitheatre',
-    location: '18300 W Alameda Pkwy, Morrison, CO',
-    subtitle: 'Hosted by Denver Arts & Venues',
-    dates: 'May – October',
-    price: 22000,
-    priceUnit: 'night',
-    capacity: 9525,
-    rating: 4.94,
-    reviews: 38,
-    badge: 'Iconic',
-    category: 'amphitheaters',
-    lat: 39.6655, lng: -105.2057,
-    images: [
-      'https://images.unsplash.com/photo-1565035010268-a3816f98589a?w=800&q=80',
-      'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80',
-      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80',
-      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80',
-    ],
-    amenities: ['pro_sound','stage','backline','monitors','stage_lights','led_wall','followspot','laser_show','fog_machine','bar','vip_area','green_room','standing','seated','coat_check','security','box_office','load_in','parking','accessibility'],
-    cancellationPolicy: 'Given the unique nature of this venue and the production commitments involved, cancellations more than 60 days before the event date are eligible for a full deposit refund. Cancellations within 60 days but more than 14 days before the event will forfeit 50% of the deposit. Cancellations within 14 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
-    host: { name:'Denver Arts & Venues', years:9, superhost:true, img:'https://randomuser.me/api/portraits/women/33.jpg' },
-    description: 'The greatest outdoor concert venue on earth — a naturally formed 9,525-capacity amphitheater carved into the Colorado Rockies. Towering 300-million-year-old red sandstone formations flank the stage, creating acoustics and visuals that no architect could design.',
-    highlights: [
-      { title:'300-million-year-old acoustics', desc:'Natural rock formations shape every note' },
-      { title:'9,525 capacity', desc:'Terraced seating with sightlines from every row' },
-      { title:'Colorado Rockies backdrop', desc:'The most iconic outdoor stage in the USA' },
-    ],
-  },
-  {
-    id: 10,
-    title: 'The Corner Dive',
-    location: '415 E 6th St, Austin, TX',
-    subtitle: 'Hosted by Sixth Street Collective',
-    dates: 'Year-round',
-    price: 800,
-    priceUnit: 'night',
-    capacity: 120,
-    rating: 4.82,
-    reviews: 612,
-    badge: null,
-    category: 'dive-bars',
-    lat: 30.2672, lng: -97.7431,
-    images: [
-      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80',
-      'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80',
-      'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&q=80',
-      'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=800&q=80',
-    ],
-    amenities: ['pro_sound','stage','monitors','backline','drums','bar','standing','green_room','wifi'],
-    cancellationPolicy: 'Cancellations more than 21 days before the event date are eligible for a full deposit refund. Cancellations within 21 days but more than 7 days before the event date will forfeit 50% of the deposit. Cancellations within 7 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
-    host: { name:'Sixth Street Collective', years:5, superhost:false, img:'https://randomuser.me/api/portraits/men/26.jpg' },
-    description: 'The legendary dive bar where careers are launched. No frills — just a perfect-sounding room, a tight stage, and an audience that actually listens. Elbow room for 120, but it feels like you\'re playing for thousands.',
-    highlights: [
-      { title:'Where legends started', desc:'Dozens of artists broke out on this stage' },
-      { title:'Legendary acoustics', desc:'The room has been tuned for 20 years' },
-      { title:'House backline included', desc:'Vintage Marshall and Vox amps on stage' },
-    ],
-  },
-  {
-    id: 11,
-    title: 'The Fox Theatre',
-    location: '660 Peachtree St NE, Atlanta, GA',
-    subtitle: 'Hosted by Atlanta Landmarks',
-    dates: 'By application only',
-    price: 18000,
-    priceUnit: 'night',
-    capacity: 2679,
-    rating: 5.0,
-    reviews: 21,
-    badge: 'Iconic',
-    category: 'theaters',
-    lat: 33.7725, lng: -84.3857,
-    images: [
-      'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&q=80',
-      'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80',
-      'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&q=80',
-      'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=800&q=80',
-    ],
-    amenities: ['pro_sound','stage','monitors','piano','stage_lights','followspot','projection','bar','seated','green_room','recording','coat_check','accessibility','box_office','load_in','security'],
-    cancellationPolicy: 'Due to the historic significance and demand for this venue, cancellations more than 60 days before the event date are eligible for a full deposit refund. Cancellations within 60 days but more than 14 days before the event will forfeit 50% of the deposit. Cancellations within 14 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
-    host: { name:'Atlanta Landmarks', years:14, superhost:true, img:'https://randomuser.me/api/portraits/women/55.jpg' },
-    description: 'Atlanta\'s crown jewel and one of the most breathtaking concert halls in America. The Fox Theatre\'s 1929 Moorish-Egyptian interior — with its starlit ceiling, ornate arches, and 4,678-pipe Möller organ — makes every performance feel like a once-in-a-career moment.',
-    highlights: [
-      { title:'1929 Moorish-Egyptian interior', desc:'One of America\'s most stunning concert halls' },
-      { title:'Starlit ceiling', desc:'Hand-painted sky dome visible from every seat' },
-      { title:'Historic 4,678-pipe organ', desc:'The Möller Grande Organ, fully operational' },
-    ],
-  },
-  {
-    id: 12,
-    title: 'Fillmore West Revival',
-    location: '1805 Geary Blvd, San Francisco, CA',
-    subtitle: 'Hosted by Bay Area Shows',
-    dates: 'Year-round',
-    price: 3800,
-    priceUnit: 'night',
-    capacity: 1150,
-    rating: 4.90,
-    reviews: 179,
-    badge: null,
-    category: 'theaters',
-    lat: 37.7841, lng: -122.4330,
-    images: [
-      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80',
-      'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80',
-      'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=800&q=80',
-      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80',
-    ],
-    amenities: ['pro_sound','stage','stage_lights','led_wall','bar','vip_area','green_room','standing','coat_check','security','wifi','accessibility'],
-    cancellationPolicy: 'Cancellations more than 30 days before the event date are eligible for a full deposit refund. Cancellations within 30 days but more than 7 days before the event date will forfeit 50% of the deposit. Cancellations within 7 days of the event date forfeit the deposit in full. The GigNVenue booking fee is non-refundable in all cases.',
-    host: { name:'Bay Area Shows', years:6, superhost:true, img:'https://randomuser.me/api/portraits/men/62.jpg' },
-    description: 'A spiritual successor to Bill Graham\'s legendary venue. Exposed brick, psychedelic poster art covering every wall, and a floor plan that puts every single person within 80 feet of the stage. San Francisco music royalty.',
-    highlights: [
-      { title:'Bill Graham heritage', desc:'Continuing a 60-year SF music tradition' },
-      { title:'80 feet to the stage', desc:'Intimate sightlines in every spot' },
-      { title:'Famous poster collection', desc:'Iconic psychedelic art adorns every wall' },
-    ],
-  },
-  {
-    id: 13,
-    title: 'The Summit Arena',
-    location: '1510 Polk St, Houston, TX',
-    subtitle: 'Hosted by Houston Live Events',
-    dates: 'Year-round',
-    price: 28000,
-    priceUnit: 'night',
-    capacity: 16000,
-    rating: 4.87,
-    reviews: 57,
-    badge: 'Iconic',
-    category: 'arenas',
-    lat: 29.7490, lng: -95.3677,
-    images: [
-      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80',
-      'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80',
-      'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&q=80',
-      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80',
-    ],
-    amenities: ['pro_sound','stage','backline','monitors','stage_lights','led_wall','followspot','laser_show','fog_machine','bar','vip_area','green_room','standing','seated','coat_check','security','box_office','load_in','parking','accessibility','wifi'],
-    cancellationPolicy: 'Due to the scale of production commitments at this venue, cancellations more than 60 days before the event date are eligible for a full deposit refund. Cancellations within 60 days but more than 14 days before the event will forfeit 50% of the deposit. Cancellations within 14 days of the event date forfeit the deposit in full. No exceptions. The GigNVenue booking fee is non-refundable in all cases.',
-    host: { name:'Houston Live Events', years:11, superhost:true, img:'https://randomuser.me/api/portraits/men/41.jpg' },
-    description: 'Houston\'s premier indoor arena — 16,000 seats of pure spectacle. A fully rigged production house with a 360° LED ceiling, 48-point rigging grid, and a stage that has welcomed everyone from stadium rock acts to sold-out residencies. If you\'re ready to play at this scale, this is your room.',
-    highlights: [
-      { title:'360° LED ceiling', desc:'Full arena roof wrapped in programmable display panels' },
-      { title:'16,000-seat capacity', desc:'Tiered bowl seating with unobstructed views throughout' },
-      { title:'48-point rigging grid', desc:'Full production fly system for large touring shows' },
-    ],
-  },
-];
-
-// ─── VENUE TIMEZONES ──────────────────────────────────────────────────────────
-// Keyed by listing id; used to determine "today" and display dates in the
-// correct local time for the venue rather than the visitor's browser timezone.
-const VENUE_TIMEZONES = {
-  1:  'America/Los_Angeles', // The Neon Stage         — Hollywood, CA
-  2:  'America/New_York',    // Velvet Lounge           — Brooklyn, NY
-  3:  'America/New_York',    // Rooftop Sessions        — New York, NY
-  4:  'America/New_York',    // The Midnight Rooftop    — Manhattan, NY
-  5:  'America/Chicago',     // Blue Note Underground   — New Orleans, LA
-  6:  'America/Los_Angeles', // Coachella Stage II      — Indio, CA
-  7:  'America/Chicago',     // The Chicago Shrine      — Chicago, IL
-  8:  'America/Chicago',     // The Ryman Stage         — Nashville, TN
-  9:  'America/Denver',      // Red Rocks Amphitheatre  — Morrison, CO
-  10: 'America/Chicago',     // The Corner Dive         — Austin, TX
-  11: 'America/New_York',    // The Fox Theatre         — Atlanta, GA
-  12: 'America/Los_Angeles', // Fillmore West Revival   — San Francisco, CA
-  13: 'America/Chicago',     // The Summit Arena         — Houston, TX
-};
-
-// Maps numeric listing IDs back to the booker-dashboard venue string IDs
-// (used to cross-reference the artist's requests from bb_my_requests)
-const LISTING_TO_BOOKER_VENUE = { 1:'l1', 2:'l2', 3:'l3', 4:'l4', 5:'l5', 6:'l6', 7:'l7', 8:'l8', 9:'l9', 10:'l10', 11:'l11', 12:'l12', 13:'l13' };
-
-// Returns today's ISO date (YYYY-MM-DD) in the venue's local timezone.
-function venueToday(tz) {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: tz || 'UTC' }).format(new Date());
+  };
 }
 
-// Formats an ISO date string for display without any UTC-parsing shift.
-function fmtIso(iso, opts) {
-  const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('en-US', opts || { month: 'short', day: 'numeric', year: 'numeric' });
+async function loadVenues() {
+  const { data, error } = await gnvClient
+    .from('venues')
+    .select('*, ST_X(location::geometry) as lng, ST_Y(location::geometry) as lat')
+    .eq('active', true)
+    .eq('archived', false)
+    .order('created_at', { ascending: true });
+  if (error) { console.error('Failed to load venues:', error.message); return; }
+  LISTINGS.length = 0;
+  (data || []).forEach(row => LISTINGS.push(mapVenueRow(row)));
 }
 
+// (legacy hardcoded venue data removed — venues now load from Supabase)
 // ─── CATEGORIES ───────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
@@ -710,29 +331,26 @@ function normalizeVenueId(id) {
   return isNaN(n) ? id : n;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // Restore saved venues so hearts render correctly on load
   try {
     JSON.parse(localStorage.getItem('bb_saved_venues') || '[]')
       .forEach(v => appState.wishlist.add(normalizeVenueId(v.id)));
   } catch(e) {}
 
-  mergeHostListings();
-
   renderCategoryBar();
   renderSkeletons();
-  setTimeout(() => {
-    applyFilters();
-    renderCalendars();
-    initSearchBackdrop();
-    buildAmenityList();
-    // Deep-link: ?venue=l1 or ?venue=1 opens that listing's profile immediately
-    const vParam = new URLSearchParams(location.search).get('venue');
-    if (vParam) {
-      const id = normalizeVenueId(vParam) || (Object.entries(HOST_ID_MAP).find(([k]) => k === vParam)?.[1] ?? vParam);
-      openListing(id);
-    }
-  }, 600);
+
+  await loadVenues();
+
+  applyFilters();
+  renderCalendars();
+  initSearchBackdrop();
+  buildAmenityList();
+
+  // Deep-link: ?venue=<uuid> opens that listing's profile immediately
+  const vParam = new URLSearchParams(location.search).get('venue');
+  if (vParam) openListing(vParam);
 });
 
 // ─── SKELETON ────────────────────────────────────────────────────────────────
@@ -1760,7 +1378,7 @@ function renderModalCal() {
   const el = document.getElementById('modalCalGrid');
   if (!el) return;
   const statuses  = getVenueCalendar();
-  const tz        = VENUE_TIMEZONES[appState.selectedListing && appState.selectedListing.id] || 'UTC';
+  const tz        = (appState.selectedListing && appState.selectedListing.timezone) || 'UTC';
   const todayIso  = venueToday(tz);
 
   // Map of iso → status for the logged-in artist's requests at this venue
@@ -2204,7 +1822,7 @@ function openListing(id) {
 
 
   // Reset modal calendar state — single date only
-  const tz = VENUE_TIMEZONES[l.id] || 'UTC';
+  const tz = l.timezone || 'UTC';
   const todayIsoInit = venueToday(tz);
   const [ty, tm] = todayIsoInit.split('-').map(Number);
   modalCal.year  = ty;
