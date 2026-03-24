@@ -11,7 +11,7 @@
   let _artistRecord = null;
 
   async function _fetchArtist(authId) {
-    const { data } = await supabase
+    const { data } = await gnvClient
       .from('artists')
       .select('*')
       .eq('auth_id', authId)
@@ -66,7 +66,7 @@
       }
 
       // Create artist profile row
-      const { data: artist, error: insertErr } = await supabase
+      const { data: artist, error: insertErr } = await gnvClient
         .from('artists')
         .insert({
           auth_id:      data.user.id,
@@ -91,7 +91,7 @@
     async updateProfile(updates) {
       const { data: { session } } = await gnvClient.auth.getSession();
       if (!session) return;
-      const { data, error } = await supabase
+      const { data, error } = await gnvClient
         .from('artists')
         .update(updates)
         .eq('auth_id', session.user.id)

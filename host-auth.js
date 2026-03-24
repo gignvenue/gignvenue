@@ -11,7 +11,7 @@ const Auth = (() => {
   let _hostRecord = null;
 
   async function _fetchHost(authId) {
-    const { data } = await supabase
+    const { data } = await gnvClient
       .from('hosts')
       .select('*')
       .eq('auth_id', authId)
@@ -61,7 +61,7 @@ const Auth = (() => {
     }
 
     // Create host profile row linked to the new auth user
-    const { data: host, error: insertErr } = await supabase
+    const { data: host, error: insertErr } = await gnvClient
       .from('hosts')
       .insert({
         auth_id:      data.user.id,
@@ -85,7 +85,7 @@ const Auth = (() => {
   async function updateProfile(updates) {
     const { data: { session } } = await gnvClient.auth.getSession();
     if (!session) return null;
-    const { data, error } = await supabase
+    const { data, error } = await gnvClient
       .from('hosts')
       .update(updates)
       .eq('auth_id', session.user.id)
