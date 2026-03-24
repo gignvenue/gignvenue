@@ -147,6 +147,22 @@ async function loadVenues() {
 }
 
 // (legacy hardcoded venue data removed — venues now load from Supabase)
+
+// Maps legacy numeric listing IDs to booker-dashboard venue string IDs
+// (used by localStorage calendar cross-reference; will be removed in Phase 4)
+const LISTING_TO_BOOKER_VENUE = { 1:'l1', 2:'l2', 3:'l3', 4:'l4', 5:'l5', 6:'l6', 7:'l7', 8:'l8', 9:'l9', 10:'l10', 11:'l11', 12:'l12', 13:'l13' };
+
+// Returns today's ISO date (YYYY-MM-DD) in the venue's local timezone.
+function venueToday(tz) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: tz || 'UTC' }).format(new Date());
+}
+
+// Formats an ISO date string for display without any UTC-parsing shift.
+function fmtIso(iso, opts) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', opts || { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 // ─── CATEGORIES ───────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
