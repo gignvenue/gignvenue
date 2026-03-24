@@ -24,7 +24,7 @@
   const BookerAuth = {
 
     async currentUser() {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await gnvClient.auth.getSession();
       if (!session) return null;
       if (!_artistRecord) _artistRecord = await _fetchArtist(session.user.id);
       return _artistRecord;
@@ -36,7 +36,7 @@
     },
 
     async requireAuth(redirectTo = 'booker-login.html') {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await gnvClient.auth.getSession();
       if (!session) { window.location.href = redirectTo; return null; }
       _artistRecord = await _fetchArtist(session.user.id);
       if (!_artistRecord) { window.location.href = redirectTo; return null; }
@@ -44,12 +44,12 @@
     },
 
     async requireGuest(redirectTo = 'booker-dashboard.html') {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await gnvClient.auth.getSession();
       if (session) window.location.href = redirectTo;
     },
 
     async login(email, password) {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await gnvClient.auth.signInWithPassword({ email, password });
       if (error) return { ok: false, error: 'Invalid email or password.' };
       _artistRecord = await _fetchArtist(data.user.id);
       if (!_artistRecord) return { ok: false, error: 'Account not found. Please sign up.' };
@@ -57,7 +57,7 @@
     },
 
     async signup(firstName, lastName, email, password, artistName, genre) {
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await gnvClient.auth.signUp({ email, password });
       if (error) {
         if (error.message.toLowerCase().includes('already')) {
           return { ok: false, error: 'An account with this email already exists.' };
@@ -83,13 +83,13 @@
     },
 
     async logout(redirect) {
-      await supabase.auth.signOut();
+      await gnvClient.auth.signOut();
       _artistRecord = null;
       if (redirect) window.location.href = redirect;
     },
 
     async updateProfile(updates) {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await gnvClient.auth.getSession();
       if (!session) return;
       const { data, error } = await supabase
         .from('artists')
@@ -103,7 +103,7 @@
     },
 
     async sendPasswordReset(email) {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await gnvClient.auth.resetPasswordForEmail(email, {
         redirectTo: window.location.origin + '/booker-login.html',
       });
       return { ok: !error, error: error?.message };
