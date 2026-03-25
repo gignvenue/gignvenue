@@ -996,16 +996,15 @@ async function initiateStripeCheckout() {
   const btn = document.getElementById('pmStripeBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Redirecting to Stripe…'; }
   try {
-    const { data: { session: authSession } } = await gnvClient.auth.getSession();
+    // Edge function uses service role internally; anon key is sufficient to pass the gateway
     const _anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ieXVidm9ma3pqbnRnZWp5ZHplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNzI4OTksImV4cCI6MjA4OTk0ODg5OX0.YHz_bcP0dWY1ML-tKs5MLjqWP62njnV_oqWkkMZ461Y';
-    const _token = authSession?.access_token || _anonKey;
     const resp = await fetch(
       'https://mbyubvofkzjntgejydze.supabase.co/functions/v1/create-checkout-session',
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${_token}`,
+          'Authorization': `Bearer ${_anonKey}`,
           'apikey': _anonKey,
         },
         body: JSON.stringify({ bookingId: r.id }),
