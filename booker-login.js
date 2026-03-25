@@ -91,7 +91,20 @@ async function handleSignup(e) {
 
   const result = await BookerAuth.signup(first, last, email, pw, artist, genre);
   if (result.ok) {
-    window.location.href = 'booker-dashboard.html';
+    // With email confirmation enabled, Supabase doesn't create a session until confirmed
+    const { data: { session } } = await gnvClient.auth.getSession();
+    if (session) {
+      window.location.href = 'booker-dashboard.html';
+    } else {
+      const form = document.getElementById('signupForm');
+      if (form) form.innerHTML = `
+        <div style="text-align:center;padding:24px 0;">
+          <div style="font-size:40px;margin-bottom:16px;">📬</div>
+          <h2 style="font-size:20px;font-weight:700;margin:0 0 10px;">Check your inbox</h2>
+          <p style="color:#888;font-size:14px;line-height:1.6;margin:0 0 20px;">We sent a confirmation link to <strong>${document.getElementById('suEmail')?.value || 'your email'}</strong>. Click it to activate your account, then log in here.</p>
+          <button type="button" class="btn-primary" onclick="switchTab('login')" style="width:100%;">Go to log in</button>
+        </div>`;
+    }
   } else {
     setErr('signupFormErr', result.error);
     btn.disabled = false;
