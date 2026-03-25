@@ -144,7 +144,7 @@ async function loadVenues() {
     .from('venues')
     .select('*')
     .eq('active', true)
-    .eq('archived', false)
+    .or('archived.is.null,archived.eq.false')
     .order('created_at', { ascending: true });
   if (error) { console.error('Failed to load venues:', error.message); return; }
   LISTINGS.length = 0;
@@ -1513,7 +1513,7 @@ async function submitVenueRequest() {
   const { data: conflictReqs } = await gnvClient
     .from('booking_requests')
     .select('id')
-    .eq('artist_id', _currentArtist.id)
+    .eq('artist_id', _currentArtist.authId)
     .eq('show_date', modalCal.date)
     .neq('venue_id', l.id)
     .in('status', ['pending', 'approved', 'confirmed']);
@@ -1539,7 +1539,7 @@ async function submitVenueRequest() {
     .from('booking_requests')
     .insert({
       venue_id:       l.id,
-      artist_id:      _currentArtist.id,
+      artist_id:      _currentArtist.authId,
       show_date:      modalCal.date,
       fan_count:      attendance,
       notes:          notes || null,
@@ -1662,12 +1662,12 @@ async function prefetchVenueData(venueId) {
     const { data: artistRow } = await gnvClient
       .from('artists').select('id, display_name').eq('auth_id', session.user.id).maybeSingle();
     if (artistRow) {
-      _currentArtist = artistRow;
+      _currentArtist = { ...artistRow, authId: session.user.id };
       const { data: myReqs } = await gnvClient
         .from('booking_requests')
         .select('show_date, status')
         .eq('venue_id', venueId)
-        .eq('artist_id', artistRow.id)
+        .eq('artist_id', session.user.id)
         .neq('status', 'cancelled');
       (myReqs || []).forEach(r => _myRequestsCache.set(r.show_date, r.status));
     }

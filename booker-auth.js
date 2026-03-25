@@ -27,7 +27,7 @@
       const { data: { session } } = await gnvClient.auth.getSession();
       if (!session) return null;
       if (!_artistRecord) _artistRecord = await _fetchArtist(session.user.id);
-      return _artistRecord;
+      return _artistRecord ? { ..._artistRecord, authId: session.user.id } : null;
     },
 
     // Profile and user are the same record in Supabase (artists table)
@@ -40,7 +40,7 @@
       if (!session) { window.location.href = redirectTo; return null; }
       _artistRecord = await _fetchArtist(session.user.id);
       if (!_artistRecord) { window.location.href = redirectTo; return null; }
-      return _artistRecord;
+      return { ..._artistRecord, authId: session.user.id };
     },
 
     async requireGuest(redirectTo = 'booker-dashboard.html') {
