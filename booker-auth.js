@@ -75,19 +75,18 @@
         return { ok: false, error: 'That email is already registered as a host account. Please use a different email for your artist account.' };
       }
 
-      // Create artist profile row
-      const { data: artist, error: insertErr } = await gnvClient
-        .from('artists')
-        .insert({
-          auth_id:      data.user.id,
-          email,
-          display_name: artistName || `${firstName} ${lastName}`,
-          genre:        genre || '',
-        })
-        .select()
-        .single();
+      // Create artist profile row via security definer function (works before email confirmation)
+      const { error: insertErr } = await gnvClient.rpc('create_artist_profile', {
+        p_auth_id:      data.user.id,
+        p_email:        email,
+        p_display_name: artistName || `${firstName} ${lastName}`,
+        p_genre:        genre || '',
+      });
 
       if (insertErr) return { ok: false, error: 'Could not create your account. Please try again.' };
+
+      // Fetch the created row
+      const { data: artist } = await gnvClient.from('artists').select().eq('auth_id', data.user.id).single();
       _artistRecord = artist;
       return { ok: true, user: artist };
     },

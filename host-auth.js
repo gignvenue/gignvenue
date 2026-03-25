@@ -70,18 +70,17 @@ const Auth = (() => {
       return { ok: false, error: 'That email is already registered as an artist account. Please use a different email for your host account.' };
     }
 
-    // Create host profile row linked to the new auth user
-    const { data: host, error: insertErr } = await gnvClient
-      .from('hosts')
-      .insert({
-        auth_id:      data.user.id,
-        email,
-        display_name: `${firstName} ${lastName}`,
-      })
-      .select()
-      .single();
+    // Create host profile row via security definer function (works before email confirmation)
+    const { error: insertErr } = await gnvClient.rpc('create_host_profile', {
+      p_auth_id:      data.user.id,
+      p_email:        email,
+      p_display_name: `${firstName} ${lastName}`,
+    });
 
     if (insertErr) return { ok: false, error: 'Could not create your account. Please try again.' };
+
+    // Fetch the created row
+    const { data: host } = await gnvClient.from('hosts').select().eq('auth_id', data.user.id).single();
     _hostRecord = host;
     return { ok: true, user: host };
   }
