@@ -1006,7 +1006,9 @@ async function initiateStripeCheckout() {
         body: JSON.stringify({ bookingId: r.id }),
       }
     );
-    const json = await resp.json();
+    const text = await resp.text();
+    console.log('checkout response status:', resp.status, 'body:', text);
+    const json = JSON.parse(text);
     if (json.url) {
       window.location.href = json.url;
     } else {
