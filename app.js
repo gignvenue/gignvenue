@@ -1513,7 +1513,7 @@ async function submitVenueRequest() {
   const { data: conflictReqs } = await gnvClient
     .from('booking_requests')
     .select('id')
-    .eq('artist_id', _currentArtist.authId)
+    .eq('artist_id', _currentArtist.id)
     .eq('show_date', modalCal.date)
     .neq('venue_id', l.id)
     .in('status', ['pending', 'approved', 'confirmed']);
@@ -1539,7 +1539,7 @@ async function submitVenueRequest() {
     .from('booking_requests')
     .insert({
       venue_id:       l.id,
-      artist_id:      _currentArtist.authId,
+      artist_id:      _currentArtist.id,
       show_date:      modalCal.date,
       fan_count:      attendance,
       notes:          notes || null,
@@ -1667,7 +1667,7 @@ async function prefetchVenueData(venueId) {
         .from('booking_requests')
         .select('show_date, status')
         .eq('venue_id', venueId)
-        .eq('artist_id', session.user.id)
+        .eq('artist_id', artistRow.id)
         .neq('status', 'cancelled');
       (myReqs || []).forEach(r => _myRequestsCache.set(r.show_date, r.status));
     }

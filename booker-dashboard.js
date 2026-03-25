@@ -148,7 +148,7 @@ function dismissStrikeWarning() {
 function checkExpiredApprovals() {
   const now = Date.now();
   let changed = false;
-  ALL_REQUESTS.filter(r => r.bookerId === user.authId).forEach(r => {
+  ALL_REQUESTS.filter(r => r.bookerId === user.id).forEach(r => {
     if (r.status === 'approved' && r.paymentStatus === 'unpaid' && r.paymentDeadline && r.paymentDeadline < now) {
       r.status       = 'cancelled';
       r.cancelledBy  = 'system';
@@ -397,7 +397,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const { data: reqRows, error } = await gnvClient
       .from('booking_requests')
       .select('id, venue_id, artist_id, show_date, status, fan_count, notes, nightly_rate, payment_status, payment_due_at, created_at')
-      .eq('artist_id', user.authId)
+      .eq('artist_id', user.id)
       .order('created_at', { ascending: false });
     if (error) console.warn('Could not load booking requests:', error.message);
     (reqRows || []).forEach(row => {
@@ -825,7 +825,7 @@ function datePassed(r) {
 
 function renderRequests(filter) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  let reqs = ALL_REQUESTS.filter(r => r.bookerId === user.authId);
+  let reqs = ALL_REQUESTS.filter(r => r.bookerId === user.id);
 
   // Completed actions area — show pending resolution cards only on completed tab
   const completedArea = document.getElementById('completedActionsArea');
