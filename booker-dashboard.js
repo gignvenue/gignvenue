@@ -296,10 +296,10 @@ const ALL_REQUESTS = [
   { id:'req_c1b', bookerId:'other1', venueId:'l8', date:'2026-04-19', status:'approved', eventType:'Festival set',   attendance:2000 },
   { id:'req_c2',  bookerId:'other2', venueId:'l8', date:'2026-04-25', status:'pending',  eventType:'Concert',        attendance:800 },
   // My own requests — one date each, independent statuses
-  { id:'req_mine1',  bookerId:user.id, venueId:'l2', date:'2026-04-15', status:'pending',  eventType:'Concert / live show', attendance:180, notes:'Indie rock quartet, 90-min set. Need full backline.',   sent:'2026-03-08' },
-  { id:'req_mine2a', bookerId:user.id, venueId:'l5', date:'2026-04-22', status:'approved', eventType:'Album launch',         attendance:120, notes:'Album release party. PA system required.',            sent:'2026-03-01', paymentStatus:'unpaid', paymentDeadline: Date.now() + 47 * 3600 * 1000 },
-  { id:'req_mine2b', bookerId:user.id, venueId:'l5', date:'2026-04-23', status:'declined', eventType:'Album launch',         attendance:120, notes:'Album release party. PA system required.',            sent:'2026-03-01' },
-  { id:'req_mine3',  bookerId:user.id, venueId:'l1', date:'2026-05-10', status:'declined', eventType:'Concert / live show',  attendance:500, notes:'Large headline show. Need full production.',          sent:'2026-02-20' },
+  { id:'req_mine1',  bookerId:'__demo__', venueId:'l2', date:'2026-04-15', status:'pending',  eventType:'Concert / live show', attendance:180, notes:'Indie rock quartet, 90-min set. Need full backline.',   sent:'2026-03-08' },
+  { id:'req_mine2a', bookerId:'__demo__', venueId:'l5', date:'2026-04-22', status:'approved', eventType:'Album launch',         attendance:120, notes:'Album release party. PA system required.',            sent:'2026-03-01', paymentStatus:'unpaid', paymentDeadline: Date.now() + 47 * 3600 * 1000 },
+  { id:'req_mine2b', bookerId:'__demo__', venueId:'l5', date:'2026-04-23', status:'declined', eventType:'Album launch',         attendance:120, notes:'Album release party. PA system required.',            sent:'2026-03-01' },
+  { id:'req_mine3',  bookerId:'__demo__', venueId:'l1', date:'2026-05-10', status:'declined', eventType:'Concert / live show',  attendance:500, notes:'Large headline show. Need full production.',          sent:'2026-02-20' },
 ];
 
 // My messages with venue hosts
