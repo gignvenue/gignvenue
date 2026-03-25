@@ -45,7 +45,10 @@
 
     async requireGuest(redirectTo = 'booker-dashboard.html') {
       const { data: { session } } = await gnvClient.auth.getSession();
-      if (session) window.location.href = redirectTo;
+      if (!session) return;
+      const artist = await _fetchArtist(session.user.id);
+      if (artist) window.location.href = redirectTo;
+      // Session exists but belongs to a host account — stay on login page
     },
 
     async login(email, password) {

@@ -37,10 +37,13 @@ const Auth = (() => {
     return _hostRecord;
   }
 
-  // Call at top of login/signup pages — redirects to dashboard if already logged in
+  // Call at top of login/signup pages — redirects to dashboard if already logged in as a host
   async function requireGuest(redirectTo = 'host-dashboard.html') {
     const { data: { session } } = await gnvClient.auth.getSession();
-    if (session) window.location.href = redirectTo;
+    if (!session) return;
+    const host = await _fetchHost(session.user.id);
+    if (host) window.location.href = redirectTo;
+    // Session exists but belongs to an artist account — stay on login page
   }
 
   async function login(email, password) {
