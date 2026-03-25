@@ -14,9 +14,10 @@ const ENABLE_DATE_PASSED = true;
 const ENABLE_AUTO_REPLY = true;
 // ─────────────────────────────────────────────────────────────────────────────
 
-BookerAuth.requireAuth('booker-login.html');
-const user = BookerAuth.currentUser();
-let profile = BookerAuth.currentProfile();
+let user    = null;
+let profile = null;
+let _supabaseResolutions = []; // pending booking_resolutions rows for this artist
+let _realtimeChannel    = null; // active Supabase Realtime channel for open message thread
 
 function resolveNightlyRate(l, iso) {
   if (l.dateOverrides?.[iso] !== undefined) return l.dateOverrides[iso];
@@ -316,40 +317,39 @@ const MY_MESSAGES = [
   },
 ];
 
-// Ingest requests submitted from the Browse Venues main site into ALL_REQUESTS
-(function ingestSiteRequests() {
-  try {
-    const siteReqs = JSON.parse(localStorage.getItem('bb_site_requests') || '[]');
-    siteReqs.forEach(r => {
-      if (!ALL_REQUESTS.find(x => x.id === r.id)) ALL_REQUESTS.push(r);
-    });
-  } catch(e) {}
-})();
+// ─── SUPABASE MAPPING ─────────────────────────────────────────────────────────
 
-// Ingest host approvals written by host-dashboard when a booking is confirmed
-(function ingestApprovals() {
-  try {
-    const approvals = JSON.parse(localStorage.getItem('gnv_approvals') || '[]');
-    approvals.forEach(a => {
-      const r = ALL_REQUESTS.find(x => x.id === a.id);
-      if (r) {
-        r.status          = 'approved';
-        r.paymentStatus   = a.paymentStatus || 'unpaid';
-        r.paymentDeadline = a.paymentDeadline;
-      }
-    });
-  } catch(e) {}
-})();
+function mapVenueForBookerDash(row) {
+  return {
+    id:                 row.id,
+    title:              row.title,
+    location:           [row.city, row.state].filter(Boolean).join(', '),
+    img:                (row.photos && row.photos[0]) || '',
+    price:              row.base_price,
+    weekdayRates:       row.weekday_rates || null,
+    capacity:           row.capacity,
+    lat:                row.lat,
+    lng:                row.lng,
+    cancellationPolicy: row.cancellation_policy || '',
+    hostId:             row.host_id || null,
+  };
+}
 
-// Persist this booker's requests to localStorage so Browse Venues can show them
-(function syncMyRequests() {
-  try {
-    const mine = ALL_REQUESTS
-      .filter(r => r.bookerId === user.id && r.status !== 'cancelled')
-      .map(r => ({ id: r.id, bookerId: r.bookerId, venueId: r.venueId, date: r.date, status: r.status }));
-    localStorage.setItem('bb_my_requests', JSON.stringify(mine));
-  } catch(e) {}
-})();
+function mapRequestRow(row) {
+  return {
+    id:              row.id,
+    bookerId:        row.artist_id,
+    venueId:         row.venue_id,
+    date:            row.show_date,
+    status:          row.status,
+    eventType:       'Concert / live show',
+    attendance:      row.fan_count,
+    notes:           row.notes || '',
+    sent:            row.created_at ? row.created_at.slice(0, 10) : '',
+    paymentStatus:   row.payment_status || 'unpaid',
+    paymentDeadline: row.payment_due_at ? new Date(row.payment_due_at).getTime() : null,
+  };
+}
 
 const _calInit = new Date();
 let calYear = _calInit.getFullYear(), calMonth = _calInit.getMonth();
@@ -360,7 +360,93 @@ let requestFilter = 'pending';
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // ── Auth ────────────────────────────────────────────────────────────────────
+  user = await BookerAuth.requireAuth('booker-login.html');
+  if (!user) return;
+  profile = user;
+
+  // ── Load Supabase venues into ALL_VENUES ────────────────────────────────────
+  try {
+    const { data: venueRows } = await gnvClient
+      .from('venues').select('*').eq('active', true).eq('archived', false)
+      .order('created_at', { ascending: true });
+    (venueRows || []).forEach(row => {
+      if (!ALL_VENUES.find(v => v.id === row.id)) ALL_VENUES.push(mapVenueForBookerDash(row));
+    });
+  } catch(e) { console.warn('Could not load venues from Supabase:', e); }
+
+  // ── Load Supabase booking requests into ALL_REQUESTS ────────────────────────
+  try {
+    const { data: reqRows, error } = await gnvClient
+      .from('booking_requests')
+      .select('id, venue_id, artist_id, show_date, status, fan_count, notes, nightly_rate, payment_status, payment_due_at, created_at')
+      .eq('artist_id', user.id)
+      .order('created_at', { ascending: false });
+    if (error) console.warn('Could not load booking requests:', error.message);
+    (reqRows || []).forEach(row => {
+      if (!ALL_REQUESTS.find(x => x.id === row.id)) ALL_REQUESTS.push(mapRequestRow(row));
+    });
+  } catch(e) { console.warn('Could not load booking requests from Supabase:', e); }
+
+  // ── Load pending booking resolutions from Supabase ──────────────────────────
+  try {
+    const { data: resRows } = await gnvClient
+      .from('booking_resolutions')
+      .select('id, booking_id, resolution_type, status, artist_refund, venue_release, host_note, new_date, auto_lapse_at, created_at, booking_requests(show_date, venues(title, host_id))')
+      .eq('status', 'pending');
+    _supabaseResolutions = resRows || [];
+  } catch(e) { console.warn('Could not load resolutions:', e); }
+
+  // ── Load message threads from Supabase ───────────────────────────────────────
+  try {
+    const uuidReqIds = ALL_REQUESTS
+      .filter(r => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(r.id))
+      .map(r => r.id);
+    if (uuidReqIds.length > 0) {
+      const { data: msgRows } = await gnvClient
+        .from('messages')
+        .select('booking_id, sender_id, body, created_at')
+        .in('booking_id', uuidReqIds)
+        .order('created_at', { ascending: false });
+      const seen = new Set();
+      (msgRows || []).forEach(row => {
+        if (seen.has(row.booking_id)) return;
+        seen.add(row.booking_id);
+        if (MY_MESSAGES.find(m => m.id === row.booking_id)) return;
+        const req = ALL_REQUESTS.find(r => r.id === row.booking_id);
+        if (!req) return;
+        const venue = ALL_VENUES.find(v => v.id === req.venueId);
+        const venueName = venue?.title || 'Venue';
+        MY_MESSAGES.unshift({
+          id:       row.booking_id,
+          from:     venueName,
+          fromImg:  `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(venueName)}&backgroundColor=555555&textColor=ffffff`,
+          venue:    venueName,
+          venueId:  req.venueId,
+          lastMsg:  row.body || '',
+          time:     new Date(row.created_at).toLocaleDateString(),
+          unread:   row.sender_id !== user.id,
+          thread:   [],
+        });
+      });
+    }
+  } catch(e) { console.warn('Could not load message threads:', e); }
+
+  // ── Load unread notification count ──────────────────────────────────────────
+  try {
+    const { count } = await gnvClient
+      .from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('recipient_type', 'artist')
+      .eq('recipient_id', user.id)
+      .is('read_at', null);
+    if (count) {
+      const badge = document.getElementById('topbarBadge');
+      if (badge) { badge.textContent = count; badge.style.display = ''; }
+    }
+  } catch(e) { console.warn('Could not load notifications:', e); }
+
   seedReliabilityData();
   checkExpiredApprovals();
   renderStrikeBanner();
@@ -378,23 +464,8 @@ document.addEventListener('DOMContentLoaded', () => {
   updateBadges();
   renderTourPlanner();
 
-  // Re-ingest site requests at DOM-ready time (catches any that arrived after the
-  // module-level IIFE ran) and keep the dashboard live if this tab is already open.
-  function ingestAndRefresh() {
-    try {
-      const siteReqs = JSON.parse(localStorage.getItem('bb_site_requests') || '[]');
-      let changed = false;
-      siteReqs.forEach(r => {
-        if (!ALL_REQUESTS.find(x => x.id === r.id)) { ALL_REQUESTS.push(r); changed = true; }
-      });
-      if (changed) { renderRequests(requestFilter); renderOverview(); updateBadges(); }
-    } catch(e) {}
-  }
-  ingestAndRefresh();
-
-  // Live-update when a request is submitted in another tab / the main site
+  // Live-update when resolution state changes in another tab
   window.addEventListener('storage', e => {
-    if (e.key === 'bb_site_requests') ingestAndRefresh();
     if (e.key === 'gnv_pending_resolutions') { renderPendingActions(); if (requestFilter === 'completed') renderPendingActions('completedActionsArea'); updateBadges(); }
     if (e.key === 'bb_saved_venues') {
       // Heart toggled on browse page (possibly in another tab) — sync immediately
@@ -403,6 +474,33 @@ document.addEventListener('DOMContentLoaded', () => {
       updateBadges();
     }
   });
+
+  // Handle Stripe Checkout return
+  const _sp = new URLSearchParams(window.location.search);
+  const _paymentResult  = _sp.get('payment');
+  const _paymentBooking = _sp.get('booking');
+  if (_paymentResult === 'success' && _paymentBooking) {
+    // Mark booking paid in local cache so UI reflects it immediately (webhook will also update DB)
+    const r = ALL_REQUESTS.find(x => x.id === _paymentBooking);
+    if (r) {
+      r.paymentStatus = 'paid';
+      incrementMyReliability(true);
+      ALL_REQUESTS.filter(x =>
+        x.id !== r.id && x.bookerId === user.id && x.date === r.date && x.status === 'pending'
+      ).forEach(c => { c.status = 'cancelled'; c.cancelledBy = 'system'; });
+    }
+    navigate(null, 'bookings');
+    setTimeout(() => {
+      renderRequests('approved');
+      renderOverview();
+      updateBadges();
+      showDash('Payment confirmed! Your booking is locked in.');
+    }, 80);
+    history.replaceState({}, '', window.location.pathname);
+  } else if (_paymentResult === 'cancelled') {
+    showDash('Payment cancelled — your booking is still reserved.');
+    history.replaceState({}, '', window.location.pathname);
+  }
 
   // Handle deep-link from public venue profile: ?msg=VenueName
   const msgVenue = new URLSearchParams(window.location.search).get('msg');
@@ -709,6 +807,8 @@ function renderRequests(filter) {
     if (filter === 'completed') {
       completedArea.style.display = '';
       renderPendingActions('completedActionsArea');
+      // Mark resolution notifications as read for any pending resolutions
+      _supabaseResolutions.forEach(r => { if (r.booking_id) _markNotificationsRead(r.booking_id); });
     } else {
       completedArea.style.display = 'none';
       completedArea.innerHTML = '';
@@ -860,6 +960,38 @@ function toggleArchivedRows() {
 let _pmCountdownTimer = null;
 let _pmCurrentReqId   = null;
 
+async function initiateStripeCheckout() {
+  const r = ALL_REQUESTS.find(x => x.id === _pmCurrentReqId);
+  if (!r) return;
+  const btn = document.getElementById('pmStripeBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Redirecting to Stripe…'; }
+  try {
+    const { data: { session: authSession } } = await gnvClient.auth.getSession();
+    const resp = await fetch(
+      `${gnvClient.supabaseUrl}/functions/v1/create-checkout-session`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authSession?.access_token}`,
+          'apikey': gnvClient.supabaseKey,
+        },
+        body: JSON.stringify({ bookingId: r.id }),
+      }
+    );
+    const json = await resp.json();
+    if (json.url) {
+      window.location.href = json.url;
+    } else {
+      throw new Error(json.error || 'No redirect URL returned');
+    }
+  } catch (err) {
+    console.error('Stripe checkout error:', err);
+    showDash('Could not start payment. Please try again.');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<svg viewBox="0 0 60 25" width="38" height="16" fill="currentColor"><path d="M59.64 14.28h-8.06c.19 1.93 1.6 2.55 3.2 2.55 1.64 0 2.96-.37 4.05-.95v3.32a10.26 10.26 0 0 1-4.56.95c-4.01 0-6.83-2.53-6.83-7.07 0-4.01 2.48-7.06 6.31-7.06 3.92 0 5.96 2.91 5.96 6.62 0 .6-.04 1.17-.07 1.64zm-5.92-5.77c-1.03 0-2.17.73-2.17 2.58h4.25c0-1.85-1.07-2.58-2.08-2.58zM40.95 20.3c-1.44 0-2.32-.6-2.9-1.04l-.02 4.63-4.12.87V6.43h3.64l.15 1.01c.56-.7 1.62-1.22 3-1.22 2.86 0 5.51 2.53 5.51 7.04 0 4.43-2.55 7.04-5.26 7.04zm-.87-10.57c-.84 0-1.48.31-1.93.79l.02 5.51c.42.46 1.05.79 1.91.79 1.51 0 2.54-1.56 2.54-3.54 0-2.02-1.05-3.55-2.54-3.55zM28.24 5.07c1.36 0 2.18-1.01 2.18-2.27C30.42.99 29.6 0 28.24 0c-1.36 0-2.21 1-2.21 2.8 0 1.26.85 2.27 2.21 2.27zm2.07 15.22h-4.14V6.43h4.14v13.86zM22.22 7.43l-.26-1h-3.56v13.85h4.12v-9.6c.97-1.27 2.62-1.04 3.13-.87V6.43c-.52-.19-2.4-.52-3.43 1zm-8.94-.61c-1.44 0-2.6.52-3.34 1.5l-.16-1.89H6.27C6.33 7.5 6.4 9.3 6.4 11.07v9.21h4.14v-8.96c0-.35.03-.68.12-.93.26-.72.87-1.45 1.87-1.45 1.32 0 1.87.9 1.87 2.22v9.12h4.12v-9.55c0-3.72-1.93-5.91-5.24-5.91z"/></svg> Pay with Stripe'; }
+  }
+}
+
 function completePaymentDemo() {
   const r = ALL_REQUESTS.find(x => x.id === _pmCurrentReqId);
   if (!r) return;
@@ -924,6 +1056,13 @@ function openPaymentModal(id) {
   } else {
     notice.classList.add('hidden');
   }
+
+  // Show Stripe button for real bookings, demo button for demo/legacy
+  const isSupabase = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  const stripeBtn = document.getElementById('pmStripeBtn');
+  const demoBtn   = document.getElementById('pmDemoBtn');
+  if (stripeBtn) { stripeBtn.style.display = isSupabase ? '' : 'none'; stripeBtn.disabled = false; }
+  if (demoBtn)   { demoBtn.style.display   = isSupabase ? 'none' : ''; }
 
   document.getElementById('pmOverlay').classList.add('open');
   document.getElementById('pmModal').classList.add('open');
@@ -1027,30 +1166,93 @@ function openThread(id) {
   const msgs = document.getElementById('chatMessages');
   if (msgs) msgs.scrollTop = msgs.scrollHeight;
   updateBadges();
+
+  // For Supabase booking threads: fetch history + subscribe Realtime
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    _loadSupabaseThread(id);
+  }
+}
+
+async function _loadSupabaseThread(bookingId) {
+  if (_realtimeChannel) { gnvClient.removeChannel(_realtimeChannel); _realtimeChannel = null; }
+
+  const { data: rows } = await gnvClient
+    .from('messages')
+    .select('id, sender_id, body, created_at')
+    .eq('booking_id', bookingId)
+    .order('created_at', { ascending: true });
+
+  const chatEl = document.getElementById('chatMessages');
+  if (!chatEl) return;
+  chatEl.innerHTML = (rows || []).map(row => {
+    const mine = row.sender_id === user.id;
+    const t = new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return `<div><div class="msg-bubble ${mine?'mine':'theirs'}">${row.body}<div class="msg-bubble-time">${t}</div></div></div>`;
+  }).join('');
+  chatEl.scrollTop = chatEl.scrollHeight;
+
+  if (activeThread?.id === bookingId) {
+    activeThread.thread = (rows || []).map(row => ({
+      mine: row.sender_id === user.id,
+      text: row.body,
+      time: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    }));
+  }
+
+  _realtimeChannel = gnvClient
+    .channel(`artist-messages:${bookingId}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `booking_id=eq.${bookingId}` }, payload => {
+      const row = payload.new;
+      if (activeThread?.id !== bookingId || row.sender_id === user.id) return;
+      const el = document.getElementById('chatMessages');
+      if (!el) return;
+      const t = new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const b = document.createElement('div');
+      b.innerHTML = `<div class="msg-bubble theirs">${row.body}<div class="msg-bubble-time">${t}</div></div>`;
+      el.appendChild(b);
+      el.scrollTop = el.scrollHeight;
+    })
+    .subscribe();
 }
 
 function sendMessage() {
   const input = document.getElementById('msgInput');
   if (!input?.value.trim() || !activeThread) return;
   const text = input.value.trim();
-  activeThread.thread.push({ mine:true, text, time:'Just now' });
-  activeThread.lastMsg = text;
   input.value = '';
   const msgs = document.getElementById('chatMessages');
   const b = document.createElement('div');
   b.innerHTML = `<div class="msg-bubble mine">${text}<div class="msg-bubble-time">Just now</div></div>`;
   msgs.appendChild(b);
   msgs.scrollTop = msgs.scrollHeight;
-  if (ENABLE_AUTO_REPLY) {
+
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(activeThread.id)) {
+    // Supabase thread — persist message; Realtime delivers it to the other party
+    activeThread.thread.push({ mine: true, text, time: 'Just now' });
+    activeThread.lastMsg = text;
+    gnvClient.from('messages').insert({
+      booking_id:  activeThread.id,
+      sender_type: 'artist',
+      sender_id:   user.id,
+      body:        text,
+      event:       'message',
+    }).then(({ error }) => { if (error) console.warn('Message send failed:', error.message); });
+  } else if (ENABLE_AUTO_REPLY) {
+    // Demo thread — in-memory + simulated reply
+    activeThread.thread.push({ mine: true, text, time: 'Just now' });
+    activeThread.lastMsg = text;
     setTimeout(() => {
       const replies = ["Thanks for the message! I'll get back to you shortly.", "Got it, will confirm soon!", "Thanks! Let me check and reply."];
       const reply = replies[Math.floor(Math.random()*replies.length)];
-      activeThread.thread.push({ mine:false, text:reply, time:'Just now' });
+      activeThread.thread.push({ mine: false, text: reply, time: 'Just now' });
       const rb = document.createElement('div');
       rb.innerHTML = `<div class="msg-bubble theirs">${reply}<div class="msg-bubble-time">Just now</div></div>`;
       msgs.appendChild(rb);
       msgs.scrollTop = msgs.scrollHeight;
     }, 1500);
+  } else {
+    activeThread.thread.push({ mine: true, text, time: 'Just now' });
+    activeThread.lastMsg = text;
   }
 }
 
@@ -2390,6 +2592,30 @@ function checkCompletedRatingPrompts() {
   return completed.filter(r => !BB_RATINGS.some(rt => rt.raterType === 'artist' && rt.bookingId === r.id));
 }
 
+// ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
+
+function _insertNotification({ recipientType, recipientId, type, title, body, bookingId = null, actionUrl = null }) {
+  if (!recipientId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(recipientId)) return;
+  gnvClient.from('notifications').insert({
+    recipient_type: recipientType,
+    recipient_id:   recipientId,
+    type,
+    title,
+    body,
+    booking_id:     bookingId,
+    action_url:     actionUrl,
+  }).then(({ error }) => { if (error) console.warn('Notification insert failed:', error.message); });
+}
+
+function _markNotificationsRead(bookingId) {
+  if (!bookingId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(bookingId)) return;
+  gnvClient.from('notifications')
+    .update({ read_at: new Date().toISOString() })
+    .eq('recipient_type', 'artist').eq('recipient_id', user.id)
+    .eq('booking_id', bookingId).is('read_at', null)
+    .then();
+}
+
 // ─── PENDING RESOLUTIONS (artist-side) ───────────────────────────────────────
 
 function renderPendingActions(targetId = 'pendingActionsWrap') {
@@ -2398,10 +2624,28 @@ function renderPendingActions(targetId = 'pendingActionsWrap') {
 
   let pending = [];
   try {
-    // Show all pending resolutions in the bridge — in prototype all localStorage is per-user.
-    // TODO: filter by bookerId once Supabase is in place.
     pending = JSON.parse(localStorage.getItem('gnv_pending_resolutions') || '[]');
   } catch(e) {}
+
+  // Merge Supabase resolutions (mapped to same shape renderPendingActions expects)
+  _supabaseResolutions.forEach(res => {
+    if (pending.find(p => p.id === res.id)) return; // already present
+    const bk = res.booking_requests || {};
+    pending.push({
+      id:             res.id,
+      venueTitle:     bk.venues?.title || '—',
+      artistName:     user?.display_name || '',
+      showDate:       bk.show_date || '',
+      resolution:     res.resolution_type,
+      resolutionSetAt: new Date(res.created_at).getTime(),
+      lapseHours:     res.auto_lapse_at ? Math.round((new Date(res.auto_lapse_at) - Date.now()) / 3600000) : null,
+      venueRelease:   res.venue_release || 0,
+      artistRefund:   res.artist_refund || 0,
+      pendingNewDate: res.new_date || null,
+      hostNote:       res.host_note || null,
+      _isSupabase:    true,
+    });
+  });
 
   if (!pending.length) { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
 
@@ -2426,7 +2670,7 @@ function renderPendingActions(targetId = 'pendingActionsWrap') {
           </div>
           <span class="pending-action-badge">Response needed</span>
         </div>
-        <div class="pending-action-body">Your host confirmed this show played as planned and your $${Math.round(p.venueRelease || 0).toLocaleString()} deposit is ready to be released to them. If that's right, leave your review below — submitting it confirms the show happened. Something's not right? Dispute it instead.</div>
+        <div class="pending-action-body">Your host confirmed this show played as planned and your deposit is set to be released. If that's right, leave your review below — submitting it confirms the show happened. Something's not right? Dispute it instead.</div>
         <div class="pac-review-wrap" id="pac-review-${p.id}">
           <div class="pac-stars" id="pac-stars-${p.id}">
             ${[1,2,3,4,5].map(n => `<button class="pac-star" data-val="${n}" onclick="setPacStar('${p.id}',${n})" title="${n} star${n>1?'s':''}">★</button>`).join('')}
@@ -2495,6 +2739,23 @@ function confirmResolution(id) {
     const pending = JSON.parse(localStorage.getItem('gnv_pending_resolutions') || '[]');
     localStorage.setItem('gnv_pending_resolutions', JSON.stringify(pending.filter(p => p.id !== id)));
   } catch(e) {}
+  // Supabase path for real resolution rows
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    gnvClient.from('booking_resolutions').update({ status: 'confirmed' }).eq('id', id)
+      .then(({ error }) => { if (error) console.warn('Resolution confirm failed:', error.message); });
+    const res = _supabaseResolutions.find(r => r.id === id);
+    if (res) {
+      const hostId = res.booking_requests?.venues?.host_id;
+      _insertNotification({
+        recipientType: 'host', recipientId: hostId,
+        type: 'resolution_confirmed', title: 'Artist confirmed your resolution',
+        body: `The artist confirmed the resolution for ${res.booking_requests?.venues?.title || 'your venue'} · ${res.booking_requests?.show_date || ''}.`,
+        bookingId: res.booking_id, actionUrl: 'host-dashboard.html',
+      });
+      _markNotificationsRead(res.booking_id);
+    }
+    _supabaseResolutions = _supabaseResolutions.filter(r => r.id !== id);
+  }
   showDash('Response sent — the host has been notified.');
   renderPendingActions();
   if (requestFilter === 'completed') renderPendingActions('completedActionsArea');
@@ -2512,6 +2773,23 @@ function submitDispute(id) {
     const pending = JSON.parse(localStorage.getItem('gnv_pending_resolutions') || '[]');
     localStorage.setItem('gnv_pending_resolutions', JSON.stringify(pending.filter(p => p.id !== id)));
   } catch(e) {}
+  // Supabase path for real resolution rows
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    gnvClient.from('booking_resolutions').update({ status: 'disputed', artist_note: notes || null }).eq('id', id)
+      .then(({ error }) => { if (error) console.warn('Resolution dispute failed:', error.message); });
+    const res = _supabaseResolutions.find(r => r.id === id);
+    if (res) {
+      const hostId = res.booking_requests?.venues?.host_id;
+      _insertNotification({
+        recipientType: 'host', recipientId: hostId,
+        type: 'resolution_disputed', title: 'Artist disputed your resolution',
+        body: `The artist disputed the resolution for ${res.booking_requests?.venues?.title || 'your venue'} · ${res.booking_requests?.show_date || ''}. GigNVenue will review.`,
+        bookingId: res.booking_id, actionUrl: 'host-dashboard.html',
+      });
+      _markNotificationsRead(res.booking_id);
+    }
+    _supabaseResolutions = _supabaseResolutions.filter(r => r.id !== id);
+  }
   showDash('Dispute submitted — GigNVenue will review and follow up within 24 hours.');
   renderPendingActions();
   if (requestFilter === 'completed') renderPendingActions('completedActionsArea');

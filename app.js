@@ -99,6 +99,11 @@ function amenityIcon(id) {
 
 let LISTINGS = [];
 
+// Phase 4 — Supabase venue data caches, populated by prefetchVenueData() on modal open.
+let _venueCalendarCache = {};  // { 'YYYY-MM-DD': { status, actName } }
+let _myRequestsCache    = new Map(); // date → status (artist's own pending/approved/declined reqs)
+let _currentArtist      = null; // { id, display_name } for the logged-in artist, or null
+
 function mapVenueRow(row) {
   return {
     id:                 row.id,
@@ -476,15 +481,9 @@ function applyFilters() {
       if (l.lat == null || l.lng == null) return false;
       if (haversine(filterState.lat, filterState.lng, l.lat, l.lng) > filterState.radius) return false;
     }
-    if (filterState.checkin) {
-      const vid = LISTING_TO_BOOKER_VENUE[l.id];
-      if (vid) {
-        try {
-          const cal = JSON.parse(localStorage.getItem(`bb_pub_cal_${vid}`) || '{}');
-          if (cal[filterState.checkin] === 'booked') return false;
-        } catch(e) {}
-      }
-    }
+    // TODO Phase 3b: server-side date availability filter (PostGIS + venue_calendar query)
+    // The old localStorage calendar check has been removed; Supabase venue availability
+    // filtering will be added when applyFilters() is replaced with a server-side query.
     return true;
   });
   _currentResults = results;
@@ -1379,12 +1378,7 @@ function setActiveMapPin(id, active) {
 // ─── VENUE AVAILABILITY CALENDAR (listing modal) ─────────────────────────────
 
 function getVenueCalendar() {
-  try {
-    const bookerVenueId = LISTING_TO_BOOKER_VENUE[appState.selectedListing && appState.selectedListing.id];
-    if (!bookerVenueId) return {};
-    const saved = localStorage.getItem(`bb_pub_cal_${bookerVenueId}`);
-    return saved ? JSON.parse(saved) : {};
-  } catch(e) { return {}; }
+  return _venueCalendarCache;
 }
 
 const modalCal = {
@@ -1400,17 +1394,8 @@ function renderModalCal() {
   const tz        = (appState.selectedListing && appState.selectedListing.timezone) || 'UTC';
   const todayIso  = venueToday(tz);
 
-  // Map of iso → status for the logged-in artist's requests at this venue
-  const myReqMap = new Map();
-  try {
-    const session = JSON.parse(localStorage.getItem('vf_booker_session') || 'null');
-    const bookerVenueId = LISTING_TO_BOOKER_VENUE[appState.selectedListing && appState.selectedListing.id];
-    if (session && bookerVenueId) {
-      const myReqs = JSON.parse(localStorage.getItem('bb_my_requests') || '[]');
-      myReqs.filter(r => r.bookerId === session.userId && r.venueId === bookerVenueId)
-            .forEach(r => myReqMap.set(r.date, r.status));
-    }
-  } catch(e) {}
+  // Map of iso → status for the logged-in artist's requests at this venue (populated by prefetchVenueData)
+  const myReqMap = _myRequestsCache;
   const firstDay  = new Date(modalCal.year, modalCal.month, 1).getDay();
   const daysInMo  = new Date(modalCal.year, modalCal.month + 1, 0).getDate();
   const prevDays  = new Date(modalCal.year, modalCal.month, 0).getDate();
@@ -1494,7 +1479,7 @@ function vrfAttendanceCheck(input, capacity) {
   if (err) err.style.display = over ? '' : 'none';
 }
 
-function submitVenueRequest() {
+async function submitVenueRequest() {
   const l = appState.selectedListing;
   if (!l) return;
 
@@ -1510,116 +1495,70 @@ function submitVenueRequest() {
     return;
   }
 
-  const bookerVenueId = LISTING_TO_BOOKER_VENUE[l.id];
-  if (!bookerVenueId) {
-    showToast('Online booking is not yet available for this venue.');
-    return;
-  }
-
-  const session = JSON.parse(localStorage.getItem('vf_booker_session') || 'null');
-  if (!session) {
+  // Require Supabase session + artist record
+  if (!_currentArtist) {
     showToast('Please log in to your artist account to request a booking.');
     setTimeout(() => { window.location.href = 'booker-login.html'; }, 1800);
     return;
   }
 
-  const users  = JSON.parse(localStorage.getItem('vf_booker_users') || '[]');
-  const booker = users.find(u => u.id === session.userId);
-  if (!booker) { showToast('Session error — please log in again.'); return; }
+  // Block duplicate: same artist, same venue, same date
+  const existingStatus = _myRequestsCache.get(modalCal.date);
+  if (existingStatus) {
+    showToast(`You already have a ${existingStatus} request for this venue on that date.`);
+    return;
+  }
 
-  // Check account freeze / flag from strike system
-  try {
-    const strikeRec = (JSON.parse(localStorage.getItem('bb_strikes') || '{}'))[session.userId];
-    if (strikeRec) {
-      if (strikeRec.flagged) {
-        showToast('Your account is under review. Please contact support to restore booking access.');
-        return;
-      }
-      if (strikeRec.freezeUntil && Date.now() < strikeRec.freezeUntil) {
-        const d = new Date(strikeRec.freezeUntil).toLocaleDateString('en-US', { month:'long', day:'numeric' });
-        showToast(`New requests are paused until ${d} due to a missed payment window.`);
-        return;
-      }
-    }
-  } catch(e) {}
+  // Warn (but don't block) if artist has another request on this date at a different venue
+  const { data: conflictReqs } = await gnvClient
+    .from('booking_requests')
+    .select('id')
+    .eq('artist_id', _currentArtist.id)
+    .eq('show_date', modalCal.date)
+    .neq('venue_id', l.id)
+    .in('status', ['pending', 'approved', 'confirmed']);
 
-  // Block duplicate: same artist, same venue, same date — checks both request stores
-  try {
-    const allMine = [
-      ...JSON.parse(localStorage.getItem('bb_my_requests')   || '[]'),
-      ...JSON.parse(localStorage.getItem('bb_site_requests') || '[]'),
-    ];
-    const duplicate = allMine.find(r =>
-      r.bookerId === session.userId &&
-      r.venueId  === bookerVenueId  &&
-      r.date     === modalCal.date  &&
-      r.status   !== 'cancelled'
-    );
-    if (duplicate) {
-      showToast(`You already have a ${duplicate.status} request for this venue on that date.`);
-      return;
-    }
-    // Warn (but don't block) if artist already has a request on this date at a different venue
-    const dateConflict = allMine.find(r =>
-      r.bookerId === session.userId &&
-      r.venueId  !== bookerVenueId  &&
-      r.date     === modalCal.date  &&
-      (r.status === 'pending' || r.status === 'approved' || r.status === 'confirmed')
-    );
-    if (dateConflict && !submitVenueRequest._conflictArmed) {
-      submitVenueRequest._conflictArmed = modalCal.date;
-      showToast('⚠️ You already have a booking request on this date. Submit again to proceed anyway — if that booking is confirmed, this request will be auto-cancelled.');
-      return;
-    }
-    if (submitVenueRequest._conflictArmed !== modalCal.date) {
-      submitVenueRequest._conflictArmed = null;
-    }
-  } catch(e) {}
+  if (conflictReqs && conflictReqs.length > 0 && !submitVenueRequest._conflictArmed) {
+    submitVenueRequest._conflictArmed = modalCal.date;
+    showToast('⚠️ You already have a booking request on this date. Submit again to proceed anyway — if that booking is confirmed, this request will be auto-cancelled.');
+    return;
+  }
+  if (submitVenueRequest._conflictArmed !== modalCal.date) {
+    submitVenueRequest._conflictArmed = null;
+  }
 
   const eventType = document.getElementById('vrfEventType')?.value || 'Concert / live show';
   const notes     = document.getElementById('vrfNotes')?.value?.trim() || '';
-  const today     = new Date().toISOString().slice(0, 10);
-  const reqId     = 'req_site_' + Date.now();
 
-  // 1. Host dashboard pickup queue
-  try {
-    const queue = JSON.parse(localStorage.getItem('bb_host_pending_requests') || '[]');
-    queue.push({
-      id:          reqId,
-      guest:       `${booker.firstName} ${booker.lastName}`.trim(),
-      bandName:    booker.artistName || '',
-      guestImg:    booker.avatar    || '',
-      property:    l.title,
-      propertyImg: l.images[0]     || '',
-      checkin:     modalCal.date,
-      checkout:    modalCal.date,
-      guests:      attendance,
-      total:       l.price,
-      submittedAt: today,
-      eventType,
+  const nightlyRate = resolveNightlyRate(l, modalCal.date);
+  const depositAmt  = Math.round(nightlyRate * 0.20);
+  const artistFee   = Math.round(nightlyRate * 0.05);
+  const venueFee    = Math.round(nightlyRate * 0.05);
+
+  const { error } = await gnvClient
+    .from('booking_requests')
+    .insert({
+      venue_id:       l.id,
+      artist_id:      _currentArtist.id,
+      show_date:      modalCal.date,
+      fan_count:      attendance,
+      notes:          notes || null,
+      status:         'pending',
+      nightly_rate:   nightlyRate,
+      deposit_amount: depositAmt,
+      artist_fee:     artistFee,
+      venue_fee:      venueFee,
     });
-    localStorage.setItem('bb_host_pending_requests', JSON.stringify(queue));
-  } catch(e) {}
 
-  // 2. Artist dashboard pickup queue
-  const siteReq = {
-    id: reqId, bookerId: session.userId, venueId: bookerVenueId,
-    date: modalCal.date, status: 'pending', eventType, attendance, notes, sent: today,
-  };
-  try {
-    const siteReqs = JSON.parse(localStorage.getItem('bb_site_requests') || '[]');
-    siteReqs.push(siteReq);
-    localStorage.setItem('bb_site_requests', JSON.stringify(siteReqs));
-  } catch(e) {}
+  if (error) {
+    console.error('Booking request failed:', error.message);
+    showToast('Could not send your request. Please try again.');
+    return;
+  }
 
-  // 3. Update bb_my_requests so the modal calendar green dot shows immediately
-  try {
-    const mine = JSON.parse(localStorage.getItem('bb_my_requests') || '[]');
-    mine.push({ id: reqId, bookerId: session.userId, venueId: bookerVenueId, date: modalCal.date, status: 'pending' });
-    localStorage.setItem('bb_my_requests', JSON.stringify(mine));
-  } catch(e) {}
+  // Update local cache so the calendar green dot shows immediately
+  _myRequestsCache.set(modalCal.date, 'pending');
 
-  // Update button to confirmed state
   const btn = document.getElementById('venueReqBtn');
   if (btn) {
     btn.textContent = '✓ Request sent!';
@@ -1631,19 +1570,18 @@ function submitVenueRequest() {
 }
 
 function goToBookerCalendar() {
-  const bookerVenueId = LISTING_TO_BOOKER_VENUE[appState.selectedListing && appState.selectedListing.id];
-  const url = bookerVenueId
-    ? `booker-dashboard.html?section=calendar&venue=${bookerVenueId}`
+  const vid = appState.selectedListing && appState.selectedListing.id;
+  window.location.href = vid
+    ? `booker-dashboard.html?section=calendar&venue=${vid}`
     : 'booker-dashboard.html?section=calendar';
-  window.location.href = url;
 }
 
 // Navigate to booker dashboard calendar at the specific month of an ISO date
 function goToBookerCalendarDate(iso) {
-  const bookerVenueId = LISTING_TO_BOOKER_VENUE[appState.selectedListing && appState.selectedListing.id];
+  const vid = appState.selectedListing && appState.selectedListing.id;
   const [y, m] = iso.split('-');
   const params = new URLSearchParams({ section: 'calendar' });
-  if (bookerVenueId) params.set('venue', bookerVenueId);
+  if (vid) params.set('venue', vid);
   params.set('year', y);
   params.set('month', m); // 1-based
   window.location.href = `booker-dashboard.html?${params.toString()}`;
@@ -1703,7 +1641,40 @@ function updateModalBookingTotal() {
 
 // ─── LISTING DETAIL MODAL ────────────────────────────────────────────────────
 
-function openListing(id) {
+// Prefetch venue calendar + artist's own requests into module-level caches.
+// Called at the start of openListing so all downstream code reads synchronously.
+async function prefetchVenueData(venueId) {
+  _venueCalendarCache = {};
+  _myRequestsCache    = new Map();
+  _currentArtist      = null;
+
+  const [calRes, sessRes] = await Promise.all([
+    gnvClient.from('venue_calendar').select('date, entry_type, label').eq('venue_id', venueId),
+    gnvClient.auth.getSession(),
+  ]);
+
+  (calRes.data || []).forEach(row => {
+    _venueCalendarCache[row.date] = { status: row.entry_type, actName: row.label || null };
+  });
+
+  const session = sessRes.data?.session;
+  if (session) {
+    const { data: artistRow } = await gnvClient
+      .from('artists').select('id, display_name').eq('auth_id', session.user.id).maybeSingle();
+    if (artistRow) {
+      _currentArtist = artistRow;
+      const { data: myReqs } = await gnvClient
+        .from('booking_requests')
+        .select('show_date, status')
+        .eq('venue_id', venueId)
+        .eq('artist_id', artistRow.id)
+        .neq('status', 'cancelled');
+      (myReqs || []).forEach(r => _myRequestsCache.set(r.show_date, r.status));
+    }
+  }
+}
+
+async function openListing(id) {
   mergeHostListings();
   const l = LISTINGS.find(x => x.id === id);
   if (!l) return;
@@ -1714,6 +1685,9 @@ function openListing(id) {
   document.getElementById('listingModalOverlay').classList.add('open');
   document.getElementById('listingModal').classList.add('open');
   document.body.style.overflow = 'hidden';
+
+  // Fetch venue calendar + artist's existing requests before building booking card
+  await prefetchVenueData(l.id);
 
   document.getElementById('listingModalImages').innerHTML =
     l.images.slice(0,4).map((src,i) => `<img src="${src}" alt="${l.title}" loading="${i?'lazy':'eager'}" onerror="this.style.background='#1a1a1a'"/>`).join('') +
@@ -1858,32 +1832,22 @@ function openListing(id) {
   const initDateLabel = modalCal.date
     ? fmtIso(modalCal.date, { month:'short', day:'numeric', year:'numeric' })
     : 'Select a date';
-  // Build existing-request banner for logged-in bookers
-  const _bvId = LISTING_TO_BOOKER_VENUE[l.id];
+  // Build existing-request banner for logged-in artists (uses prefetched cache)
   let _existingBanner = '';
-  if (_bvId) {
-    try {
-      const _sess = JSON.parse(localStorage.getItem('vf_booker_session') || 'null');
-      if (_sess) {
-        const _mine = JSON.parse(localStorage.getItem('bb_my_requests') || '[]')
-          .filter(r => r.bookerId === _sess.userId && r.venueId === _bvId && r.status !== 'cancelled');
-        if (_mine.length) {
-          const _statusColor = { pending:'#f59e0b', approved:'#10b981', declined:'#ef4444' };
-          const _statusLabel = { pending:'Pending', approved:'Approved', declined:'Declined' };
-          const _pills = _mine.map(r => {
-            const d = new Date(r.date + 'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-            const col = _statusColor[r.status] || 'var(--text-muted)';
-            const lbl = _statusLabel[r.status] || r.status;
-            return `<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.04);border:1px solid ${col}33;border-radius:20px;padding:3px 10px;font-size:12px;color:${col}"><span style="width:6px;height:6px;border-radius:50%;background:${col};flex-shrink:0"></span>${lbl} · ${d}</span>`;
-          }).join(' ');
-          _existingBanner = `<div style="margin-bottom:14px;padding:10px 14px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px">
-            <div style="font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Your requests here</div>
-            <div style="display:flex;flex-wrap:wrap;gap:6px">${_pills}</div>
-            <a href="booker-dashboard.html" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--red);text-decoration:none;font-weight:500">View in dashboard →</a>
-          </div>`;
-        }
-      }
-    } catch(e) {}
+  if (_myRequestsCache.size > 0) {
+    const _statusColor = { pending:'#f59e0b', approved:'#10b981', declined:'#ef4444' };
+    const _statusLabel = { pending:'Pending', approved:'Approved', declined:'Declined' };
+    const _pills = [..._myRequestsCache.entries()].map(([date, status]) => {
+      const d = new Date(date + 'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      const col = _statusColor[status] || 'var(--text-muted)';
+      const lbl = _statusLabel[status] || status;
+      return `<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.04);border:1px solid ${col}33;border-radius:20px;padding:3px 10px;font-size:12px;color:${col}"><span style="width:6px;height:6px;border-radius:50%;background:${col};flex-shrink:0"></span>${lbl} · ${d}</span>`;
+    }).join(' ');
+    _existingBanner = `<div style="margin-bottom:14px;padding:10px 14px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px">
+      <div style="font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Your requests here</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${_pills}</div>
+      <a href="booker-dashboard.html" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--red);text-decoration:none;font-weight:500">View in dashboard →</a>
+    </div>`;
   }
 
   document.getElementById('bookingCard').innerHTML = `
@@ -1955,7 +1919,7 @@ function openListing(id) {
       <span>I have read and agree to the ${l.cancellationPolicy ? 'venue cancellation policy above and ' : ''}<a href="terms.html#cancellation" target="_blank" onclick="event.stopPropagation()">GigNVenue's cancellation terms</a></span>
     </label>
     <button class="booking-reserve-btn" id="venueReqBtn" onclick="submitVenueRequest()" disabled>Request to book</button>
-    ${(()=>{ try { return JSON.parse(localStorage.getItem('vf_booker_session')||'null'); } catch(e){} return null; })()
+    ${_currentArtist
         ? `<button class="msg-venue-btn" onclick="messageVenue(${JSON.stringify(l.title)})"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Message venue first</button>`
         : `<button class="msg-venue-btn msg-venue-btn-disabled" disabled title="Log in to send messages"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Log in to message venue</button>`}
     <div id="modalBookingBreakdown">

@@ -4,10 +4,8 @@
 
 'use strict';
 
-// Guard: must be logged in
-Auth.requireAuth('host-login.html');
-
-const user = Auth.currentUser();
+// Guard: must be logged in (awaited in DOMContentLoaded async init)
+let user = null;
 
 // ─── ARTIST RELIABILITY ───────────────────────────────────────────────────────
 // Read the same 'bb_reliability' store seeded by the artist dashboard.
@@ -181,6 +179,29 @@ function saveDateStatuses() { /* DATE_STATUSES is rebuilt each load — no persi
 
 function saveManualEntries() {
   localStorage.setItem('gnv_manual_entries', JSON.stringify(MANUAL_CAL_ENTRIES));
+  _syncCalendarToSupabase();
+}
+
+async function _syncCalendarToSupabase() {
+  const rows = [];
+  const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  Object.entries(MANUAL_CAL_ENTRIES).forEach(([venueId, dates]) => {
+    if (!uuidRe.test(venueId)) return; // skip demo l1/l2/l3 entries
+    Object.entries(dates).forEach(([iso, entry]) => {
+      rows.push({
+        venue_id:   venueId,
+        date:       iso,
+        entry_type: entry.status,
+        label:      entry.bandName || null,
+        source:     'manual',
+      });
+    });
+  });
+  if (!rows.length) return;
+  const { error } = await gnvClient
+    .from('venue_calendar')
+    .upsert(rows, { onConflict: 'venue_id,date' });
+  if (error) console.warn('Calendar sync failed:', error.message);
 }
 
 // Returns merged status map: RESERVATIONS take priority over manual overrides.
@@ -340,10 +361,57 @@ function saveHostListings() {
   } catch(e) {}
 }
 
+// ─── SUPABASE MAPPING ─────────────────────────────────────────────────────────
+
+function mapVenueForHostDash(row) {
+  return {
+    id:           row.id,
+    title:        row.title,
+    location:     [row.address, row.city, row.state].filter(Boolean).join(', '),
+    img:          (row.photos && row.photos[0]) || '',
+    price:        row.base_price,
+    weekdayRates: row.weekday_rates || null,
+    active:       row.active !== false,
+    capacity:     row.capacity,
+    type:         row.category || 'clubs',
+    desc:         row.description || '',
+    amenities:    row.amenities || [],
+  };
+}
+
+function mapReservationRow(row, venueMap) {
+  const venue = venueMap.get(row.venue_id) || {};
+  const artist = row.artists || {};
+  const displayName = artist.display_name || 'Artist';
+  return {
+    id:          row.id,
+    guest:       displayName,
+    bandName:    displayName,
+    guestImg:    `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayName)}&backgroundColor=FF2D78&textColor=ffffff`,
+    property:    venue.title    || 'Unknown Venue',
+    propertyImg: (venue.photos && venue.photos[0]) || '',
+    checkin:     row.show_date,
+    checkout:    row.show_date,
+    guests:      row.fan_count  || 0,
+    total:       row.nightly_rate || 0,
+    status:      row.status,
+    isNew:       true,
+    submittedAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+    eventType:   'Concert / live show',
+    notes:       row.notes || '',
+    paymentStatus:   row.payment_status || 'unpaid',
+    paymentDeadline: row.payment_due_at ? new Date(row.payment_due_at).getTime() : null,
+  };
+}
+
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Restore persisted venue listed/unlisted states
+document.addEventListener('DOMContentLoaded', async () => {
+  // ── Auth ────────────────────────────────────────────────────────────────────
+  user = await Auth.requireAuth('host-login.html');
+  if (!user) return;
+
+  // ── Restore persisted venue listed/unlisted states ──────────────────────────
   try {
     const saved = localStorage.getItem('gnv_venue_active');
     if (saved) {
@@ -352,49 +420,80 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   } catch(e) {}
 
-  // Ingest artist-submitted booking requests from the queue
+  // ── Load Supabase venues into HOST_LISTINGS + fetch requests + calendar ──────
   try {
-    const rawQueue = JSON.parse(localStorage.getItem('bb_host_pending_requests') || '[]');
-    // Deduplicate the queue itself: keep only the first entry per guest+property+date
-    const seen = new Set();
-    const queue = rawQueue.filter(n => {
-      const key = `${n.guest}|${n.property}|${n.checkin}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-    if (queue.length !== rawQueue.length) {
-      try { localStorage.setItem('bb_host_pending_requests', JSON.stringify(queue)); } catch(e) {}
-    }
-    queue.forEach(n => {
-      if (RESERVATIONS.find(r => r.id === n.id)) return; // already present by id
-      // Skip if a non-cancelled entry already exists for same guest + property + date
-      const dupExists = RESERVATIONS.find(r =>
-        r.guest    === n.guest    &&
-        r.property === n.property &&
-        r.checkin  === n.checkin  &&
-        r.status   !== 'cancelled'
-      );
-      if (dupExists) return;
-      RESERVATIONS.push({
-        id:          n.id,
-        guest:       n.guest,
-        bandName:    n.bandName || '',
-        guestImg:    n.guestImg || 'https://api.dicebear.com/7.x/initials/svg?seed=Artist&backgroundColor=FF2D78&textColor=ffffff',
-        property:    n.property,
-        propertyImg: n.propertyImg,
-        checkin:     n.checkin,
-        checkout:    n.checkout,
-        guests:      n.guests || 0,
-        total:       n.total  || 0,
-        status:      'pending',
-        isNew:       true,
-        submittedAt: n.submittedAt,
-        eventType:   n.eventType || '',
-        notes:       n.notes    || '',
+    const { data: venueRows } = await gnvClient
+      .from('venues')
+      .select('*')
+      .eq('host_id', user.id)
+      .eq('archived', false)
+      .order('created_at', { ascending: true });
+
+    if (venueRows && venueRows.length > 0) {
+      // Replace hardcoded HOST_LISTINGS with real Supabase venues
+      HOST_LISTINGS.length = 0;
+      venueRows.forEach(row => HOST_LISTINGS.push(mapVenueForHostDash(row)));
+
+      const venueMap = new Map(venueRows.map(v => [v.id, v]));
+      const venueIds = venueRows.map(v => v.id);
+
+      // Load booking requests
+      const { data: reqRows, error: reqErr } = await gnvClient
+        .from('booking_requests')
+        .select('*, artists(id, display_name, email)')
+        .in('venue_id', venueIds)
+        .order('created_at', { ascending: false });
+      if (reqErr) console.warn('Could not load booking requests:', reqErr.message);
+      (reqRows || []).forEach(row => {
+        if (!RESERVATIONS.find(r => r.id === row.id))
+          RESERVATIONS.push(mapReservationRow(row, venueMap));
       });
-    });
-  } catch(e) {}
+
+      // Load venue_calendar into MANUAL_CAL_ENTRIES
+      const { data: calRows } = await gnvClient
+        .from('venue_calendar')
+        .select('venue_id, date, entry_type, label')
+        .in('venue_id', venueIds);
+      (calRows || []).forEach(row => {
+        if (!MANUAL_CAL_ENTRIES[row.venue_id]) MANUAL_CAL_ENTRIES[row.venue_id] = {};
+        MANUAL_CAL_ENTRIES[row.venue_id][row.date] = {
+          status:   row.entry_type,
+          bandName: row.label || '',
+          publicAct: false,
+        };
+      });
+
+      // Load message threads — last message per booking_id that has messages
+      const uuidReqIds = RESERVATIONS
+        .filter(r => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(r.id))
+        .map(r => r.id);
+      if (uuidReqIds.length > 0) {
+        const { data: msgRows } = await gnvClient
+          .from('messages')
+          .select('booking_id, sender_id, body, created_at')
+          .in('booking_id', uuidReqIds)
+          .order('created_at', { ascending: false });
+        const seen = new Set();
+        (msgRows || []).forEach(row => {
+          if (seen.has(row.booking_id)) return;
+          seen.add(row.booking_id);
+          if (MESSAGES.find(m => m.id === row.booking_id)) return;
+          const res = RESERVATIONS.find(r => r.id === row.booking_id);
+          if (!res) return;
+          MESSAGES.unshift({
+            id:       row.booking_id,
+            from:     res.guest,
+            fromImg:  res.guestImg,
+            property: res.property,
+            lastMsg:  row.body || '',
+            time:     new Date(row.created_at).toLocaleDateString(),
+            unread:   row.sender_id !== user.id,
+            thread:   [],
+          });
+        });
+      }
+    }
+  } catch(e) { console.warn('Could not load Supabase data:', e); }
 
   // Inject any cancellation notifications sent by artists
   try {
@@ -1399,6 +1498,48 @@ function changeResStatus(id, newStatus) {
     } catch(e) {}
   }
 
+  // Sync to Supabase for UUID-keyed (real) booking requests
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    gnvClient.from('booking_requests').update({ status: newStatus }).eq('id', id)
+      .then(({ error }) => { if (error) console.warn('Supabase status update failed:', error.message); });
+
+    // Notify artist of confirmed or cancelled booking
+    if ((newStatus === 'confirmed' || newStatus === 'cancelled') && r.bookerId) {
+      const venueTitle = r.property || 'your venue';
+      const showDate   = r.checkin || '';
+      _insertNotification({
+        recipientType: 'artist',
+        recipientId:   r.bookerId,
+        type:          newStatus === 'confirmed' ? 'booking_approved' : 'booking_declined',
+        title:         newStatus === 'confirmed' ? 'Your booking was approved' : 'Booking request declined',
+        body:          newStatus === 'confirmed'
+          ? `${venueTitle} approved your request for ${showDate}. You have 48 hours to complete payment.`
+          : `${venueTitle} declined your request for ${showDate}.`,
+        bookingId:     id,
+        actionUrl:     'booker-dashboard.html',
+      });
+    }
+
+    // Mirror confirmed bookings into venue_calendar so artists see booked dates
+    if (newStatus === 'confirmed' && r.checkin && r.property) {
+      const venue = HOST_LISTINGS.find(l => l.title === r.property);
+      if (venue) {
+        gnvClient.from('venue_calendar').upsert({
+          venue_id: venue.id, date: r.checkin, entry_type: 'booked',
+          label: r.bandName || r.guest || null, source: 'booking',
+        }, { onConflict: 'venue_id,date' }).then();
+      }
+    }
+    if (newStatus === 'cancelled' && r.checkin && r.property) {
+      const venue = HOST_LISTINGS.find(l => l.title === r.property);
+      if (venue) {
+        gnvClient.from('venue_calendar')
+          .delete().eq('venue_id', venue.id).eq('date', r.checkin).eq('source', 'booking')
+          .then();
+      }
+    }
+  }
+
   // When confirming, auto-cancel all other pending requests at the same date + venue
   if (newStatus === 'confirmed') {
     RESERVATIONS.forEach(x => {
@@ -1718,7 +1859,40 @@ function submitResolution() {
 
   saveResolutionState(r);
   writePendingResolutionBridge(r);
-  // TODO: trigger push notification to artist when notification system is live — resolution type + amounts + lapse window are all on `r`
+
+  // Sync to Supabase for real (UUID) bookings
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(r.id)) {
+    const hostNote = document.getElementById('resolveHostNote')?.value?.trim() || null;
+    gnvClient.from('booking_resolutions').upsert({
+      booking_id:       r.id,
+      resolution_type:  _resolveType,
+      status:           'pending',
+      artist_refund:    r.artistRefund  || 0,
+      venue_release:    r.venueRelease  || 0,
+      gnv_fee:          Math.round(r.total * 0.05),
+      split_pct_artist: (_resolveType === 'artist-cancel' || _resolveType === 'mutual') ? (100 - (_cancelVenuePct || 0)) : null,
+      split_pct_venue:  (_resolveType === 'artist-cancel' || _resolveType === 'mutual') ? (_cancelVenuePct || 0) : null,
+      host_note:        hostNote,
+      new_date:         _resolveType === 'postponed' ? r.pendingNewDate : null,
+      auto_lapse_at:    r.resolutionLapseHours ? new Date(Date.now() + r.resolutionLapseHours * 3600000).toISOString() : null,
+    }, { onConflict: 'booking_id' })
+      .then(({ error }) => { if (error) console.warn('Resolution sync failed:', error.message); });
+  }
+
+  // Notify artist that the host submitted a resolution
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(r.id) && r.bookerId) {
+    const resLabels = { played:'Show played off','host-cancel':'Host canceled','artist-cancel':'Artist canceled','mutual':'Mutual cancellation','postponed':'New date proposed' };
+    _insertNotification({
+      recipientType: 'artist',
+      recipientId:   r.bookerId,
+      type:          'resolution_submitted',
+      title:         'Your host submitted a resolution',
+      body:          `${r.property} submitted a resolution for your ${r.checkin} show: ${resLabels[_resolveType] || _resolveType}. Please review and respond.`,
+      bookingId:     r.id,
+      actionUrl:     'booker-dashboard.html?section=completed',
+    });
+  }
+
   closeResolveModal();
   syncCalendarFromBookings(); renderCalendar();
   renderReservations(currentResFilter); updateConfirmedTabBadge();
@@ -1845,6 +2019,27 @@ function applyResolutionFinal(r, trigger) {
   }
   removePendingResolutionBridge(r.id);
   clearResolutionState(r.id);
+
+  // Persist earnings record to Supabase for UUID bookings
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(r.id) && r.resolution !== 'postponed') {
+    const netPayout = r.resolution === 'played'
+      ? (r.venueRelease != null ? r.venueRelease : Math.round(r.total * 0.15))
+      : (r.venueRelease || 0);
+    gnvClient.from('earnings').upsert({
+      host_id:      user.id,
+      booking_id:   r.id,
+      entry_type:   'gnv',
+      show_date:    r.checkin,
+      artist_name:  r.bandName || r.guest || '',
+      nightly_rate: r.total || 0,
+      gnv_fee:      Math.round((r.total || 0) * 0.05),
+      net_payout:   netPayout,
+      status:       r.resolution === 'played' ? 'released' : 'cancelled',
+      notes:        r.cancelReason || '',
+    }, { onConflict: 'booking_id' })
+      .then(({ error }) => { if (error) console.warn('Earnings write failed:', error.message); });
+  }
+
   syncCalendarFromBookings(); renderCalendar();
   renderReservations(currentResFilter); updateConfirmedTabBadge();
   renderOverview(); renderEarnings();
@@ -1867,6 +2062,7 @@ function checkLapsedResolutions() {
 }
 
 function ingestResolutionResponses() {
+  // localStorage path (demo data / legacy)
   try {
     const responses = JSON.parse(localStorage.getItem('gnv_resolution_responses') || '[]');
     let changed = false;
@@ -1894,6 +2090,45 @@ function ingestResolutionResponses() {
     });
     if (changed) localStorage.setItem('gnv_resolution_responses', JSON.stringify(responses));
   } catch(e) {}
+
+  // Supabase path — check for artist responses on real bookings
+  _ingestSupabaseResolutionResponses();
+}
+
+async function _ingestSupabaseResolutionResponses() {
+  try {
+    const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const pendingIds = RESERVATIONS
+      .filter(r => r.status === 'pending_resolution' && uuidRe.test(r.id))
+      .map(r => r.id);
+    if (!pendingIds.length) return;
+
+    const { data: resRows } = await gnvClient
+      .from('booking_resolutions')
+      .select('booking_id, status, artist_note')
+      .in('booking_id', pendingIds)
+      .in('status', ['confirmed', 'disputed']);
+
+    (resRows || []).forEach(res => {
+      const r = RESERVATIONS.find(x => x.id === res.booking_id);
+      if (!r || r.status !== 'pending_resolution') return;
+      if (res.status === 'confirmed') {
+        applyResolutionFinal(r, 'artist_confirmed');
+        showDash(`Artist confirmed the resolution for ${r.property} · ${fmt(r.checkin)}.`);
+      } else if (res.status === 'disputed') {
+        r.status       = 'disputed';
+        r.disputeNotes = res.artist_note || '';
+        r.disputedAt   = Date.now();
+        r.disputedBy   = 'artist';
+        saveResolutionState(r);
+        removePendingResolutionBridge(r.id);
+        syncCalendarFromBookings(); renderCalendar();
+        renderReservations(currentResFilter); updateConfirmedTabBadge();
+        renderOverview(); renderEarnings();
+        showDash(`⚠ Artist disputed the resolution for ${r.property}.`);
+      }
+    });
+  } catch(e) { console.warn('Supabase resolution ingest failed:', e); }
 }
 
 // ─── RATINGS ─────────────────────────────────────────────────────────────────
@@ -2471,18 +2706,19 @@ function goToMessageWithGuest(rid) {
   const r = RESERVATIONS.find(x => x.id === rid);
   if (!r) return;
 
-  // Find existing thread or create a new one
-  let thread = MESSAGES.find(m => m.from === r.guest);
+  // For Supabase bookings, use the booking UUID as thread ID so messages link to booking_id
+  const isSupabase = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(r.id);
+  let thread = MESSAGES.find(m => isSupabase ? m.id === r.id : m.from === r.guest);
   if (!thread) {
     thread = {
-      id: 'msg_' + Date.now(),
-      from: r.guest,
-      fromImg: r.guestImg,
+      id:       isSupabase ? r.id : ('msg_' + Date.now()),
+      from:     r.guest,
+      fromImg:  r.guestImg,
       property: r.property,
-      lastMsg: '',
-      time: 'Now',
-      unread: false,
-      thread: [],
+      lastMsg:  '',
+      time:     'Now',
+      unread:   false,
+      thread:   [],
     };
     MESSAGES.unshift(thread);
     renderMessages();
@@ -3694,9 +3930,25 @@ function setDateStatus(iso, newStatus, bandName = '', publicAct = false) {
   showDash(`${iso} → ${labels[newStatus]}${bandName ? ' · ' + bandName : ''}`);
 }
 
+// ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
+
+function _insertNotification({ recipientType, recipientId, type, title, body, bookingId = null, actionUrl = null }) {
+  if (!recipientId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(recipientId)) return;
+  gnvClient.from('notifications').insert({
+    recipient_type: recipientType,
+    recipient_id:   recipientId,
+    type,
+    title,
+    body,
+    booking_id:     bookingId,
+    action_url:     actionUrl,
+  }).then(({ error }) => { if (error) console.warn('Notification insert failed:', error.message); });
+}
+
 // ─── MESSAGES ─────────────────────────────────────────────────────────────────
 
 let activeThread = null;
+let _realtimeChannel = null; // active Supabase Realtime channel for open message thread
 
 function _msgBandName(from) {
   return RESERVATIONS.find(r => r.guest === from)?.bandName || null;
@@ -3799,33 +4051,95 @@ function openThread(id) {
   document.getElementById('msgBadge').textContent          = unreadCount || '';
   document.getElementById('topbarMsgBadge').textContent    = unreadCount || '';
   renderActionItems();
+
+  // For Supabase booking threads: fetch history + subscribe Realtime
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    _loadSupabaseThread(id);
+  }
+}
+
+async function _loadSupabaseThread(bookingId) {
+  if (_realtimeChannel) { gnvClient.removeChannel(_realtimeChannel); _realtimeChannel = null; }
+
+  const { data: rows } = await gnvClient
+    .from('messages')
+    .select('id, sender_id, body, created_at')
+    .eq('booking_id', bookingId)
+    .order('created_at', { ascending: true });
+
+  const chatEl = document.getElementById('chatMessages');
+  if (!chatEl) return;
+  chatEl.innerHTML = (rows || []).map(row => {
+    const mine = row.sender_id === user.id;
+    const t = new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return `<div><div class="msg-bubble ${mine?'mine':'theirs'}">${row.body}<div class="msg-bubble-time">${t}</div></div></div>`;
+  }).join('');
+  chatEl.scrollTop = chatEl.scrollHeight;
+
+  if (activeThread?.id === bookingId) {
+    activeThread.thread = (rows || []).map(row => ({
+      mine: row.sender_id === user.id,
+      text: row.body,
+      time: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    }));
+  }
+
+  _realtimeChannel = gnvClient
+    .channel(`host-messages:${bookingId}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `booking_id=eq.${bookingId}` }, payload => {
+      const row = payload.new;
+      if (activeThread?.id !== bookingId || row.sender_id === user.id) return;
+      const el = document.getElementById('chatMessages');
+      if (!el) return;
+      const t = new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const b = document.createElement('div');
+      b.innerHTML = `<div class="msg-bubble theirs">${row.body}<div class="msg-bubble-time">${t}</div></div>`;
+      el.appendChild(b);
+      el.scrollTop = el.scrollHeight;
+    })
+    .subscribe();
 }
 
 function sendMessage() {
   const input = document.getElementById('msgInput');
   if (!input || !input.value.trim() || !activeThread) return;
   const text = input.value.trim();
-  activeThread.thread.push({ mine: true, text, time: 'Just now' });
-  activeThread.lastMsg = text;
   input.value = '';
   const msgs = document.getElementById('chatMessages');
   const bubble = document.createElement('div');
   bubble.innerHTML = `<div class="msg-bubble mine">${text}<div class="msg-bubble-time">Just now</div></div>`;
   msgs.appendChild(bubble);
   msgs.scrollTop = msgs.scrollHeight;
-  setTimeout(() => {
-    const replies = [
-      'Thanks for letting me know!',
-      'That sounds great, I will confirm shortly.',
-      'Happy to help! Let me check.',
-    ];
-    const reply = replies[Math.floor(Math.random() * replies.length)];
-    activeThread.thread.push({ mine: false, text: reply, time: 'Just now' });
-    const rb = document.createElement('div');
-    rb.innerHTML = `<div class="msg-bubble theirs">${reply}<div class="msg-bubble-time">Just now</div></div>`;
-    msgs.appendChild(rb);
-    msgs.scrollTop = msgs.scrollHeight;
-  }, 1500);
+
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(activeThread.id)) {
+    // Supabase thread — persist message; Realtime delivers it to the other party
+    activeThread.thread.push({ mine: true, text, time: 'Just now' });
+    activeThread.lastMsg = text;
+    gnvClient.from('messages').insert({
+      booking_id:  activeThread.id,
+      sender_type: 'host',
+      sender_id:   user.id,
+      body:        text,
+      event:       'message',
+    }).then(({ error }) => { if (error) console.warn('Message send failed:', error.message); });
+  } else {
+    // Demo thread — in-memory + simulated reply
+    activeThread.thread.push({ mine: true, text, time: 'Just now' });
+    activeThread.lastMsg = text;
+    setTimeout(() => {
+      const replies = [
+        'Thanks for letting me know!',
+        'That sounds great, I will confirm shortly.',
+        'Happy to help! Let me check.',
+      ];
+      const reply = replies[Math.floor(Math.random() * replies.length)];
+      activeThread.thread.push({ mine: false, text: reply, time: 'Just now' });
+      const rb = document.createElement('div');
+      rb.innerHTML = `<div class="msg-bubble theirs">${reply}<div class="msg-bubble-time">Just now</div></div>`;
+      msgs.appendChild(rb);
+      msgs.scrollTop = msgs.scrollHeight;
+    }, 1500);
+  }
 }
 
 function sendOnEnter(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
@@ -4021,6 +4335,23 @@ function saveLoggedEarnings() {
   MANUAL_CAL_ENTRIES[_lemVenueId][_lemIso].earningsNotes = notes;
   MANUAL_CAL_ENTRIES[_lemVenueId][_lemIso].reservationId = _lemResId;
   saveManualEntries();
+
+  // Persist self-managed earnings to Supabase for UUID reservation IDs
+  if (_lemResId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(_lemResId)) {
+    const res = RESERVATIONS.find(r => r.id === _lemResId);
+    gnvClient.from('earnings').upsert({
+      host_id:     user.id,
+      booking_id:  _lemResId,
+      entry_type:  'self_managed',
+      show_date:   _lemIso,
+      artist_name: res?.guest || '',
+      net_payout:  amt,
+      status:      'released',
+      notes:       notes || '',
+    }, { onConflict: 'booking_id' })
+      .then(({ error }) => { if (error) console.warn('Earnings write failed:', error.message); });
+  }
+
   closeLogEarningsModal();
   renderEarnings();
   showDash('Earnings saved.');
