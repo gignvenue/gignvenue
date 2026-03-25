@@ -994,21 +994,20 @@ async function initiateStripeCheckout() {
   if (btn) { btn.disabled = true; btn.textContent = 'Redirecting to Stripe…'; }
   try {
     const { data: { session: authSession } } = await gnvClient.auth.getSession();
+    const token = authSession?.access_token || gnvClient.supabaseKey;
     const resp = await fetch(
-      `${gnvClient.supabaseUrl}/functions/v1/create-checkout-session`,
+      'https://mbyubvofkzjntgejydze.supabase.co/functions/v1/create-checkout-session',
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authSession?.access_token}`,
+          'Authorization': `Bearer ${token}`,
           'apikey': gnvClient.supabaseKey,
         },
         body: JSON.stringify({ bookingId: r.id }),
       }
     );
-    const text = await resp.text();
-    console.log('checkout response status:', resp.status, 'body:', text);
-    const json = JSON.parse(text);
+    const json = await resp.json();
     if (json.url) {
       window.location.href = json.url;
     } else {
@@ -1016,7 +1015,7 @@ async function initiateStripeCheckout() {
     }
   } catch (err) {
     console.error('Stripe checkout error:', err);
-    showDash('Payment error: ' + (err.message || 'unknown'));
+    showDash('Could not start payment. Please try again.');
     if (btn) { btn.disabled = false; btn.innerHTML = '<svg viewBox="0 0 60 25" width="38" height="16" fill="currentColor"><path d="M59.64 14.28h-8.06c.19 1.93 1.6 2.55 3.2 2.55 1.64 0 2.96-.37 4.05-.95v3.32a10.26 10.26 0 0 1-4.56.95c-4.01 0-6.83-2.53-6.83-7.07 0-4.01 2.48-7.06 6.31-7.06 3.92 0 5.96 2.91 5.96 6.62 0 .6-.04 1.17-.07 1.64zm-5.92-5.77c-1.03 0-2.17.73-2.17 2.58h4.25c0-1.85-1.07-2.58-2.08-2.58zM40.95 20.3c-1.44 0-2.32-.6-2.9-1.04l-.02 4.63-4.12.87V6.43h3.64l.15 1.01c.56-.7 1.62-1.22 3-1.22 2.86 0 5.51 2.53 5.51 7.04 0 4.43-2.55 7.04-5.26 7.04zm-.87-10.57c-.84 0-1.48.31-1.93.79l.02 5.51c.42.46 1.05.79 1.91.79 1.51 0 2.54-1.56 2.54-3.54 0-2.02-1.05-3.55-2.54-3.55zM28.24 5.07c1.36 0 2.18-1.01 2.18-2.27C30.42.99 29.6 0 28.24 0c-1.36 0-2.21 1-2.21 2.8 0 1.26.85 2.27 2.21 2.27zm2.07 15.22h-4.14V6.43h4.14v13.86zM22.22 7.43l-.26-1h-3.56v13.85h4.12v-9.6c.97-1.27 2.62-1.04 3.13-.87V6.43c-.52-.19-2.4-.52-3.43 1zm-8.94-.61c-1.44 0-2.6.52-3.34 1.5l-.16-1.89H6.27C6.33 7.5 6.4 9.3 6.4 11.07v9.21h4.14v-8.96c0-.35.03-.68.12-.93.26-.72.87-1.45 1.87-1.45 1.32 0 1.87.9 1.87 2.22v9.12h4.12v-9.55c0-3.72-1.93-5.91-5.24-5.91z"/></svg> Pay with Stripe'; }
   }
 }
