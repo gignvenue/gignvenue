@@ -156,21 +156,26 @@ function checkExpiredApprovals() {
       changed = true;
       addStrike();
       incrementMyReliability(false);
-      // Notify host
-      try {
-        const v = ALL_VENUES.find(vv => vv.id === r.venueId);
-        const notifs = JSON.parse(localStorage.getItem('bb_host_notifications') || '[]');
-        notifs.push({
-          id: 'notif_exp_' + r.id,
-          artistName: `${user.firstName} ${user.lastName}`.trim(),
-          venueName:  v?.title || 'your venue',
-          dates:      r.date,
-          eventType:  r.eventType || 'event',
-          reason:     'Payment window expired — booking automatically cancelled.',
-          type:       'expired',
+      // Notify host — Supabase path for real bookings, localStorage bridge for demo
+      const v = ALL_VENUES.find(vv => vv.id === r.venueId);
+      const expiredArtistName = `${user.firstName} ${user.lastName}`.trim();
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(r.id) && v?.hostId) {
+        _insertNotification({
+          recipientType: 'host',
+          recipientId:   v.hostId,
+          type:          'payment_expired',
+          title:         'Payment window expired',
+          body:          `${expiredArtistName}'s payment window for ${r.date} at ${v.title} expired — booking automatically cancelled.`,
+          bookingId:     r.id,
+          actionUrl:     'host-dashboard.html',
         });
-        localStorage.setItem('bb_host_notifications', JSON.stringify(notifs));
-      } catch(e) {}
+      } else {
+        try {
+          const notifs = JSON.parse(localStorage.getItem('bb_host_notifications') || '[]');
+          notifs.push({ id: 'notif_exp_' + r.id, artistName: expiredArtistName, venueName: v?.title || 'your venue', dates: r.date, eventType: r.eventType || 'event', reason: 'Payment window expired — booking automatically cancelled.', type: 'expired' });
+          localStorage.setItem('bb_host_notifications', JSON.stringify(notifs));
+        } catch(e) {}
+      }
     }
   });
   if (changed) { renderStrikeBanner(); renderOverview(); }
@@ -248,21 +253,25 @@ function submitDecline() {
   r.cancelReason = reason;
   // Count against reliability (approvals went up, paid did not) but NO strike
   incrementMyReliability(false);
-  // Notify host
-  try {
-    const artistName = profile.artistName || `${user.firstName} ${user.lastName}`.trim();
-    const notifs = JSON.parse(localStorage.getItem('bb_host_notifications') || '[]');
-    notifs.push({
-      id:         'notif_dec_' + r.id,
-      artistName,
-      venueName:  v?.title || 'your venue',
-      dates:      r.date,
-      eventType:  r.eventType || 'event',
-      reason,
-      type:       'artist_declined',
+  // Notify host — Supabase path for real bookings, localStorage bridge for demo
+  const artistName = profile.artistName || `${user.firstName} ${user.lastName}`.trim();
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(r.id) && v?.hostId) {
+    _insertNotification({
+      recipientType: 'host',
+      recipientId:   v.hostId,
+      type:          'booking_declined',
+      title:         'Artist declined an approved booking',
+      body:          `${artistName} declined the approved booking for ${r.date} at ${v.title}. Reason: ${reason}`,
+      bookingId:     r.id,
+      actionUrl:     'host-dashboard.html',
     });
-    localStorage.setItem('bb_host_notifications', JSON.stringify(notifs));
-  } catch(e) {}
+  } else {
+    try {
+      const notifs = JSON.parse(localStorage.getItem('bb_host_notifications') || '[]');
+      notifs.push({ id: 'notif_dec_' + r.id, artistName, venueName: v?.title || 'your venue', dates: r.date, eventType: r.eventType || 'event', reason, type: 'artist_declined' });
+      localStorage.setItem('bb_host_notifications', JSON.stringify(notifs));
+    } catch(e) {}
+  }
   closeDeclineModal();
   renderRequests(requestFilter);
   renderOverview();
@@ -376,7 +385,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ── Load Supabase venues into ALL_VENUES ────────────────────────────────────
   try {
     const { data: venueRows } = await gnvClient
-      .from('venues').select('*').eq('active', true).eq('archived', false)
+      .from('venues').select('*').eq('active', true).or('archived.is.null,archived.eq.false')
       .order('created_at', { ascending: true });
     (venueRows || []).forEach(row => {
       if (!ALL_VENUES.find(v => v.id === row.id)) ALL_VENUES.push(mapVenueForBookerDash(row));
@@ -398,11 +407,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ── Load pending booking resolutions from Supabase ──────────────────────────
   try {
-    const { data: resRows } = await gnvClient
-      .from('booking_resolutions')
-      .select('id, booking_id, resolution_type, status, artist_refund, venue_release, host_note, new_date, auto_lapse_at, created_at, booking_requests(show_date, venues(title, host_id))')
-      .eq('status', 'pending');
-    _supabaseResolutions = resRows || [];
+    const uuidReqIds = ALL_REQUESTS
+      .filter(r => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(r.id))
+      .map(r => r.id);
+    if (uuidReqIds.length) {
+      const { data: resRows } = await gnvClient
+        .from('booking_resolutions')
+        .select('id, booking_id, resolution_type, status, artist_refund, venue_release, host_note, new_date, auto_lapse_at, created_at, booking_requests(show_date, venues(title, host_id))')
+        .in('booking_id', uuidReqIds)
+        .eq('status', 'pending');
+      _supabaseResolutions = resRows || [];
+    }
   } catch(e) { console.warn('Could not load resolutions:', e); }
 
   // ── Load message threads from Supabase ───────────────────────────────────────
@@ -598,8 +613,12 @@ function updateBadges() {
   // Badge on Completed tab for pending resolution actions
   const completedBtn = document.getElementById('completedTabBtnBooker');
   if (completedBtn) {
-    let pendingCount = 0;
-    try { pendingCount = JSON.parse(localStorage.getItem('gnv_pending_resolutions') || '[]').length; } catch(e) {}
+    let pendingCount = _supabaseResolutions.length;
+    try {
+      const uuidRe2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      pendingCount += JSON.parse(localStorage.getItem('gnv_pending_resolutions') || '[]')
+        .filter(p => !uuidRe2.test(p.id)).length;
+    } catch(e) {}
     const existing = completedBtn.querySelector('.confirm-tab-badge');
     if (existing) existing.remove();
     if (pendingCount > 0) {
@@ -1089,21 +1108,26 @@ function cancelRequest(id) {
   r.cancelledBy = cancellerName;
   r.cancelledAt = Date.now();
 
-  // Queue a notification for the host to pick up when they load their dashboard
+  // Notify host — Supabase path for real bookings, localStorage bridge for demo
   const venue = ALL_VENUES.find(v => v.id === r.venueId);
   const notifDate = new Date(r.date + 'T00:00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
-  try {
-    const pending = JSON.parse(localStorage.getItem('bb_host_notifications') || '[]');
-    pending.push({
-      id:         'notif_' + Date.now(),
-      artistName: cancellerName,
-      venueName:  venue?.title || 'Unknown venue',
-      dates:      notifDate,
-      eventType:  r.eventType,
-      ts:         Date.now(),
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(r.id) && venue?.hostId) {
+    _insertNotification({
+      recipientType: 'host',
+      recipientId:   venue.hostId,
+      type:          'booking_cancelled',
+      title:         'Artist cancelled a booking request',
+      body:          `${cancellerName} cancelled their booking request for ${notifDate} at ${venue.title}.`,
+      bookingId:     r.id,
+      actionUrl:     'host-dashboard.html',
     });
-    localStorage.setItem('bb_host_notifications', JSON.stringify(pending));
-  } catch(e) {}
+  } else {
+    try {
+      const pending = JSON.parse(localStorage.getItem('bb_host_notifications') || '[]');
+      pending.push({ id: 'notif_' + Date.now(), artistName: cancellerName, venueName: venue?.title || 'Unknown venue', dates: notifDate, eventType: r.eventType, ts: Date.now() });
+      localStorage.setItem('bb_host_notifications', JSON.stringify(pending));
+    } catch(e) {}
+  }
 
   renderRequests(requestFilter);
   updateBadges();
@@ -2629,17 +2653,21 @@ function renderPendingActions(targetId = 'pendingActionsWrap') {
   const wrap = document.getElementById(targetId);
   if (!wrap) return;
 
+  const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  // Demo path: localStorage entries for non-UUID (demo) bookings only
   let pending = [];
   try {
-    pending = JSON.parse(localStorage.getItem('gnv_pending_resolutions') || '[]');
+    pending = JSON.parse(localStorage.getItem('gnv_pending_resolutions') || '[]')
+      .filter(p => !uuidRe.test(p.id));
   } catch(e) {}
 
-  // Merge Supabase resolutions (mapped to same shape renderPendingActions expects)
+  // Supabase path: real resolutions keyed by booking_id
   _supabaseResolutions.forEach(res => {
-    if (pending.find(p => p.id === res.id)) return; // already present
+    if (pending.find(p => p.id === res.booking_id)) return;
     const bk = res.booking_requests || {};
     pending.push({
-      id:             res.id,
+      id:             res.booking_id,
       venueTitle:     bk.venues?.title || '—',
       artistName:     user?.display_name || '',
       showDate:       bk.show_date || '',

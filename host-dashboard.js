@@ -385,6 +385,7 @@ function mapReservationRow(row, venueMap) {
   const displayName = artist.display_name || 'Artist';
   return {
     id:          row.id,
+    bookerId:    artist.id || row.artist_id || null,
     guest:       displayName,
     bandName:    displayName,
     guestImg:    `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayName)}&backgroundColor=FF2D78&textColor=ffffff`,
@@ -433,7 +434,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       .from('venues')
       .select('*')
       .eq('host_id', user.id)
-      .eq('archived', false)
+      .or('archived.is.null,archived.eq.false')
       .order('created_at', { ascending: true });
 
     if (venueRows && venueRows.length > 0) {
@@ -455,6 +456,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!RESERVATIONS.find(r => r.id === row.id))
           RESERVATIONS.push(mapReservationRow(row, venueMap));
       });
+
+      // Restore pending_resolution / disputed states from booking_resolutions table
+      const uuidResIds = RESERVATIONS
+        .filter(r => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(r.id))
+        .map(r => r.id);
+      if (uuidResIds.length) {
+        const { data: activeResRows } = await gnvClient
+          .from('booking_resolutions')
+          .select('booking_id, resolution_type, status, artist_refund, venue_release, artist_note, new_date, auto_lapse_at, created_at')
+          .in('booking_id', uuidResIds)
+          .in('status', ['pending', 'disputed']);
+        (activeResRows || []).forEach(res => {
+          const r = RESERVATIONS.find(x => x.id === res.booking_id);
+          if (!r) return;
+          r.resolution           = res.resolution_type;
+          r.venueRelease         = res.venue_release || 0;
+          r.artistRefund         = res.artist_refund || 0;
+          r.pendingNewDate       = res.new_date || null;
+          r.resolutionSetAt      = new Date(res.created_at).getTime();
+          r.resolutionLapseHours = res.auto_lapse_at
+            ? Math.max(0, Math.round((new Date(res.auto_lapse_at) - Date.now()) / 3600000))
+            : null;
+          if (res.status === 'pending') {
+            r.status = 'pending_resolution';
+          } else if (res.status === 'disputed') {
+            r.status       = 'disputed';
+            r.disputeNotes = res.artist_note || '';
+            r.disputedBy   = 'artist';
+          }
+        });
+      }
 
       // Load venue_calendar into MANUAL_CAL_ENTRIES
       const { data: calRows } = await gnvClient
@@ -1491,23 +1523,32 @@ function changeResStatus(id, newStatus) {
     }
   }
 
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
   if (newStatus === 'confirmed') {
-    r.confirmedAt    = Date.now();
-    r.paymentStatus  = 'unpaid';
+    r.confirmedAt     = Date.now();
+    r.paymentStatus   = 'unpaid';
     r.paymentDeadline = Date.now() + 48 * 3600 * 1000;
-    // Write approval to localStorage so the artist's dashboard can pick it up
-    try {
-      const approvals = JSON.parse(localStorage.getItem('gnv_approvals') || '[]');
-      const existing  = approvals.findIndex(a => a.id === r.id);
-      const entry     = { id: r.id, paymentStatus: 'unpaid', paymentDeadline: r.paymentDeadline };
-      if (existing >= 0) approvals[existing] = entry; else approvals.push(entry);
-      localStorage.setItem('gnv_approvals', JSON.stringify(approvals));
-    } catch(e) {}
+    // Demo/localStorage path only — UUID bookings get payment fields written to Supabase below
+    if (!isUUID) {
+      try {
+        const approvals = JSON.parse(localStorage.getItem('gnv_approvals') || '[]');
+        const existing  = approvals.findIndex(a => a.id === r.id);
+        const entry     = { id: r.id, paymentStatus: 'unpaid', paymentDeadline: r.paymentDeadline };
+        if (existing >= 0) approvals[existing] = entry; else approvals.push(entry);
+        localStorage.setItem('gnv_approvals', JSON.stringify(approvals));
+      } catch(e) {}
+    }
   }
 
   // Sync to Supabase for UUID-keyed (real) booking requests
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
-    gnvClient.from('booking_requests').update({ status: newStatus }).eq('id', id)
+  if (isUUID) {
+    const updateData = { status: newStatus };
+    if (newStatus === 'confirmed') {
+      updateData.payment_status = 'unpaid';
+      updateData.payment_due_at = new Date(r.paymentDeadline).toISOString();
+    }
+    gnvClient.from('booking_requests').update(updateData).eq('id', id)
       .then(({ error }) => { if (error) console.warn('Supabase status update failed:', error.message); });
 
     // Notify artist of confirmed or cancelled booking
@@ -1884,6 +1925,8 @@ function submitResolution() {
       auto_lapse_at:    r.resolutionLapseHours ? new Date(Date.now() + r.resolutionLapseHours * 3600000).toISOString() : null,
     }, { onConflict: 'booking_id' })
       .then(({ error }) => { if (error) console.warn('Resolution sync failed:', error.message); });
+    gnvClient.from('booking_requests').update({ status: 'pending_resolution' }).eq('id', r.id)
+      .then(({ error }) => { if (error) console.warn('booking_requests status sync failed:', error.message); });
   }
 
   // Notify artist that the host submitted a resolution
@@ -2027,6 +2070,15 @@ function applyResolutionFinal(r, trigger) {
   removePendingResolutionBridge(r.id);
   clearResolutionState(r.id);
 
+  // Sync final status back to booking_requests for UUID bookings
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(r.id)) {
+    const finalStatus = r.resolution === 'postponed' ? 'confirmed'
+      : r.resolution === 'played'   ? 'completed'
+      : 'cancelled';
+    gnvClient.from('booking_requests').update({ status: finalStatus }).eq('id', r.id)
+      .then(({ error }) => { if (error) console.warn('booking_requests final status sync failed:', error.message); });
+  }
+
   // Persist earnings record to Supabase for UUID bookings
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(r.id) && r.resolution !== 'postponed') {
     const netPayout = r.resolution === 'played'
@@ -2129,6 +2181,8 @@ async function _ingestSupabaseResolutionResponses() {
         r.disputedBy   = 'artist';
         saveResolutionState(r);
         removePendingResolutionBridge(r.id);
+        gnvClient.from('booking_requests').update({ status: 'disputed' }).eq('id', r.id)
+          .then(({ error }) => { if (error) console.warn('booking_requests disputed sync failed:', error.message); });
         syncCalendarFromBookings(); renderCalendar();
         renderReservations(currentResFilter); updateConfirmedTabBadge();
         renderOverview(); renderEarnings();
