@@ -411,6 +411,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   user = await Auth.requireAuth('host-login.html');
   if (!user) return;
 
+  // ── Email confirmation banner ────────────────────────────────────────────────
+  const { data: { user: authUser } } = await gnvClient.auth.getUser();
+  if (authUser && !authUser.email_confirmed_at) {
+    const banner = document.getElementById('emailConfirmBanner');
+    if (banner) banner.style.display = 'flex';
+  }
+
   // ── Restore persisted venue listed/unlisted states ──────────────────────────
   try {
     const saved = localStorage.getItem('gnv_venue_active');
@@ -4920,6 +4927,13 @@ function fmtTs(ts) {
 function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
 let toastTimer;
+async function resendConfirmationEmail() {
+  const { data: { user: authUser } } = await gnvClient.auth.getUser();
+  if (!authUser) return;
+  const { error } = await gnvClient.auth.resend({ type: 'signup', email: authUser.email });
+  showDash(error ? 'Could not resend — please try again.' : 'Confirmation email sent! Check your inbox.');
+}
+
 function showDash(msg) {
   let t = document.getElementById('_dash_toast');
   if (!t) {

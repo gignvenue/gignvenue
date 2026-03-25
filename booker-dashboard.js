@@ -366,6 +366,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!user) return;
   profile = user;
 
+  // ── Email confirmation banner ────────────────────────────────────────────────
+  const { data: { user: authUser } } = await gnvClient.auth.getUser();
+  if (authUser && !authUser.email_confirmed_at) {
+    const banner = document.getElementById('emailConfirmBanner');
+    if (banner) banner.style.display = 'flex';
+  }
+
   // ── Load Supabase venues into ALL_VENUES ────────────────────────────────────
   try {
     const { data: venueRows } = await gnvClient
@@ -2852,6 +2859,13 @@ function fmtDate(iso) {
 function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
 let toastTimer;
+async function resendConfirmationEmail() {
+  const { data: { user: authUser } } = await gnvClient.auth.getUser();
+  if (!authUser) return;
+  const { error } = await gnvClient.auth.resend({ type: 'signup', email: authUser.email });
+  showDash(error ? 'Could not resend — please try again.' : 'Confirmation email sent! Check your inbox.');
+}
+
 function showDash(msg) {
   let t = document.getElementById('_dash_toast');
   if (!t) {
