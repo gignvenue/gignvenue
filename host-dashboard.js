@@ -412,6 +412,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   user = await Auth.requireAuth('host-login.html');
   if (!user) return;
 
+  // Show profile completion prompt on first login
+  if (!user.firstName) _showHostProfileCompletion();
+
   // ── Email confirmation banner ────────────────────────────────────────────────
   const { data: { user: authUser } } = await gnvClient.auth.getUser();
   if (authUser && !authUser.email_confirmed_at) {
@@ -4898,6 +4901,53 @@ function replyToReview(idx) {
 }
 
 // ─── PROFILE ─────────────────────────────────────────────────────────────────
+
+function _showHostProfileCompletion() {
+  const overlay = document.createElement('div');
+  overlay.id = 'profileCompletionOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML = `
+    <div style="background:#1A1A1A;border:1px solid #2A2A2A;border-radius:16px;padding:32px;width:100%;max-width:400px">
+      <h2 style="color:#fff;margin:0 0 6px;font-size:22px">Welcome to GigNVenue</h2>
+      <p style="color:#888;font-size:14px;margin:0 0 24px">Tell us your name so artists know who they're working with.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div>
+          <label style="color:#aaa;font-size:12px;display:block;margin-bottom:5px">First name <span style="color:#FF2D78">*</span></label>
+          <input id="hpcFirst" type="text" placeholder="Alex" autocomplete="given-name"
+            style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:10px 12px;color:#fff;font-size:14px">
+        </div>
+        <div>
+          <label style="color:#aaa;font-size:12px;display:block;margin-bottom:5px">Last name</label>
+          <input id="hpcLast" type="text" placeholder="Johnson" autocomplete="family-name"
+            style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:10px 12px;color:#fff;font-size:14px">
+        </div>
+      </div>
+      <button id="hpcSaveBtn" style="width:100%;padding:13px;background:#FF2D78;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer">
+        Save and continue →
+      </button>
+      <div id="hpcError" style="color:#EF4444;font-size:13px;margin-top:8px;min-height:18px"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  document.getElementById('hpcSaveBtn').addEventListener('click', async () => {
+    const firstName = document.getElementById('hpcFirst').value.trim();
+    const lastName  = document.getElementById('hpcLast').value.trim();
+    const errEl     = document.getElementById('hpcError');
+    if (!firstName) { errEl.textContent = 'First name is required.'; return; }
+    errEl.textContent = '';
+    const btn = document.getElementById('hpcSaveBtn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    const updated = await Auth.updateProfile({ firstName, lastName });
+    if (updated) {
+      Object.assign(user, updated);
+      populateSidebarUser();
+      overlay.remove();
+    } else {
+      btn.disabled = false; btn.textContent = 'Save and continue →';
+      errEl.textContent = 'Could not save — please try again.';
+    }
+  });
+}
 
 function populateProfile() {
   document.getElementById('profileAvatar').src = user.avatar;

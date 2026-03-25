@@ -19,13 +19,39 @@ const Auth = (() => {
     return data || null;
   }
 
+  // Maps DB snake_case → JS camelCase
+  function _enrichHost(record) {
+    if (!record) return null;
+    return {
+      ...record,
+      firstName: record.first_name || '',
+      lastName:  record.last_name  || '',
+      showEmail: record.show_email || false,
+      showPhone: record.show_phone || false,
+    };
+  }
+
+  // Maps JS camelCase → DB snake_case for writes
+  const _FIELD_MAP = {
+    firstName: 'first_name',
+    lastName:  'last_name',
+    showEmail: 'show_email',
+    showPhone: 'show_phone',
+  };
+
+  function _toDb(updates) {
+    const db = {};
+    Object.entries(updates).forEach(([k, v]) => { db[_FIELD_MAP[k] || k] = v; });
+    return db;
+  }
+
   // ── Public API ────────────────────────────────────────────────────────────
 
   async function currentUser() {
     const { data: { session } } = await gnvClient.auth.getSession();
     if (!session) return null;
     if (!_hostRecord) _hostRecord = await _fetchHost(session.user.id);
-    return _hostRecord;
+    return _enrichHost(_hostRecord);
   }
 
   // Call at top of protected pages — redirects to login if no session
@@ -34,7 +60,7 @@ const Auth = (() => {
     if (!session) { window.location.href = redirectTo; return null; }
     _hostRecord = await _fetchHost(session.user.id);
     if (!_hostRecord) { window.location.href = redirectTo; return null; }
-    return _hostRecord;
+    return _enrichHost(_hostRecord);
   }
 
   // Call at top of login/signup pages — redirects to dashboard if already logged in as a host
@@ -51,7 +77,7 @@ const Auth = (() => {
     if (error) return { ok: false, error: 'Incorrect email or password.' };
     _hostRecord = await _fetchHost(data.user.id);
     if (!_hostRecord) return { ok: false, error: 'Account not found. Please sign up.' };
-    return { ok: true, user: _hostRecord };
+    return { ok: true, user: _enrichHost(_hostRecord) };
   }
 
   async function signup(firstName, lastName, email, password) {
@@ -82,10 +108,18 @@ const Auth = (() => {
 
     if (insertErr) return { ok: false, error: 'Could not create your account. Please try again.' };
 
+    // Store first/last name separately (non-blocking — columns may not exist yet)
+    if (firstName || lastName) {
+      gnvClient.from('hosts')
+        .update({ first_name: firstName || null, last_name: lastName || null })
+        .eq('auth_id', data.user.id)
+        .then();
+    }
+
     // Fetch the created row
     const { data: host } = await gnvClient.from('hosts').select().eq('auth_id', data.user.id).single();
     _hostRecord = host;
-    return { ok: true, user: host };
+    return { ok: true, user: _enrichHost(host) };
   }
 
   async function logout(redirectTo = 'index.html') {
@@ -99,13 +133,13 @@ const Auth = (() => {
     if (!session) return null;
     const { data, error } = await gnvClient
       .from('hosts')
-      .update(updates)
+      .update(_toDb(updates))
       .eq('auth_id', session.user.id)
       .select()
       .single();
     if (error) return null;
     _hostRecord = data;
-    return data;
+    return _enrichHost(data);
   }
 
   async function sendPasswordReset(email) {

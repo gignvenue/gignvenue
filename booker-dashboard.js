@@ -375,6 +375,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!user) return;
   profile = user;
 
+  // Show profile completion prompt on first login (no name set yet)
+  if (!user.firstName && !user.artistName) _showProfileCompletion();
+
   // ── Email confirmation banner ────────────────────────────────────────────────
   const { data: { user: authUser } } = await gnvClient.auth.getUser();
   if (authUser && !authUser.email_confirmed_at) {
@@ -1041,6 +1044,70 @@ function completePaymentDemo() {
   renderOverview();
   updateBadges();
   showDash(`Payment confirmed! Your booking at ${v?.title || 'the venue'} is locked in. 🎉`);
+}
+
+// ─── PROFILE COMPLETION ────────────────────────────────────────────────────────
+
+function _showProfileCompletion() {
+  const overlay = document.createElement('div');
+  overlay.id = 'profileCompletionOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML = `
+    <div style="background:#1A1A1A;border:1px solid #2A2A2A;border-radius:16px;padding:32px;width:100%;max-width:420px">
+      <h2 style="color:#fff;margin:0 0 6px;font-size:22px">Welcome to GigNVenue</h2>
+      <p style="color:#888;font-size:14px;margin:0 0 24px">Set up your artist profile so venues know who they're booking.</p>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label style="color:#aaa;font-size:12px;display:block;margin-bottom:5px">First name</label>
+            <input id="pcFirst" type="text" placeholder="Jane" autocomplete="given-name"
+              style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:10px 12px;color:#fff;font-size:14px">
+          </div>
+          <div>
+            <label style="color:#aaa;font-size:12px;display:block;margin-bottom:5px">Last name</label>
+            <input id="pcLast" type="text" placeholder="Smith" autocomplete="family-name"
+              style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:10px 12px;color:#fff;font-size:14px">
+          </div>
+        </div>
+        <div>
+          <label style="color:#aaa;font-size:12px;display:block;margin-bottom:5px">Artist / act name <span style="color:#FF2D78">*</span></label>
+          <input id="pcArtist" type="text" placeholder="e.g. The Midnight, DJ Blaze, Solo Artist"
+            style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:10px 12px;color:#fff;font-size:14px">
+        </div>
+        <div>
+          <label style="color:#aaa;font-size:12px;display:block;margin-bottom:5px">Genre</label>
+          <input id="pcGenre" type="text" placeholder="e.g. Indie Rock, Jazz, Hip-Hop"
+            style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:10px 12px;color:#fff;font-size:14px">
+        </div>
+      </div>
+      <button id="pcSaveBtn" style="margin-top:22px;width:100%;padding:13px;background:#FF2D78;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer">
+        Save and continue →
+      </button>
+      <div id="pcError" style="color:#EF4444;font-size:13px;margin-top:8px;min-height:18px"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  document.getElementById('pcSaveBtn').addEventListener('click', async () => {
+    const firstName  = document.getElementById('pcFirst').value.trim();
+    const lastName   = document.getElementById('pcLast').value.trim();
+    const artistName = document.getElementById('pcArtist').value.trim();
+    const genre      = document.getElementById('pcGenre').value.trim();
+    const errEl      = document.getElementById('pcError');
+    if (!artistName) { errEl.textContent = 'Artist name is required.'; return; }
+    errEl.textContent = '';
+    const btn = document.getElementById('pcSaveBtn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    const updated = await BookerAuth.updateProfile({ firstName, lastName, artistName, genre });
+    if (updated) {
+      Object.assign(user, updated);
+      Object.assign(profile, updated);
+      populateSidebarUser();
+      overlay.remove();
+    } else {
+      btn.disabled = false; btn.textContent = 'Save and continue →';
+      errEl.textContent = 'Could not save — please try again.';
+    }
+  });
 }
 
 function openPaymentModal(id) {
