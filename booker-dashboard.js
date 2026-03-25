@@ -515,7 +515,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         x.id !== r.id && x.bookerId === user.id && x.date === r.date && x.status === 'pending'
       ).forEach(c => { c.status = 'cancelled'; c.cancelledBy = 'system'; });
     }
-    navigate(null, 'bookings');
+    navigate(null, 'requests');
     setTimeout(() => {
       renderRequests('approved');
       renderOverview();
