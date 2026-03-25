@@ -505,6 +505,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Mark booking paid in local cache so UI reflects it immediately (webhook will also update DB)
     const r = ALL_REQUESTS.find(x => x.id === _paymentBooking);
     if (r) {
+      r.status        = 'confirmed';
       r.paymentStatus = 'paid';
       incrementMyReliability(true);
       ALL_REQUESTS.filter(x =>
@@ -676,7 +677,7 @@ function renderOverview() {
   const myReqs      = ALL_REQUESTS.filter(r => r.bookerId === user.id);
   const todayOv     = new Date(); todayOv.setHours(0,0,0,0);
   const activeMyReqs = myReqs.filter(r => new Date(r.date + 'T00:00:00') >= todayOv);
-  const approved    = activeMyReqs.filter(r => r.status === 'approved').length;
+  const approved    = activeMyReqs.filter(r => r.status === 'approved' || r.status === 'confirmed').length;
   const pending     = activeMyReqs.filter(r => r.status === 'pending').length;
   const unpaidReqs  = activeMyReqs.filter(r => r.status === 'approved' && r.paymentStatus === 'unpaid');
 
@@ -845,10 +846,10 @@ function renderRequests(filter) {
     reqs = reqs.filter(r => r.status === 'pending' && !datePassed(r));
   } else if (filter === 'approved') {
     // Upcoming approved shows only (date >= today)
-    reqs = reqs.filter(r => r.status === 'approved' && new Date(r.date + 'T00:00:00') >= today);
+    reqs = reqs.filter(r => (r.status === 'approved' || r.status === 'confirmed') && new Date(r.date + 'T00:00:00') >= today);
   } else if (filter === 'completed') {
-    // Past-date approved shows (show has happened or should have)
-    reqs = reqs.filter(r => r.status === 'approved' && new Date(r.date + 'T00:00:00') < today);
+    // Past-date approved/confirmed shows (show has happened or should have)
+    reqs = reqs.filter(r => (r.status === 'approved' || r.status === 'confirmed') && new Date(r.date + 'T00:00:00') < today);
   } else if (filter === 'cancelled') {
     // Cancelled + declined + date-passed pending
     reqs = reqs.filter(r => r.status === 'cancelled' || r.status === 'declined' || datePassed(r));
@@ -868,7 +869,7 @@ function renderRequests(filter) {
   const makeRow = (r, isArchived = false) => {
     const v          = ALL_VENUES.find(vv => vv.id === r.venueId);
     const passed     = ENABLE_DATE_PASSED && datePassed(r);
-    const isBooked   = r.status === 'approved' && r.paymentStatus === 'paid';
+    const isBooked   = (r.status === 'approved' && r.paymentStatus === 'paid') || r.status === 'confirmed';
     const isCompleted = filter === 'completed';
     const dispStatus = passed ? 'date_passed' : r.status;
     return `<tr${isArchived ? ' class="archived-entry"' : ''}>

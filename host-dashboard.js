@@ -248,7 +248,7 @@ function syncCalendarFromBookings() {
   HOST_LISTINGS.forEach(l => { next[l.id] = {}; });
 
   RESERVATIONS.forEach(r => {
-    if (r.status === 'confirmed' || r.status === 'completed') {
+    if (r.status === 'approved' || r.status === 'confirmed' || r.status === 'completed') {
       const vid = titleToId[r.property];
       if (!vid) return;
       eachDateInRange(r.checkin, r.checkout, iso => { next[vid][iso] = 'booked'; });
@@ -289,7 +289,7 @@ function publishPublicCalendars() {
 }
 
 const _firstUpcoming = RESERVATIONS
-  .filter(r => r.status === 'pending' || r.status === 'confirmed')
+  .filter(r => r.status === 'pending' || r.status === 'approved' || r.status === 'confirmed')
   .map(r => r.checkin).sort()[0];
 const _calInit = _firstUpcoming ? new Date(_firstUpcoming + 'T00:00:00') : new Date();
 let calYear = _calInit.getFullYear(), calMonth = _calInit.getMonth();
@@ -678,7 +678,7 @@ function renderOverview() {
   renderActionItems();
 
   const _now = new Date(); _now.setHours(0,0,0,0);
-  document.getElementById('checkinList').innerHTML = RESERVATIONS.filter(r => r.status === 'confirmed' && new Date(r.checkin+'T00:00:00') >= _now).slice(0,3).map(r => {
+  document.getElementById('checkinList').innerHTML = RESERVATIONS.filter(r => (r.status === 'approved' || r.status === 'confirmed') && new Date(r.checkin+'T00:00:00') >= _now).slice(0,3).map(r => {
     const d = new Date(r.checkin);
     const label = d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
     return `
@@ -712,7 +712,7 @@ function renderVenueConfirmedCards() {
 
   const venueCards = HOST_LISTINGS.map(l => {
     const _vcNow = new Date(); _vcNow.setHours(0,0,0,0);
-    const venueConfirmed = RESERVATIONS.filter(r => r.status === 'confirmed' && r.property === l.title && new Date(r.checkin+'T00:00:00') >= _vcNow);
+    const venueConfirmed = RESERVATIONS.filter(r => (r.status === 'approved' || r.status === 'confirmed') && r.property === l.title && new Date(r.checkin+'T00:00:00') >= _vcNow);
     const newCount = venueConfirmed.filter(r => r.confirmedAt && (now - r.confirmedAt) < cutoff).length;
     return `
       <div class="venue-confirmed-card stat-card-link" onclick="goToConfirmedTab()">
@@ -743,7 +743,7 @@ function renderActionItems() {
   const items = [
     ...(unreadMsgs > 0 ? [{ icon:'📥', cls:'orange', title:`${unreadMsgs} new message${unreadMsgs !== 1 ? 's' : ''}`, sub:'Respond within 24 hours to maintain your response rate', onclick:`navigate(null,'messages')` }] : []),
     ...unlisted.map(l => {
-      const activeBookings = RESERVATIONS.filter(r => r.property === l.title && (r.status === 'pending' || r.status === 'confirmed')).length;
+      const activeBookings = RESERVATIONS.filter(r => r.property === l.title && (r.status === 'pending' || r.status === 'approved' || r.status === 'confirmed')).length;
       return { icon:'🔇', cls:'red', title:`${l.title} is unlisted`, sub: activeBookings ? `Hidden from new searches — ${activeBookings} active booking${activeBookings!==1?'s':''} unaffected` : 'Hidden from new searches — no active bookings', onclick:`navigate(null,'listings')` };
     }),
     ...(pendingCount > 0 ? [{ icon:'✅', cls:'blue', title:`${pendingCount} booking request${pendingCount !== 1 ? 's' : ''}`, sub:'Awaiting your approval in the Bookings tab', onclick:`goToBooking(null,'pending')` }] : []),
@@ -1268,7 +1268,7 @@ function renderReservations(status) {
     const now = new Date(); now.setHours(0, 0, 0, 0);
     const isUpcoming = r => new Date(r.checkin + 'T00:00:00') >= now;
     const statusMatch = status === 'confirmed'
-      ? r => r.status === 'confirmed' && isUpcoming(r)
+      ? r => (r.status === 'confirmed' || r.status === 'approved') && isUpcoming(r)
       : status === 'completed'
       ? r => (r.status === 'confirmed' && !isUpcoming(r)) ||
              ['pending_resolution', 'disputed', 'completed'].includes(r.status)
@@ -1450,7 +1450,7 @@ function resRow(r, isPending, rank, isFirst, isLast, conflict, showDragHandle, i
           const showDate = new Date(r.checkin + 'T00:00:00');
           const today = new Date(); today.setHours(0,0,0,0);
           const isPastDate = showDate < today;
-          const paymentLine = r.status === 'confirmed' && !r.hostGenerated
+          const paymentLine = (r.status === 'approved' || r.status === 'confirmed') && !r.hostGenerated
             ? `<div style="font-size:11px;margin-bottom:4px">${r.paymentStatus === 'paid' ? '<span style="color:#10B981">● Payment received</span>' : (() => {
                 const deadline = r.confirmedAt ? r.confirmedAt + 48 * 3600000 : null;
                 const remaining = deadline ? deadline - Date.now() : null;
@@ -1476,7 +1476,7 @@ function resRow(r, isPending, rank, isFirst, isLast, conflict, showDragHandle, i
           }
           return paymentLine + `<select class="res-status-select status-${r.status}" onchange="changeResStatus('${r.id}', this.value)">
             <option value="pending"   ${r.status==='pending'  ?'selected':''}>Pending</option>
-            <option value="confirmed" ${r.status==='confirmed'?'selected':''}>Confirmed</option>
+            <option value="approved"  ${r.status==='approved' ?'selected':''}>Approved</option>
             <option value="completed" ${r.status==='completed'?'selected':''}>Completed</option>
             <option value="cancelled" ${r.status==='cancelled'?'selected':''}>Cancelled</option>
           </select>`;
@@ -1525,7 +1525,7 @@ function changeResStatus(id, newStatus) {
 
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
-  if (newStatus === 'confirmed') {
+  if (newStatus === 'approved') {
     r.confirmedAt     = Date.now();
     r.paymentStatus   = 'unpaid';
     r.paymentDeadline = Date.now() + 48 * 3600 * 1000;
@@ -1544,23 +1544,23 @@ function changeResStatus(id, newStatus) {
   // Sync to Supabase for UUID-keyed (real) booking requests
   if (isUUID) {
     const updateData = { status: newStatus };
-    if (newStatus === 'confirmed') {
+    if (newStatus === 'approved') {
       updateData.payment_status = 'unpaid';
       updateData.payment_due_at = new Date(r.paymentDeadline).toISOString();
     }
     gnvClient.from('booking_requests').update(updateData).eq('id', id)
       .then(({ error }) => { if (error) console.warn('Supabase status update failed:', error.message); });
 
-    // Notify artist of confirmed or cancelled booking
-    if ((newStatus === 'confirmed' || newStatus === 'cancelled') && r.bookerId) {
+    // Notify artist of approved or cancelled booking
+    if ((newStatus === 'approved' || newStatus === 'cancelled') && r.bookerId) {
       const venueTitle = r.property || 'your venue';
       const showDate   = r.checkin || '';
       _insertNotification({
         recipientType: 'artist',
         recipientId:   r.bookerId,
-        type:          newStatus === 'confirmed' ? 'booking_approved' : 'booking_declined',
-        title:         newStatus === 'confirmed' ? 'Your booking was approved' : 'Booking request declined',
-        body:          newStatus === 'confirmed'
+        type:          newStatus === 'approved' ? 'booking_approved' : 'booking_declined',
+        title:         newStatus === 'approved' ? 'Your booking was approved' : 'Booking request declined',
+        body:          newStatus === 'approved'
           ? `${venueTitle} approved your request for ${showDate}. You have 48 hours to complete payment.`
           : `${venueTitle} declined your request for ${showDate}.`,
         bookingId:     id,
@@ -1568,8 +1568,8 @@ function changeResStatus(id, newStatus) {
       });
     }
 
-    // Mirror confirmed bookings into venue_calendar so artists see booked dates
-    if (newStatus === 'confirmed' && r.checkin && r.property) {
+    // Mirror approved bookings into venue_calendar so artists see booked dates
+    if (newStatus === 'approved' && r.checkin && r.property) {
       const venue = HOST_LISTINGS.find(l => l.title === r.property);
       if (venue) {
         gnvClient.from('venue_calendar').upsert({
@@ -1588,8 +1588,8 @@ function changeResStatus(id, newStatus) {
     }
   }
 
-  // When confirming, auto-cancel all other pending requests at the same date + venue
-  if (newStatus === 'confirmed') {
+  // When approving, auto-cancel all other pending requests at the same date + venue
+  if (newStatus === 'approved') {
     RESERVATIONS.forEach(x => {
       if (x.id !== id && x.status === 'pending' && x.property === r.property && x.checkin === r.checkin) {
         x.status = 'cancelled';
@@ -1602,8 +1602,8 @@ function changeResStatus(id, newStatus) {
   }
   syncCalendarFromBookings();
   renderCalendar();
-  const labels = { pending:'Pending', confirmed:'Confirmed', completed:'Completed', cancelled:'Cancelled' };
-  const calNote = newStatus === 'confirmed' ? ' · Calendar marked Booked · Artist has 48 hrs to complete payment'
+  const labels = { pending:'Pending', approved:'Approved', confirmed:'Confirmed', completed:'Completed', cancelled:'Cancelled' };
+  const calNote = newStatus === 'approved' ? ' · Calendar marked Booked · Artist has 48 hrs to complete payment'
                 : newStatus === 'pending'   ? ' · Calendar marked Pending'
                 : newStatus === 'cancelled' ? ' · Calendar dates freed'
                 : '';
