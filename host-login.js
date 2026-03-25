@@ -185,14 +185,8 @@ async function handleForgot() {
 
 // ─── SOCIAL LOGIN (SIMULATED) ────────────────────────────────────────────────
 
-async function socialLogin(provider) {
-  // Simulate OAuth redirect then auto-login with demo account
-  const mockBtn = document.querySelector(`.btn-social:has(svg)`);
-  showToastMsg(`Connecting to ${provider}…`);
-  await delay(1200);
-  // Auto-login with demo account as if OAuth succeeded
-  const result = Auth.login('sarah@example.com', 'Password1');
-  if (result.ok) window.location.href = 'host-dashboard.html';
+function socialLogin(provider) {
+  showToastMsg(`${provider} login coming soon — please use email for now.`);
 }
 
 // ─── UTILS ───────────────────────────────────────────────────────────────────

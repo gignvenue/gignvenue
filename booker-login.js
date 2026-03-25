@@ -112,12 +112,7 @@ async function handleForgot() {
 // ─── SOCIAL LOGIN ──────────────────────────────────────────────────────────────
 
 function socialLogin(provider) {
-  const btn = document.querySelector(`button[onclick="socialLogin('${provider}')"]`);
-  if (btn) { btn.disabled = true; btn.textContent = 'Connecting…'; }
-  setTimeout(() => {
-    BookerAuth.login('alex@example.com', 'Password1');
-    window.location.href = 'booker-dashboard.html';
-  }, 800);
+  showToastMsg(`${provider} login coming soon — please use email for now.`);
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
