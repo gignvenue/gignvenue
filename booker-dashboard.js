@@ -515,6 +515,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         x.id !== r.id && x.bookerId === user.id && x.date === r.date && x.status === 'pending'
       ).forEach(c => { c.status = 'cancelled'; c.cancelledBy = 'system'; });
     }
+    // Write to DB directly as a safety net in case webhook hasn't fired yet
+    gnvClient.from('booking_requests')
+      .update({ status: 'confirmed', payment_status: 'paid' })
+      .eq('id', _paymentBooking)
+      .then();
     navigate(null, 'requests');
     setTimeout(() => {
       renderRequests('approved');

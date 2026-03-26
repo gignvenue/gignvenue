@@ -2335,9 +2335,10 @@ function viewRes(id) {
   const isPaid     = r.paymentStatus === 'paid';
 
   // Timeline steps
+  const _isConfirmed = !!r.confirmedAt || ['approved','confirmed','completed','pending_resolution','disputed'].includes(r.status);
   const tlSteps = [
     { label: 'Request submitted',  time: r.submittedAt ? fmtTs(r.submittedAt) : null,  done: true },
-    { label: 'Booking confirmed',  time: r.confirmedAt ? fmtTs(r.confirmedAt) : null,  done: !!r.confirmedAt },
+    { label: 'Booking confirmed',  time: r.confirmedAt ? fmtTs(r.confirmedAt) : null,  done: _isConfirmed },
     { label: 'Payment received',   time: r.paidAt      ? fmtTs(r.paidAt)      : null,  done: isPaid },
     { label: 'Show played off',    time: r.playedOffAt  ? fmtTs(r.playedOffAt) : null,  done: !!r.playedOffAt },
   ];
