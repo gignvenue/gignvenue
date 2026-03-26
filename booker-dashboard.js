@@ -621,7 +621,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 function populateSidebarUser() {
   const allProfiles = BookerAuth.getProfiles();
   document.getElementById('sidebarUser').innerHTML = `
-    <img src="${profile.avatar}" alt="${user.firstName}" class="sidebar-user-avatar"
+    <img src="${profile.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.firstName + ' ' + user.lastName)}&backgroundColor=FF2D78&textColor=ffffff`}" alt="${user.firstName}" class="sidebar-user-avatar"
          onerror="this.src='https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.firstName + ' ' + user.lastName)}&backgroundColor=FF2D78&textColor=ffffff'"/>
     <div class="sidebar-user-info">
       <div class="sidebar-user-name">${profile.artistName || user.firstName + ' ' + user.lastName}</div>
@@ -634,7 +634,7 @@ function populateSidebarUser() {
 
 function populateTopbarAvatar() {
   document.getElementById('topbarAvatar').innerHTML =
-    `<img src="${profile.avatar}" alt="${user.firstName}" style="width:100%;height:100%;object-fit:cover"
+    `<img src="${profile.avatar || ''}" alt="${user.firstName}" style="width:100%;height:100%;object-fit:cover"
       onerror="this.style.background='#FF2D78'"/>`;
 }
 
