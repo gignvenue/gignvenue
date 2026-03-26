@@ -118,32 +118,7 @@ function markResSeen(id) {
   document.getElementById(`res-row-${id}`)?.classList.remove('res-row-new');
 }
 
-const MESSAGES = [
-  { id:'m1', from:'Emily Clarke',  fromImg:'https://randomuser.me/api/portraits/women/12.jpg', property:'The Neon Stage', lastMsg:'Can we do sound check from 4pm?', time:'10:23 AM', unread:true,
-    thread:[
-      { mine:false, text:'Hi! We are so excited for our show at The Neon Stage. Is it possible to start sound check earlier?', time:'10:20 AM' },
-      { mine:false, text:'We would love to get in from 4pm if that works for you.', time:'10:21 AM' },
-      { mine:true,  text:"Hi Emily! Let me check and get back to you shortly 🎸", time:'10:23 AM' },
-    ]
-  },
-  { id:'m2', from:'Jake Morrison', fromImg:'https://randomuser.me/api/portraits/men/35.jpg', property:'Velvet Lounge', lastMsg:'Do you have a house grand piano?', time:'Yesterday', unread:true,
-    thread:[
-      { mine:false, text:'Hello! We are a jazz quartet and would love to know if there is a house grand piano available.', time:'Yesterday' },
-    ]
-  },
-  { id:'m3', from:'Priya Nair',    fromImg:'https://randomuser.me/api/portraits/women/54.jpg', property:'Rooftop Sessions', lastMsg:'Looks amazing! Can we add an extra night?', time:'Mon', unread:true,
-    thread:[
-      { mine:false, text:'The rooftop looks absolutely incredible in the photos!', time:'Mon' },
-      { mine:false, text:'We would love to add an extra night if there is availability on April 5th?', time:'Mon' },
-    ]
-  },
-  { id:'m4', from:'David Kim',     fromImg:'https://randomuser.me/api/portraits/men/21.jpg', property:'The Neon Stage', lastMsg:'Best venue we have ever played. Thank you!', time:'Feb 14', unread:false,
-    thread:[
-      { mine:false, text:'Just wanted to say thank you for an incredible show night at The Neon Stage!', time:'Feb 14' },
-      { mine:true,  text:"It was our pleasure David! You guys absolutely killed it 🤘", time:'Feb 14' },
-    ]
-  },
-];
+const MESSAGES = [];
 
 const REVIEWS_DATA = [
   { guest:'Emily Clarke', guestImg:'https://randomuser.me/api/portraits/women/12.jpg', rating:5, date:'February 2025', text:'The Neon Stage is everything we dreamed of. The sound system is world-class and the lighting rig is just stunning. Sarah was an amazing host — so responsive and professional.', property:'The Neon Stage', replied:false },
