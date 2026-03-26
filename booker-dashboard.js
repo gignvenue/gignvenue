@@ -1086,6 +1086,61 @@ function completePaymentDemo() {
 
 // ─── PROFILE COMPLETION ────────────────────────────────────────────────────────
 
+function _showReportModal(reportedType, reportedId, reportedName) {
+  const overlay = document.createElement('div');
+  overlay.id = 'reportOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML = `
+    <div style="background:#1A1A1A;border:1px solid #2A2A2A;border-radius:16px;padding:28px;width:100%;max-width:400px">
+      <h3 style="color:#fff;margin:0 0 6px;font-size:18px">Report ${reportedName}</h3>
+      <p style="color:#888;font-size:13px;margin:0 0 20px">Reports are reviewed by GigNVenue staff. Please only report genuine issues.</p>
+      <label style="color:#aaa;font-size:12px;display:block;margin-bottom:6px">Reason <span style="color:#FF2D78">*</span></label>
+      <select id="reportReason" style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:10px 12px;color:#fff;font-size:14px;margin-bottom:14px">
+        <option value="">Select a reason…</option>
+        <option value="spam">Spam or fake profile</option>
+        <option value="harassment">Harassment or threatening behaviour</option>
+        <option value="inappropriate_content">Inappropriate content</option>
+        <option value="fraud">Suspected fraud or scam</option>
+        <option value="no_show">No-show or failure to honour booking</option>
+        <option value="other">Other</option>
+      </select>
+      <label style="color:#aaa;font-size:12px;display:block;margin-bottom:6px">Additional details <span style="color:#555">(optional)</span></label>
+      <textarea id="reportDetails" rows="3" placeholder="Describe what happened…"
+        style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:10px 12px;color:#fff;font-size:14px;resize:vertical;margin-bottom:18px"></textarea>
+      <div style="display:flex;gap:10px">
+        <button onclick="document.getElementById('reportOverlay').remove()" style="flex:1;padding:11px;background:#222;border:1px solid #333;border-radius:8px;color:#aaa;font-size:14px;cursor:pointer">Cancel</button>
+        <button id="reportSubmitBtn" style="flex:1;padding:11px;background:#EF4444;border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Submit report</button>
+      </div>
+      <div id="reportError" style="color:#EF4444;font-size:13px;margin-top:8px;min-height:16px"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  document.getElementById('reportSubmitBtn').addEventListener('click', async () => {
+    const reason  = document.getElementById('reportReason').value;
+    const details = document.getElementById('reportDetails').value.trim();
+    const errEl   = document.getElementById('reportError');
+    if (!reason) { errEl.textContent = 'Please select a reason.'; return; }
+    const btn = document.getElementById('reportSubmitBtn');
+    btn.disabled = true; btn.textContent = 'Submitting…';
+    const { error } = await gnvClient.from('reports').insert({
+      reporter_id:          user.id,
+      reporter_type:        'artist',
+      reported_entity_type: reportedType,
+      reported_entity_id:   reportedId,
+      reported_name:        reportedName,
+      reason,
+      details: details || null,
+    });
+    if (error) {
+      btn.disabled = false; btn.textContent = 'Submit report';
+      errEl.textContent = 'Could not submit — please try again.';
+    } else {
+      overlay.remove();
+      showDash('Report submitted. Our team will review it shortly.');
+    }
+  });
+}
+
 function _showProfileCompletion() {
   const overlay = document.createElement('div');
   overlay.id = 'profileCompletionOverlay';
@@ -1286,6 +1341,7 @@ function openThread(id) {
         </div>
         <div class="msg-chat-header-sub"><span>Venue</span></div>
       </div>
+      ${m.venueId ? `<button onclick="_showReportModal('venue','${m.venueId}',${JSON.stringify(m.venue)})" title="Report this venue" style="margin-left:auto;background:none;border:none;color:#555;font-size:16px;cursor:pointer;padding:4px 6px;border-radius:6px;flex-shrink:0" onmouseover="this.style.color='#EF4444'" onmouseout="this.style.color='#555'">⚑</button>` : ''}
     </div>
     <div class="msg-chat-messages" id="chatMessages">
       ${m.thread.map(msg => `
