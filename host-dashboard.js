@@ -412,8 +412,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   user = await Auth.requireAuth('host-login.html');
   if (!user) return;
 
-  // Show profile completion prompt on first login
-  if (!user.firstName) _showHostProfileCompletion();
+  // Track first login — profile tab will be the landing section
+  const _firstLogin = !user.firstName;
 
   // ── Email confirmation banner ────────────────────────────────────────────────
   const { data: { user: authUser } } = await gnvClient.auth.getUser();
@@ -582,6 +582,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   populateProfile();
   renderAnalyticsPinSettings();
   checkPlayedOffNotifications();
+
+  // On first login: land on profile tab with a welcome prompt
+  if (_firstLogin) {
+    const profileSection = document.getElementById('section-profile');
+    if (profileSection && !document.getElementById('firstLoginBanner')) {
+      const banner = document.createElement('div');
+      banner.id = 'firstLoginBanner';
+      banner.style.cssText = 'background:#1A1A1A;border:1px solid #FF2D78;border-radius:12px;padding:18px 20px;margin-bottom:24px;display:flex;align-items:flex-start;gap:14px';
+      banner.innerHTML = `
+        <div style="flex:1">
+          <div style="color:#fff;font-weight:600;font-size:15px;margin-bottom:4px">Welcome to GigNVenue!</div>
+          <div style="color:#aaa;font-size:13px;line-height:1.5">Fill in your profile so artists know who they're working with. You can update this any time from the Profile tab.</div>
+        </div>
+        <button onclick="document.getElementById('firstLoginBanner').remove()" style="background:none;border:none;color:#666;font-size:18px;cursor:pointer;padding:0;line-height:1;flex-shrink:0">✕</button>`;
+      profileSection.insertBefore(banner, profileSection.firstChild);
+    }
+    navigate(null, 'profile');
+  }
+
   // Seed the initial history entry so the back button stays inside the dashboard
   history.replaceState({ section: _currentSection }, '', `?section=${_currentSection}`);
 });
