@@ -103,6 +103,8 @@ let LISTINGS = [];
 let _venueCalendarCache = {};  // { 'YYYY-MM-DD': { status, actName } }
 let _myRequestsCache    = new Map(); // date → status (artist's own pending/approved/declined reqs)
 let _currentArtist      = null; // { id, display_name } for the logged-in artist, or null
+let _msgVenueId         = null; // set when modal opens — used by messageCurrentVenue()
+let _msgVenueName       = null;
 
 function mapVenueRow(row) {
   return {
@@ -1688,6 +1690,8 @@ async function openListing(id) {
 
   // Fetch venue calendar + artist's existing requests before building booking card
   await prefetchVenueData(l.id);
+  _msgVenueId   = l.id;
+  _msgVenueName = l.title;
 
   document.getElementById('listingModalImages').innerHTML =
     l.images.slice(0,4).map((src,i) => `<img src="${src}" alt="${l.title}" loading="${i?'lazy':'eager'}" onerror="this.style.background='#1a1a1a'"/>`).join('') +
@@ -1920,7 +1924,7 @@ async function openListing(id) {
     </label>
     <button class="booking-reserve-btn" id="venueReqBtn" onclick="submitVenueRequest()" disabled>Request to book</button>
     ${_currentArtist
-        ? `<button class="msg-venue-btn" onclick="messageVenue(${JSON.stringify(l.id)},${JSON.stringify(l.title)})"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Message venue first</button>`
+        ? `<button class="msg-venue-btn" onclick="messageCurrentVenue()"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Message venue first</button>`
         : `<button class="msg-venue-btn msg-venue-btn-disabled" disabled title="Log in to send messages"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Log in to message venue</button>`}
     <div id="modalBookingBreakdown">
       <div class="booking-fee-row"><span>Venue fee <sup style="color:var(--red);font-size:9px">*</sup></span><span>${formatPrice(l.price)} / night</span></div>
@@ -1943,6 +1947,10 @@ async function openListing(id) {
     modalSvg.setAttribute('stroke', inWL ? 'none'    : 'currentColor');
     document.getElementById('modalSaveBtnLabel').textContent = inWL ? 'Saved' : 'Save';
   }
+}
+
+async function messageCurrentVenue() {
+  await messageVenue(_msgVenueId, _msgVenueName);
 }
 
 async function messageVenue(venueId, venueName) {
