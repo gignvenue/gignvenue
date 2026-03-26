@@ -1920,7 +1920,7 @@ async function openListing(id) {
     </label>
     <button class="booking-reserve-btn" id="venueReqBtn" onclick="submitVenueRequest()" disabled>Request to book</button>
     ${_currentArtist
-        ? `<button class="msg-venue-btn" onclick="messageVenue(${JSON.stringify(l.title)})"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Message venue first</button>`
+        ? `<button class="msg-venue-btn" onclick="messageVenue(${JSON.stringify(l.id)},${JSON.stringify(l.title)})"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Message venue first</button>`
         : `<button class="msg-venue-btn msg-venue-btn-disabled" disabled title="Log in to send messages"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Log in to message venue</button>`}
     <div id="modalBookingBreakdown">
       <div class="booking-fee-row"><span>Venue fee <sup style="color:var(--red);font-size:9px">*</sup></span><span>${formatPrice(l.price)} / night</span></div>
@@ -1945,12 +1945,10 @@ async function openListing(id) {
   }
 }
 
-function messageVenue(venueName) {
-  try {
-    const session = JSON.parse(localStorage.getItem('vf_booker_session') || 'null');
-    if (!session) { window.location.href = 'booker-login.html'; return; }
-  } catch(e) {}
-  window.location.href = `booker-dashboard.html?msg=${encodeURIComponent(venueName)}`;
+async function messageVenue(venueId, venueName) {
+  const { data: { session } } = await gnvClient.auth.getSession();
+  if (!session) { window.location.href = 'booker-login.html'; return; }
+  window.location.href = `booker-dashboard.html?msgVenueId=${encodeURIComponent(venueId)}&msgVenueName=${encodeURIComponent(venueName)}`;
 }
 
 function closeListing() {

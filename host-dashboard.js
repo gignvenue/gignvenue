@@ -509,6 +509,37 @@ document.addEventListener('DOMContentLoaded', async () => {
           });
         });
       }
+
+      // Load pre-booking threads (artists who messaged before submitting a request)
+      const { data: preMsgRows } = await gnvClient
+        .from('messages')
+        .select('artist_id, venue_id, body, created_at, sender_id, artists(display_name)')
+        .in('venue_id', venueIds)
+        .is('booking_id', null)
+        .order('created_at', { ascending: false });
+      const seenPreThreads = new Set();
+      (preMsgRows || []).forEach(row => {
+        const key = `${row.artist_id}_${row.venue_id}`;
+        if (seenPreThreads.has(key)) return;
+        seenPreThreads.add(key);
+        const threadId = `pre_${row.artist_id}_${row.venue_id}`;
+        if (MESSAGES.find(m => m.id === threadId)) return;
+        const artistName = row.artists?.display_name || 'Artist';
+        const venue = venueRows.find(v => v.id === row.venue_id);
+        MESSAGES.unshift({
+          id:         threadId,
+          from:       artistName,
+          fromImg:    `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(artistName)}&backgroundColor=555555&textColor=ffffff`,
+          property:   venue?.title || 'Venue',
+          artistId:   row.artist_id,
+          venueId:    row.venue_id,
+          lastMsg:    row.body || '',
+          time:       new Date(row.created_at).toLocaleDateString(),
+          unread:     row.sender_id !== user.id,
+          preRequest: true,
+          thread:     [],
+        });
+      });
     }
   } catch(e) { console.warn('Could not load Supabase data:', e); }
 
@@ -4111,10 +4142,59 @@ function openThread(id) {
   document.getElementById('topbarMsgBadge').textContent    = unreadCount || '';
   renderActionItems();
 
-  // For Supabase booking threads: fetch history + subscribe Realtime
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+  // Load history + subscribe Realtime based on thread type
+  if (id.startsWith('pre_')) {
+    _loadPreBookingThread(id);
+  } else if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
     _loadSupabaseThread(id);
   }
+}
+
+async function _loadPreBookingThread(threadId) {
+  if (_realtimeChannel) { gnvClient.removeChannel(_realtimeChannel); _realtimeChannel = null; }
+  const thread = MESSAGES.find(m => m.id === threadId);
+  if (!thread) return;
+  const { artistId, venueId } = thread;
+
+  const { data: rows } = await gnvClient
+    .from('messages')
+    .select('id, sender_id, body, created_at')
+    .eq('artist_id', artistId)
+    .eq('venue_id', venueId)
+    .is('booking_id', null)
+    .order('created_at', { ascending: true });
+
+  const chatEl = document.getElementById('chatMessages');
+  if (!chatEl) return;
+  chatEl.innerHTML = (rows || []).map(row => {
+    const mine = row.sender_id === user.id;
+    const t = new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return `<div><div class="msg-bubble ${mine?'mine':'theirs'}">${row.body}<div class="msg-bubble-time">${t}</div></div></div>`;
+  }).join('');
+  chatEl.scrollTop = chatEl.scrollHeight;
+
+  if (activeThread?.id === threadId) {
+    activeThread.thread = (rows || []).map(row => ({
+      mine: row.sender_id === user.id,
+      text: row.body,
+      time: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    }));
+  }
+
+  _realtimeChannel = gnvClient
+    .channel(`pre-msg-host:${artistId}:${venueId}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `venue_id=eq.${venueId}` }, payload => {
+      const row = payload.new;
+      if (row.booking_id || row.artist_id !== artistId || row.sender_id === user.id || activeThread?.id !== threadId) return;
+      const el = document.getElementById('chatMessages');
+      if (!el) return;
+      const t = new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const b = document.createElement('div');
+      b.innerHTML = `<div class="msg-bubble theirs">${row.body}<div class="msg-bubble-time">${t}</div></div>`;
+      el.appendChild(b);
+      el.scrollTop = el.scrollHeight;
+    })
+    .subscribe();
 }
 
 async function _loadSupabaseThread(bookingId) {
@@ -4170,8 +4250,20 @@ function sendMessage() {
   msgs.appendChild(bubble);
   msgs.scrollTop = msgs.scrollHeight;
 
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(activeThread.id)) {
-    // Supabase thread — persist message; Realtime delivers it to the other party
+  if (activeThread.id.startsWith('pre_')) {
+    // Pre-booking thread — persist with artist_id + venue_id
+    activeThread.thread.push({ mine: true, text, time: 'Just now' });
+    activeThread.lastMsg = text;
+    gnvClient.from('messages').insert({
+      artist_id:   activeThread.artistId,
+      venue_id:    activeThread.venueId,
+      sender_type: 'host',
+      sender_id:   user.id,
+      body:        text,
+      event:       'message',
+    }).then(({ error }) => { if (error) console.warn('Message send failed:', error.message); });
+  } else if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(activeThread.id)) {
+    // Booking thread — persist with booking_id
     activeThread.thread.push({ mine: true, text, time: 'Just now' });
     activeThread.lastMsg = text;
     gnvClient.from('messages').insert({
@@ -4182,22 +4274,8 @@ function sendMessage() {
       event:       'message',
     }).then(({ error }) => { if (error) console.warn('Message send failed:', error.message); });
   } else {
-    // Demo thread — in-memory + simulated reply
     activeThread.thread.push({ mine: true, text, time: 'Just now' });
     activeThread.lastMsg = text;
-    setTimeout(() => {
-      const replies = [
-        'Thanks for letting me know!',
-        'That sounds great, I will confirm shortly.',
-        'Happy to help! Let me check.',
-      ];
-      const reply = replies[Math.floor(Math.random() * replies.length)];
-      activeThread.thread.push({ mine: false, text: reply, time: 'Just now' });
-      const rb = document.createElement('div');
-      rb.innerHTML = `<div class="msg-bubble theirs">${reply}<div class="msg-bubble-time">Just now</div></div>`;
-      msgs.appendChild(rb);
-      msgs.scrollTop = msgs.scrollHeight;
-    }, 1500);
   }
 }
 
