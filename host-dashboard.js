@@ -505,7 +505,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             artistId: res.bookerId || null,
             lastMsg:  row.body || '',
             time:     new Date(row.created_at).toLocaleDateString(),
-            unread:   row.sender_id !== user.id,
+            unread:   _isThreadUnread(res.id, row.created_at, row.sender_id),
             thread:   [],
           });
         });
@@ -536,7 +536,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           venueId:    row.venue_id,
           lastMsg:    row.body || '',
           time:       new Date(row.created_at).toLocaleDateString(),
-          unread:     row.sender_id !== user.id,
+          unread:     _isThreadUnread(threadId, row.created_at, row.sender_id),
           preRequest: true,
           thread:     [],
         });
@@ -4116,6 +4116,24 @@ function _msgBooking(from, property) {
   return matches.slice().sort((a, b) => priority[a.status] - priority[b.status])[0];
 }
 
+function _markThreadRead(threadId) {
+  if (!user?.id) return;
+  try {
+    const reads = JSON.parse(localStorage.getItem(`gnv_read_${user.id}`) || '{}');
+    reads[threadId] = Date.now();
+    localStorage.setItem(`gnv_read_${user.id}`, JSON.stringify(reads));
+  } catch(e) {}
+}
+function _isThreadUnread(threadId, lastMsgCreatedAt, lastSenderId) {
+  if (lastSenderId === user?.id) return false;
+  try {
+    const reads = JSON.parse(localStorage.getItem(`gnv_read_${user.id}`) || '{}');
+    const readAt = reads[threadId];
+    if (!readAt) return true;
+    return new Date(lastMsgCreatedAt).getTime() > readAt;
+  } catch(e) { return true; }
+}
+
 function renderMessages() {
   document.getElementById('msgThreadList').innerHTML = MESSAGES.map(m => {
     const band    = _msgBandName(m.from);
@@ -4147,6 +4165,7 @@ function openThread(id) {
   if (!m) return;
   activeThread = m;
   m.unread = false;
+  _markThreadRead(id);
   document.querySelectorAll('.msg-thread').forEach(t => t.classList.remove('active'));
   document.getElementById(`thread-${id}`).classList.add('active');
   document.getElementById(`thread-${id}`).querySelector('.msg-unread-dot')?.remove();
@@ -4253,6 +4272,7 @@ async function _loadPreBookingThread(threadId) {
       b.innerHTML = `<div class="msg-bubble theirs">${row.body}<div class="msg-bubble-time">${t}</div></div>`;
       el.appendChild(b);
       el.scrollTop = el.scrollHeight;
+      _markThreadRead(threadId);
     })
     .subscribe();
 }
