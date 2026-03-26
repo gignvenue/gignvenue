@@ -4320,7 +4320,6 @@ function sendMessage() {
       sender_type: 'host',
       sender_id:   user.id,
       body:        text,
-      event:       'message',
     }).then(({ error }) => { if (error) console.warn('Message send failed:', error.message); });
   } else if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(activeThread.id)) {
     // Booking thread — persist with booking_id
@@ -4331,7 +4330,6 @@ function sendMessage() {
       sender_type: 'host',
       sender_id:   user.id,
       body:        text,
-      event:       'message',
     }).then(({ error }) => { if (error) console.warn('Message send failed:', error.message); });
   } else {
     activeThread.thread.push({ mine: true, text, time: 'Just now' });

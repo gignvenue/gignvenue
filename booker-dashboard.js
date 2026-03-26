@@ -1480,7 +1480,6 @@ function sendMessage() {
       sender_type: 'artist',
       sender_id:   user.id,
       body:        text,
-      event:       'message',
     }).then(({ error }) => { if (error) console.error('PRE-BOOKING MSG ERROR:', JSON.stringify(error)); });
   } else if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(activeThread.id)) {
     // Booking thread — persist with booking_id
@@ -1491,7 +1490,6 @@ function sendMessage() {
       sender_type: 'artist',
       sender_id:   user.id,
       body:        text,
-      event:       'message',
     }).then(({ error }) => { if (error) console.warn('Message send failed:', error.message); });
   } else {
     activeThread.thread.push({ mine: true, text, time: 'Just now' });
