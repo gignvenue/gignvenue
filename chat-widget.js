@@ -103,7 +103,7 @@
     {
       label: 'Approving or declining requests (host)',
       keywords: ['approve','decline','host','accept request','reject request','confirm booking','how to approve'],
-      answer: 'In your <strong>Bookings → Pending tab</strong>, click Details on any request to see full info — event type, attendance, artist notes. Use the status dropdown to Confirm or Cancel. When you confirm, the artist gets 48 hours to complete payment. If multiple artists request the same date, you can approve the best fit and all others are auto-declined.',
+      answer: 'In your <strong>Bookings → Pending tab</strong>, click Details on any request to see full info — event type, attendance, artist notes. Use the <strong>Approve</strong> or <strong>Decline</strong> buttons to respond. When you approve, the booking moves to your Approved tab and the artist gets 48 hours to complete payment. If multiple artists request the same date, you can approve the best fit and all others are auto-declined.',
     },
     {
       label: 'Multiple requests for the same date',
@@ -138,6 +138,30 @@
       label: 'Add a show manually (host)',
       keywords: ['manual','add show','add to calendar','self-managed','manually add','add booking','add event'],
       answer: 'Click any date in your Availability Calendar and choose a status — <em>Pending</em> (expected but not confirmed) or <em>Booked</em> (confirmed). Enter the artist or event name and save. The show is tracked in your Earnings section once the date passes.',
+    },
+
+    /* ── Messaging (pre-booking) ── */
+    {
+      label: 'Message a venue before booking',
+      keywords: ['message venue','contact venue','pre-booking message','message before booking','reach out','message first','talk to venue','ask venue'],
+      answer: 'You can message any venue before submitting a booking request. From a venue\'s profile, tap <strong>Message venue first</strong>. This opens a direct message thread in your <strong>Messages</strong> tab — ask about availability, sound setup, load-in times, or anything else. No booking request needed to start the conversation.',
+    },
+    {
+      label: 'Messages & messaging',
+      keywords: ['message','messages','messaging','chat','direct message','inbox','thread','conversation'],
+      answer: 'Your <strong>Messages tab</strong> in the dashboard holds all your conversations — both pre-booking threads (general venue enquiries) and booking threads (tied to a specific confirmed booking). Pre-booking messages let you talk to a venue before committing to a request. Booking messages open automatically once a booking is underway and continue through the life of the show.',
+    },
+    {
+      label: 'Report or flag someone',
+      keywords: ['report','flag','flag user','inappropriate','spam','harassment','abuse','block','report artist','report venue','bad actor'],
+      answer: 'Inside any message thread, tap the <strong>⚑ flag icon</strong> in the thread header to report the artist or venue. Choose a reason — spam, harassment, inappropriate content, fraud, or other — and submit. Our team reviews every report. GigNVenue has a zero-tolerance policy for harassment, spam, and fraudulent behaviour. Read our community standards at <a href="help.html#community-standards">help.html</a>.',
+    },
+
+    /* ── Artist profile & onboarding ── */
+    {
+      label: 'Setting up your profile',
+      keywords: ['profile setup','onboarding','first login','welcome','get started','fill out profile','complete profile','setup account','new account'],
+      answer: 'When you first log in, you\'ll be taken straight to the <strong>Profile tab</strong> — that\'s your cue to fill in your details before anything else. Add your bio, genre, act type, social links, and any press kit materials. A complete profile helps venues evaluate your request and increases your approval rate. You can navigate away at any time and return to finish it later.',
     },
 
     /* ── Host: multi-venue & ratings ── */
