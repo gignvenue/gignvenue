@@ -2863,7 +2863,6 @@ function renderListingsManager() {
           <button class="lma-btn primary" onclick="navigate(null,'reservations')">Bookings</button>
         </div>
         <div class="lma-row">
-          <button class="lma-btn lma-promote${l.promoted ? ' active' : ''}" onclick="togglePromoted('${l.id}')" title="${l.promoted ? 'Remove promotion' : 'Promote listing — boosts placement in search results'}">⚡ ${l.promoted ? 'Promoted' : 'Promote'}</button>
           <button class="lma-btn" onclick="openVenueCalendar('${l.id}')" title="Manage calendar">📅 Calendar</button>
           <button class="lma-btn danger" onclick="deleteListing('${l.id}')" title="Archive listing">📦 Archive</button>
         </div>
