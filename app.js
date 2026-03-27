@@ -1272,8 +1272,7 @@ function toggleMap() {
   if (appState.mapOpen && appState.map) setTimeout(() => {
     appState.map.invalidateSize();
     if (!_mapUserMoved) {
-      appState.map.fitBounds(LOCALE_CONFIG.mapDefaultBounds, { padding: [0, 0] });
-      appState.map.setMinZoom(appState.map.getZoom());
+      appState.map.fitBounds(LOCALE_CONFIG.mapDefaultBounds, { padding: [4, 4] });
     }
   }, 60);
 }
