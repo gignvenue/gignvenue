@@ -4530,8 +4530,9 @@ function openLogEarningsModal(resId, venueId, iso, artistName, venueName) {
   _lemResId = resId; _lemVenueId = venueId; _lemIso = iso;
   document.getElementById('lemSubtitle').textContent = `${artistName}  ·  ${fmt(iso)}  ·  ${venueName}`;
   const existing = (MANUAL_CAL_ENTRIES[venueId] || {})[iso];
-  document.getElementById('lemAmount').value = existing?.earnings || '';
-  document.getElementById('lemNotes').value  = existing?.earningsNotes || '';
+  document.getElementById('lemAmount').value  = existing?.earnings || '';
+  document.getElementById('lemTurnout').value = existing?.turnout || '';
+  document.getElementById('lemNotes').value   = existing?.earningsNotes || '';
   document.getElementById('logEarningsOverlay').classList.remove('hidden');
   document.getElementById('logEarningsModal').classList.remove('hidden');
 }
@@ -4543,12 +4544,14 @@ function closeLogEarningsModal() {
 }
 
 function saveLoggedEarnings() {
-  const amt = parseFloat(document.getElementById('lemAmount').value);
+  const amt     = parseFloat(document.getElementById('lemAmount').value);
   if (!amt || amt < 0) { showDash('Please enter a valid amount.'); return; }
-  const notes = document.getElementById('lemNotes').value.trim();
+  const turnout = parseInt(document.getElementById('lemTurnout').value, 10) || null;
+  const notes   = document.getElementById('lemNotes').value.trim();
   if (!MANUAL_CAL_ENTRIES[_lemVenueId]) MANUAL_CAL_ENTRIES[_lemVenueId] = {};
   if (!MANUAL_CAL_ENTRIES[_lemVenueId][_lemIso]) MANUAL_CAL_ENTRIES[_lemVenueId][_lemIso] = { status:'booked', bandName:'' };
   MANUAL_CAL_ENTRIES[_lemVenueId][_lemIso].earnings      = amt;
+  MANUAL_CAL_ENTRIES[_lemVenueId][_lemIso].turnout       = turnout;
   MANUAL_CAL_ENTRIES[_lemVenueId][_lemIso].earningsNotes = notes;
   MANUAL_CAL_ENTRIES[_lemVenueId][_lemIso].reservationId = _lemResId;
   saveManualEntries();
@@ -4563,6 +4566,7 @@ function saveLoggedEarnings() {
       show_date:   _lemIso,
       artist_name: res?.guest || '',
       net_payout:  amt,
+      turnout:     turnout,
       status:      'released',
       notes:       notes || '',
     }, { onConflict: 'booking_id' })
@@ -4580,7 +4584,7 @@ function confirmShowPlayed(resId) {
 
 function downloadEarningsCSV() {
   const today = new Date();
-  const rows = [['Date','Venue','Artist / Event','Source','Nightly Rate ($)','GigNVenue Fee 5% ($)','Net Payout ($)','Status','Notes']];
+  const rows = [['Date','Venue','Artist / Event','Source','Nightly Rate ($)','GigNVenue Fee 5% ($)','Net Payout ($)','Turnout','Status','Notes']];
 
   // GigNVenue history
   RESERVATIONS.filter(r => !r.hostGenerated && (r.status === 'completed' || r.status === 'cancelled'))
@@ -4597,6 +4601,7 @@ function downloadEarningsCSV() {
         cancelled ? '' : r.total,
         fee,
         netPayout,
+        '',
         cancelled ? (r.resolution === 'host-cancel' ? 'Host canceled' : r.resolution === 'artist-cancel' ? 'Artist canceled' : r.resolution === 'mutual' ? 'Mutual cancel' : 'Cancelled') : 'Released',
         ''
       ]);
@@ -4616,6 +4621,7 @@ function downloadEarningsCSV() {
         entry?.earnings || '',
         '',
         entry?.earnings || '',
+        entry?.turnout || '',
         entry?.earnings ? 'Logged' : 'Not logged',
         entry?.earningsNotes || ''
       ]);
@@ -4957,11 +4963,12 @@ function renderEarnings() {
           <td>${r.property}</td>
           <td>${r.guest}</td>
           <td>${logged ? `<strong>$${logged.toLocaleString()}</strong>` : '<span style="color:var(--text-muted)">—</span>'}</td>
+          <td style="color:var(--text-muted)">${entry?.turnout ? entry.turnout.toLocaleString() : '—'}</td>
           <td><button class="res-action-btn" onclick="openLogEarningsModal('${r.id}','${vid}','${iso}','${artist}','${venue}')">${logged ? 'Edit' : 'Log earnings'}</button></td>
           <td style="font-size:12px;color:var(--text-muted)">${entry?.earningsNotes || ''}</td>
         </tr>`;
       }).join('')
-    : '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px">No past self-managed shows yet. Add shows to your calendar and log their earnings here.</td></tr>';
+    : '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">No past self-managed shows yet. Add shows to your calendar and log their earnings here.</td></tr>';
 
   // GigNVenue payout history
   const gnvHistory = RESERVATIONS.filter(r => !r.hostGenerated && (r.status === 'completed' || r.status === 'cancelled'));

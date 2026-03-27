@@ -290,7 +290,7 @@
         <h2 class="card-title" style="margin-bottom:4px">Self-managed shows</h2>
         <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px">Shows you added directly to your calendar — outside of GigNVenue requests. Log what each show earned to keep your full income picture in one place.</p>
         <table class="res-table">
-          <thead><tr><th>Event date</th><th>Venue</th><th>Artist / Event</th><th>Earnings logged</th><th></th><th>Notes</th></tr></thead>
+          <thead><tr><th>Event date</th><th>Venue</th><th>Artist / Event</th><th>Earnings logged</th><th>Turnout</th><th></th><th>Notes</th></tr></thead>
           <tbody id="selfManagedTable"></tbody>
         </table>
       </div>
@@ -935,6 +935,10 @@
         <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:15px;pointer-events:none">$</span>
         <input type="number" id="lemAmount" min="0" step="50" placeholder="0" style="padding-left:28px;width:100%;box-sizing:border-box"/>
       </div>
+    </div>
+    <div class="p-field" style="margin-top:16px">
+      <label>Turnout <span style="color:var(--text-muted);font-weight:400">(optional — tickets sold, scanned, or head count)</span></label>
+      <input type="number" id="lemTurnout" min="0" step="1" placeholder="e.g. 180"/>
     </div>
     <div class="p-field" style="margin-top:16px">
       <label>Notes <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
