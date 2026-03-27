@@ -487,7 +487,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (uuidReqIds.length > 0) {
         const { data: msgRows } = await gnvClient
           .from('messages')
-          .select('booking_id, sender_id, body, created_at')
+          .select('booking_id, sender_id, sender_type, body, created_at')
           .in('booking_id', uuidReqIds)
           .order('created_at', { ascending: false });
         const seen = new Set();
@@ -505,7 +505,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             artistId: res.bookerId || null,
             lastMsg:  row.body || '',
             time:     new Date(row.created_at).toLocaleDateString(),
-            unread:   _isThreadUnread(res.id, row.created_at, row.sender_id),
+            unread:   _isThreadUnread(res.id, row.created_at, row.sender_id, row.sender_type),
             thread:   [],
           });
         });
@@ -514,7 +514,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Load pre-booking threads (artists who messaged before submitting a request)
       const { data: preMsgRows } = await gnvClient
         .from('messages')
-        .select('artist_id, venue_id, body, created_at, sender_id, artists(display_name)')
+        .select('artist_id, venue_id, body, created_at, sender_id, sender_type, artists(display_name)')
         .in('venue_id', venueIds)
         .is('booking_id', null)
         .order('created_at', { ascending: false });
@@ -536,7 +536,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           venueId:    row.venue_id,
           lastMsg:    row.body || '',
           time:       new Date(row.created_at).toLocaleDateString(),
-          unread:     _isThreadUnread(threadId, row.created_at, row.sender_id),
+          unread:     _isThreadUnread(threadId, row.created_at, row.sender_id, row.sender_type),
           preRequest: true,
           thread:     [],
         });
@@ -4124,7 +4124,9 @@ function _markThreadRead(threadId) {
     localStorage.setItem(`gnv_read_${user.id}`, JSON.stringify(reads));
   } catch(e) {}
 }
-function _isThreadUnread(threadId, lastMsgCreatedAt, lastSenderId) {
+function _isThreadUnread(threadId, lastMsgCreatedAt, lastSenderId, lastSenderType) {
+  // Last message was sent by this host — never unread
+  if (lastSenderType === 'host') return false;
   if (lastSenderId === user?.id) return false;
   try {
     const reads = JSON.parse(localStorage.getItem(`gnv_read_${user.id}`) || '{}');
