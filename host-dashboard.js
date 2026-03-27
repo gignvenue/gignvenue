@@ -776,7 +776,7 @@ function renderActionItems() {
       return { icon:'🔇', cls:'red', title:`${l.title} is unlisted`, sub: activeBookings ? `Hidden from new searches — ${activeBookings} active booking${activeBookings!==1?'s':''} unaffected` : 'Hidden from new searches — no active bookings', onclick:`navigate(null,'listings')` };
     }),
     ...(pendingCount > 0 ? [{ icon:'✅', cls:'blue', title:`${pendingCount} booking request${pendingCount !== 1 ? 's' : ''}`, sub:'Awaiting your approval in the Bookings tab', onclick:`goToBooking(null,'pending')` }] : []),
-    ...playedOffDue.map(r => ({ icon:'🎤', cls:'green', title:`Confirm show played: ${r.bandName || r.guest} at ${r.property}`, sub:`Tap to go to this booking and confirm how the show went`, onclick:`goToBooking('${r.id}','confirmed')` })),
+    ...playedOffDue.map(r => ({ icon:'🎤', cls:'green', title:`Confirm show played: ${r.bandName || r.guest} at ${r.property}`, sub:`Tap to go to this booking and confirm how the show went`, onclick:`goToBooking('${r.id}','completed')` })),
   ];
   document.getElementById('actionItems').innerHTML = items.map(a => `
     <div class="action-item" onclick="${a.onclick}">
@@ -3844,7 +3844,7 @@ function openCalDayPopup(iso) {
     ${(()=>{
       if (isFuture) return '';
       const r = RESERVATIONS.find(x => x.property === HOST_LISTINGS.find(l => l.id === calVenueId)?.title && x.checkin === iso && x.status === 'confirmed' && !x.hostGenerated);
-      return r ? `<div class="cdp-feature-section"><button class="cdp-feature-night-btn" style="background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.4);color:#34d399" onclick="closeCalDayPopup();goToBooking('${r.id}','confirmed')">✓ Confirm show played · view booking</button></div>` : '';
+      return r ? `<div class="cdp-feature-section"><button class="cdp-feature-night-btn" style="background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.4);color:#34d399" onclick="closeCalDayPopup();goToBooking('${r.id}','completed')">✓ Confirm show played · view booking</button></div>` : '';
     })()}`;
 
   document.body.appendChild(popup);
