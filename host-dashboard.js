@@ -2859,11 +2859,11 @@ function renderListingsManager() {
       <div class="listing-mgr-actions">
         <div class="lma-row">
           <button class="lma-btn" onclick="editListing('${l.id}')">✏️ Edit</button>
-          <button class="lma-btn" onclick="previewListing('${l.id}')">👁 Preview</button>
+          <button class="lma-btn" onclick="openVenueCalendar('${l.id}')" title="Manage calendar">📅 Calendar</button>
           <button class="lma-btn primary" onclick="navigate(null,'reservations')">Bookings</button>
         </div>
         <div class="lma-row">
-          <button class="lma-btn" onclick="openVenueCalendar('${l.id}')" title="Manage calendar">📅 Calendar</button>
+          <button class="lma-btn" onclick="previewListing('${l.id}')">👁 Preview</button>
           <button class="lma-btn danger" onclick="deleteListing('${l.id}')" title="Archive listing">📦 Archive</button>
         </div>
       </div>
