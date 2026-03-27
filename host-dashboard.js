@@ -4181,6 +4181,9 @@ function openThread(id) {
   activeThread = m;
   m.unread = false;
   _markThreadRead(id);
+  const _uc = MESSAGES.filter(x => x.unread).length;
+  document.getElementById('msgBadge').textContent       = _uc || '';
+  document.getElementById('topbarMsgBadge').textContent = _uc || '';
   document.querySelectorAll('.msg-thread').forEach(t => t.classList.remove('active'));
   document.getElementById(`thread-${id}`).classList.add('active');
   document.getElementById(`thread-${id}`).querySelector('.msg-unread-dot')?.remove();
