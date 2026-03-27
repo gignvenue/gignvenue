@@ -618,7 +618,7 @@ function renderCard(l) {
         ${(() => { const _c = CATEGORIES.find(c => c.id === l.category); return _c && _c.id !== 'all' ? `<p class="listing-type-chip">${_c.emoji} ${_c.label}</p>` : ''; })()}
         <p class="listing-dates">${l.dates}</p>
         <div class="listing-price-row">
-          <p class="listing-price"><strong>${formatPrice(l.price)}</strong> <span>/ ${l.priceUnit}</span></p>
+          <p class="listing-price"><strong>${formatPrice(l.price)}</strong> <span>/ ${l.priceUnit || 'night'}</span></p>
           <p class="listing-capacity">👥 ${l.capacity >= 1000 ? (l.capacity/1000).toFixed(l.capacity%1000===0?0:1)+'k' : l.capacity.toLocaleString()}</p>
         </div>
       </div>
@@ -1856,7 +1856,7 @@ async function openListing(id) {
 
   document.getElementById('bookingCard').innerHTML = `
     ${_existingBanner}
-    <div class="booking-price"><strong id="modalSelectedPrice">${priceRangeHtml}</strong> <span>/ ${l.priceUnit}</span><sup style="color:var(--red);font-size:10px;margin-left:2px;cursor:default" title="Venue's starting price before conversation, confirmation, and contractualization.">*</sup></div>
+    <div class="booking-price"><strong id="modalSelectedPrice">${priceRangeHtml}</strong> <span>/ ${l.priceUnit || 'night'}</span><sup style="color:var(--red);font-size:10px;margin-left:2px;cursor:default" title="Venue's starting price before conversation, confirmation, and contractualization.">*</sup></div>
     <p style="font-size:11px;color:var(--text-muted);margin:-6px 0 10px;line-height:1.4">* Starting price — final rate confirmed with the venue before contractualization.</p>
 
     <div class="mcp-date-row">

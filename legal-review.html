@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GigNVenue — Legal Documents for Review</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 11pt;
+      line-height: 1.7;
+      color: #111;
+      background: #fff;
+      padding: 0;
+    }
+
+    /* ── Page layout ── */
+    .page {
+      max-width: 750px;
+      margin: 0 auto;
+      padding: 60px 60px 80px;
+    }
+
+    @media print {
+      body { font-size: 10.5pt; }
+      .page { padding: 40px 50px 60px; max-width: 100%; }
+      .page-break { page-break-before: always; }
+      .no-print { display: none !important; }
+      a { color: inherit; text-decoration: none; }
+    }
+
+    /* ── Cover page ── */
+    .cover { padding-top: 80px; }
+    .cover-platform {
+      font-family: -apple-system, Helvetica, Arial, sans-serif;
+      font-size: 13pt;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #c0195c;
+      margin-bottom: 12px;
+    }
+    .cover h1 {
+      font-size: 28pt;
+      font-weight: 400;
+      line-height: 1.2;
+      margin-bottom: 24px;
+    }
+    .cover-meta {
+      font-family: -apple-system, Helvetica, Arial, sans-serif;
+      font-size: 10pt;
+      color: #555;
+      border-top: 1px solid #ddd;
+      padding-top: 16px;
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 24px;
+    }
+    .cover-meta span { display: block; }
+    .cover-meta strong { color: #111; }
+
+    /* ── Attention box ── */
+    .attn-box {
+      margin: 40px 0;
+      padding: 24px 28px;
+      border: 1.5px solid #c0195c;
+      border-radius: 4px;
+      background: #fff8fb;
+    }
+    .attn-box h2 {
+      font-family: -apple-system, Helvetica, Arial, sans-serif;
+      font-size: 11pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #c0195c;
+      margin-bottom: 12px;
+    }
+    .attn-box ul {
+      padding-left: 18px;
+    }
+    .attn-box li {
+      font-family: -apple-system, Helvetica, Arial, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.6;
+      margin-bottom: 8px;
+      color: #222;
+    }
+    .attn-box li strong { color: #111; }
+
+    /* ── Context section ── */
+    .context-section {
+      margin: 32px 0;
+    }
+    .context-section h2 {
+      font-family: -apple-system, Helvetica, Arial, sans-serif;
+      font-size: 10pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #888;
+      margin-bottom: 10px;
+    }
+    .context-section p, .context-section li {
+      font-family: -apple-system, Helvetica, Arial, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.65;
+      color: #333;
+    }
+    .context-section ul {
+      padding-left: 18px;
+      margin-top: 6px;
+    }
+    .context-section li {
+      margin-bottom: 5px;
+    }
+
+    /* ── Document section ── */
+    .doc-header {
+      margin-bottom: 32px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #111;
+    }
+    .doc-header .doc-type {
+      font-family: -apple-system, Helvetica, Arial, sans-serif;
+      font-size: 9pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #888;
+      margin-bottom: 6px;
+    }
+    .doc-header h1 {
+      font-size: 22pt;
+      font-weight: 400;
+      margin-bottom: 8px;
+    }
+    .doc-meta {
+      font-family: -apple-system, Helvetica, Arial, sans-serif;
+      font-size: 9.5pt;
+      color: #666;
+    }
+
+    /* ── Legal body ── */
+    h2 {
+      font-size: 13pt;
+      font-weight: 700;
+      margin: 32px 0 10px;
+      font-family: -apple-system, Helvetica, Arial, sans-serif;
+    }
+    h3 {
+      font-size: 11pt;
+      font-weight: 700;
+      margin: 20px 0 8px;
+      font-family: -apple-system, Helvetica, Arial, sans-serif;
+    }
+    p { margin-bottom: 12px; }
+    ul, ol {
+      padding-left: 22px;
+      margin-bottom: 14px;
+    }
+    li { margin-bottom: 6px; }
+    hr {
+      border: none;
+      border-top: 1px solid #ddd;
+      margin: 28px 0;
+    }
+    a { color: #c0195c; }
+    strong { font-weight: 700; }
+
+    /* ── Placeholder highlight ── */
+    .placeholder {
+      background: #fff3cd;
+      color: #7a5200;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 2px;
+      font-family: -apple-system, Helvetica, Arial, sans-serif;
+      font-size: 10pt;
+    }
+
+    /* ── Draft footer ── */
+    .draft-notice {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #ddd;
+      font-family: -apple-system, Helvetica, Arial, sans-serif;
+      font-size: 9pt;
+      color: #888;
+      font-style: italic;
+    }
+
+    /* ── TOC ── */
+    .toc {
+      background: #f8f8f8;
+      border: 1px solid #e0e0e0;
+      padding: 16px 20px;
+      margin: 16px 0 24px;
+      border-radius: 3px;
+    }
+    .toc p {
+      font-family: -apple-system, Helvetica, Arial, sans-serif;
+      font-size: 9.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #888;
+      margin-bottom: 8px;
+    }
+    .toc ol {
+      margin: 0;
+      padding-left: 18px;
+    }
+    .toc li {
+      font-family: -apple-system, Helvetica, Arial, sans-serif;
+      font-size: 9.5pt;
+      margin-bottom: 3px;
+    }
+
+    /* ── Print button ── */
+    .print-bar {
+      background: #f0f0f0;
+      border-bottom: 1px solid #ddd;
+      padding: 12px 60px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-family: -apple-system, Helvetica, Arial, sans-serif;
+      font-size: 10pt;
+    }
+    .print-bar button {
+      background: #c0195c;
+      color: white;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 4px;
+      font-size: 10pt;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .print-bar button:hover { background: #a01550; }
+    .print-bar span { color: #666; }
+  </style>
+</head>
+<body>
+
+<div class="print-bar no-print">
+  <button onclick="window.print()">Print / Save as PDF</button>
+  <span>Open your browser's print dialog → Save as PDF → send to counsel</span>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     COVER PAGE
+══════════════════════════════════════════════════════════════ -->
+<div class="page cover">
+  <div class="cover-platform">GigNVenue &nbsp;·&nbsp; gignvenue.com</div>
+  <h1>Legal Documents<br>for Counsel Review</h1>
+  <div class="cover-meta">
+    <span><strong>Prepared:</strong> March 2026</span>
+    <span><strong>Status:</strong> Working drafts — not yet published</span>
+    <span><strong>Documents included:</strong> Terms of Service, Privacy Policy</span>
+    <span><strong>Contact:</strong> legal@gignvenue.com</span>
+  </div>
+
+  <div class="attn-box">
+    <h2>Items requiring counsel input before publication</h2>
+    <ul>
+      <li><strong>[STATE] placeholder (×2):</strong> Appears in Terms of Service Sections 9 and 15. Counsel should confirm governing law jurisdiction and the seat of arbitration.</li>
+      <li><strong>Arbitration clause (Terms §9):</strong> Review binding arbitration language, class action waiver, and AAA rules reference for enforceability in the chosen state.</li>
+      <li><strong>Deposit / escrow structure (Terms §6, §8):</strong> Platform holds artist deposits and releases to venues. Confirm this structure does not require a money transmitter license or escrow agent registration in the operating state(s).</li>
+      <li><strong>Fraud / misrepresentation language (Terms §4):</strong> Strong language added stating that host misrepresentations "may constitute fraud and may be subject to civil and criminal liability to the fullest extent of the law." Confirm this is appropriate and correctly calibrated.</li>
+      <li><strong>CCPA compliance (Privacy §7):</strong> Verify the rights listed are sufficient for California operations. Assess whether any additional state privacy laws apply at launch (Virginia CDPA, Colorado CPA, etc.).</li>
+      <li><strong>Platform as marketplace / not party to contract (Terms §1, §5):</strong> Confirm the language adequately insulates GigNVenue from liability arising from the direct artist–venue relationship post-confirmation.</li>
+      <li><strong>Image rights / copyright exposure (Terms §4, §11):</strong> Hosts upload venue photos; artists upload profile photos. Confirm the representation and warranty + indemnification language provides adequate protection.</li>
+      <li><strong>Entity name:</strong> "GigNVenue" is used throughout. Confirm the legal entity name matches what will be used in these documents at publication.</li>
+      <li><strong>Pre-booking messaging (Terms §5 "Messaging"):</strong> A new messaging clause covers pre-booking threads (artist messages a venue before submitting a request) and booking threads. Confirm: (a) storing pre-booking messages server-side creates no additional liability; (b) the consent-to-use-in-disputes language is enforceable; and (c) these messages fall within the existing privacy policy's data collection disclosures.</li>
+      <li><strong>User reporting / moderation (Terms §10 "User Reporting"):</strong> New clause covers the report/flag mechanism, GigNVenue's discretion to act or not act, and prohibition on retaliatory reports. Confirm: (a) "no obligation to act" and discretion language adequately limits platform liability for failure to respond to reports; (b) no additional regulatory obligations apply to operating a moderation system (e.g., state-level platform liability statutes).</li>
+      <li><strong>Report data retention (Privacy §6):</strong> Report data retained for a minimum of three years. Confirm this period is appropriate for the likely nature of disputes and applicable record-keeping obligations.</li>
+      <li><strong>Community standards document:</strong> Prohibited uses (Terms §10) and user reporting (Terms §10) together serve as the platform's conduct rules. Advise whether a separate published "Community Standards" or "Acceptable Use Policy" document is advisable at launch, or whether inline terms are sufficient.</li>
+    </ul>
+  </div>
+
+  <div class="context-section">
+    <h2>Platform overview — for context</h2>
+    <p>GigNVenue is a two-sided marketplace connecting independent musicians and bands ("Artists") with venue owners ("Hosts") for live music bookings. The platform operates as follows:</p>
+    <ul>
+      <li>Artists browse publicly listed venues, submit booking requests, and pay a 5% booking fee + 20% deposit upon approval</li>
+      <li>Hosts list venues, review requests, approve or decline, and receive the held deposit (minus a 5% platform fee) after confirming a show played off</li>
+      <li>GigNVenue holds the deposit in escrow via Stripe during the booking period; the remaining 80% of the nightly rate is settled directly between artist and venue outside the platform</li>
+      <li>Post-confirmation, the contractual relationship (performance agreement, rider, logistics) is entirely between artist and host — the platform does not participate</li>
+      <li>Artists may message a venue host before submitting a booking request ("pre-booking messaging") via the messaging system, providing a communication channel that exists outside of any specific booking record</li>
+      <li>Users may report other users, listings, or messages using the built-in reporting feature; GigNVenue reviews reports and may take moderation action at its discretion</li>
+      <li>Supabase (database + auth) migration is in progress; Stripe live payments are currently active</li>
+    </ul>
+  </div>
+
+  <div class="context-section">
+    <h2>Documents in this packet</h2>
+    <ul>
+      <li><strong>Document 1:</strong> Terms of Service — 17 sections covering platform role, user obligations, booking process (including pre-booking and booking messaging), payments, cancellations, deposit release, disputes, prohibited uses (including user reporting and community standards), IP, disclaimers, liability, indemnification, and governing law</li>
+      <li><strong>Document 2:</strong> Privacy Policy — 11 sections covering data collection (including pre-booking messages and report submissions), use, sharing, contact detail release policy, storage, retention (including pre-booking message and report data retention), user rights (CCPA), cookies, and children's privacy</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     DOCUMENT 1 — TERMS OF SERVICE
+══════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="doc-header">
+    <div class="doc-type">Document 1 of 2</div>
+    <h1>Terms of Service</h1>
+    <div class="doc-meta">GigNVenue &nbsp;·&nbsp; Last updated: March 2026 &nbsp;·&nbsp; Effective: March 2026</div>
+  </div>
+
+  <p>These Terms of Service ("Terms") govern your access to and use of the GigNVenue platform ("Platform"), operated by GigNVenue ("GigNVenue," "we," "us," or "our"). By creating an account or using the Platform, you agree to be bound by these Terms. If you do not agree, do not use the Platform.</p>
+
+  <div class="toc">
+    <p>Contents</p>
+    <ol>
+      <li>Platform Role</li>
+      <li>Accounts and Eligibility</li>
+      <li>Artist and Booker Obligations</li>
+      <li>Venue Host Obligations</li>
+      <li>The Booking Process</li>
+      <li>Payments, Fees, and Deposits</li>
+      <li>Cancellation Policy</li>
+      <li>Deposit Release and Refund</li>
+      <li>Dispute Resolution</li>
+      <li>Prohibited Uses</li>
+      <li>Intellectual Property</li>
+      <li>Disclaimers</li>
+      <li>Limitation of Liability</li>
+      <li>Indemnification</li>
+      <li>Governing Law</li>
+      <li>Changes to These Terms</li>
+      <li>Contact</li>
+    </ol>
+  </div>
+
+  <hr/>
+
+  <h2>1. Platform Role</h2>
+  <p>GigNVenue is a marketplace platform that facilitates connections between artists and bookers seeking performance venues ("Artists") and venue owners who list their spaces for live music events ("Hosts"). GigNVenue is not a party to any booking agreement entered into between an Artist and a Host.</p>
+  <p>The booking contract — including any performance terms, cancellation conditions, and obligations on the day of an event — is an agreement between the Artist and the Host. GigNVenue provides the infrastructure to initiate, confirm, and process these agreements, and manages the deposit on behalf of both parties, but is not responsible for either party's performance under the agreement.</p>
+
+  <hr/>
+
+  <h2>2. Accounts and Eligibility</h2>
+  <p>To use the Platform you must:</p>
+  <ul>
+    <li>Be at least 18 years of age</li>
+    <li>Be legally capable of entering into binding contracts</li>
+    <li>Provide accurate, complete, and current registration information</li>
+    <li>Maintain the security of your account credentials and not share them with others</li>
+  </ul>
+  <p>GigNVenue offers two account types: Artist/Booker accounts and Venue Host accounts. Each has its own dashboard and associated permissions. You are responsible for all activity that occurs under your account.</p>
+  <p>GigNVenue reserves the right to suspend or terminate any account that violates these Terms, provides false information, or engages in conduct harmful to other users or the Platform.</p>
+
+  <hr/>
+
+  <h2>3. Artist and Booker Obligations</h2>
+  <p>Artists and bookers using the Platform agree to:</p>
+  <ul>
+    <li>Provide accurate information in booking requests, including event type, expected attendance, and any specific production requirements</li>
+    <li>Complete payment within 48 hours of receiving a booking approval. Failure to do so will result in the approval expiring and the date being released back to the venue's calendar</li>
+    <li>Honor confirmed and paid bookings. Cancellation after payment is subject to the venue's cancellation policy</li>
+    <li>Communicate through the GigNVenue messaging system prior to payment completion</li>
+    <li>Settle the remaining venue balance (the nightly rate less the deposit) directly with the Host on or before the date of the event, as agreed</li>
+    <li>Not submit fraudulent, speculative, or bad-faith booking requests</li>
+    <li>Not send payment to a venue, host, or third party outside the GigNVenue platform. GigNVenue's protections — including deposit holding, platform dispute resolution, and chargeback eligibility — apply only to transactions processed through the Platform. Off-platform payments are made entirely at the Artist's own risk, and GigNVenue expressly disclaims any liability for funds transferred outside the Platform</li>
+    <li>Conduct reasonable due diligence before booking. This includes reviewing the venue's listing and cancellation policy, reading available ratings and reviews, communicating through the Platform's messaging system before payment, and where feasible visiting the venue in person prior to the event date. GigNVenue does not independently verify the physical condition, safety, licensing, or operational status of any listed venue, and visiting a venue before committing to a paid booking is strongly recommended</li>
+    <li>Not perform at any venue without a written performance agreement in place with the Host. GigNVenue recommends executing a formal performance contract directly with the Host before the event. The Platform does not provide, review, or enforce performance contracts beyond the booking confirmation terms described in these Terms</li>
+  </ul>
+
+  <hr/>
+
+  <h2>4. Venue Host Obligations</h2>
+  <p>Venue hosts using the Platform agree to:</p>
+  <ul>
+    <li>Provide accurate, complete, and up-to-date venue listings, including photos, capacity, amenities, nightly rate, and availability</li>
+    <li>Respond to booking requests in a timely manner, generally within one to two business days</li>
+    <li>Honor confirmed bookings for which payment has been received. Cancellation of a confirmed, paid booking by a Host may result in the deposit being returned to the Artist and may affect the Host's standing on the Platform</li>
+    <li>Maintain a current cancellation policy as part of their venue profile, accepted by Artists at the time of booking</li>
+    <li>Mark confirmed bookings as "played off" in the Platform promptly after the event has taken place, to trigger the release of the held deposit</li>
+    <li>Not list venues they do not have the authority to book</li>
+    <li>Acknowledge that the venue is at all times an independent legal entity. The Host is solely responsible for complying with all applicable federal, state, and local laws, regulations, permits, licenses, insurance requirements, and safety codes relating to the operation of the venue and the hosting of live events. GigNVenue does not verify, supervise, or assume responsibility for the Host's compliance with any legal or regulatory obligation</li>
+    <li>Represent and warrant, at the time of listing and throughout any active listing period, that: (a) the venue holds all permits, licenses, and insurance required by applicable law for the operation of live events; (b) the Host is legally authorized to act on behalf of the venue; and (c) the Host has the legal authority to enter into booking agreements on behalf of the venue</li>
+    <li>Upload only photos and images for which the Host holds all necessary rights, permissions, and licenses. Submitting images without proper authorization may constitute copyright infringement. GigNVenue may remove unauthorized content upon notice and reserves all related rights</li>
+  </ul>
+  <p><strong>Misrepresentation.</strong> Any false or misleading representation made by a Host in connection with a venue listing — including false claims about permits, licensing, insurance, ownership, or authority to act on behalf of a venue — may constitute fraud under applicable federal and state law and may expose the Host to civil liability and criminal prosecution to the fullest extent of the law. GigNVenue reserves the right to remove listings, suspend or terminate accounts, and report suspected fraudulent conduct to appropriate authorities.</p>
+  <p><strong>Independent operation.</strong> Hosts control their own venue rates, availability calendars, listing content, and uploaded images using GigNVenue's platform as a tool. GigNVenue does not direct, supervise, or participate in the day-to-day operation of any listed venue. Following booking confirmation and Artist payment, the contractual and operational relationship between the Artist and the Host — including any performance agreement, rider negotiation, direct coordination, and settlement of the remaining venue balance — continues entirely between those parties without involvement from GigNVenue.</p>
+
+  <hr/>
+
+  <h2>5. The Booking Process</h2>
+  <p>The GigNVenue booking process operates as follows:</p>
+  <ul>
+    <li><strong>Request:</strong> An Artist submits a booking request for a specific date at a specific venue, including event details and any notes for the Host</li>
+    <li><strong>Review:</strong> The Host reviews the request. The Platform may present multiple requests for the same date; the order in which the Host considers these is managed by the Platform at its discretion</li>
+    <li><strong>Approval:</strong> If the Host approves the request, the Artist receives a notification and a payment prompt in their dashboard</li>
+    <li><strong>Payment:</strong> The Artist has 48 hours to complete payment. Payment constitutes the Artist's agreement to the venue's cancellation policy and all applicable booking terms</li>
+    <li><strong>Confirmation:</strong> Upon payment completion, the booking is confirmed. The date is locked on the venue's calendar. Any other pending requests from the same Artist for the same date at other venues are automatically cancelled</li>
+    <li><strong>Event:</strong> The event takes place. The remaining balance is settled between Artist and Host directly</li>
+    <li><strong>Completion:</strong> The Host marks the booking as played off in the Platform. The held deposit is released to the Host within 24 hours</li>
+  </ul>
+  <p><strong>Post-confirmation direct relationship.</strong> Once a booking is confirmed and payment has been processed, the contractual and operational relationship between the Artist and the Host continues directly between those parties, without further involvement from GigNVenue. This includes but is not limited to: negotiation and execution of any performance agreement, rider, or technical requirements; production and logistics coordination; and direct settlement of the remaining venue balance. GigNVenue's role after confirmation is limited to holding the deposit and administering the completion, cancellation, or dispute process described in these Terms. GigNVenue is not a party to any performance agreement between Artist and Host and accepts no liability arising from the direct relationship between them.</p>
+
+  <h3>Messaging</h3>
+  <p>GigNVenue provides a built-in messaging system that supports two types of communication threads:</p>
+  <ul>
+    <li><strong>Pre-booking messages:</strong> Artists may initiate a message thread with a venue host before submitting a booking request. Pre-booking messages are stored on the Platform and associated with the relevant artist and venue profiles. They are not linked to a specific booking record unless and until a booking is created between the same parties</li>
+    <li><strong>Booking messages:</strong> Once a booking request has been submitted, both parties may communicate through a booking-specific message thread. These messages are stored and associated with the booking record for the life of that booking</li>
+  </ul>
+  <p>All messages sent through the Platform are governed by these Terms. Users must not use the messaging system to harass, threaten, solicit, spam, or engage in any conduct prohibited under Section 10. GigNVenue reserves the right to review message content where necessary to investigate reported violations, resolve disputes, or comply with legal requirements. Messages exchanged through the Platform may be used as evidence in platform dispute proceedings under Section 9. By sending messages through the Platform, you consent to this use.</p>
+
+  <hr/>
+
+  <h2>6. Payments, Fees, and Deposits</h2>
+
+  <h3>Artist booking fee</h3>
+  <p>Artists pay a 5% booking fee on the confirmed nightly rate of the venue at the time of payment. This fee is non-refundable once payment is completed. The booking fee covers secure payment processing via Stripe, platform operations, and support services.</p>
+
+  <h3>Venue booking fee</h3>
+  <p>Venue hosts pay a 5% booking fee on the confirmed nightly rate, deducted from the deposit release upon the Host marking a show as played off. No upfront fee is charged to Hosts; the venue booking fee is only applied when a show successfully completes. Combined, the artist and venue booking fees (5% each, totaling 10%) constitute GigNVenue's sole source of revenue.</p>
+
+  <h3>Deposit</h3>
+  <p>Artists pay a 20% deposit on the confirmed nightly rate at the time of payment. The deposit is held securely by GigNVenue via Stripe and is not the property of either the Artist or the Host until released. The conditions for release or return of the deposit are governed by the venue's cancellation policy and Section 8 of these Terms.</p>
+
+  <h3>Remaining balance</h3>
+  <p>The remaining 80% of the nightly rate (the venue balance) is settled directly between the Artist and the Host on or before the day of the event, outside of the GigNVenue platform. GigNVenue is not a party to this transaction and accepts no liability for disputes arising from it.</p>
+
+  <h3>Payment processing</h3>
+  <p>All payments on the Platform are processed by Stripe. By completing a payment, you agree to Stripe's terms of service. GigNVenue does not store payment card information.</p>
+
+  <hr/>
+
+  <h2>7. Cancellation Policy</h2>
+
+  <h3>Cancellation before payment</h3>
+  <p>Artists may cancel a pending booking request at any time before payment is completed at no cost. The cancellation is recorded in the Artist's booking history.</p>
+
+  <h3>Cancellation after payment</h3>
+  <p>Once payment has been completed, cancellation terms — including whether the deposit is refundable, partially refundable, or non-refundable — are governed by the Host's cancellation policy, which the Artist reviewed and accepted as part of completing payment. The 5% booking fee is non-refundable in all cases.</p>
+
+  <h3>Host-initiated cancellation</h3>
+  <p>If a Host cancels a confirmed, paid booking, the Artist's deposit will be returned in full. GigNVenue reserves the right to take further action against a Host who cancels confirmed bookings, up to and including removal from the Platform.</p>
+
+  <h3>Automatic cancellation</h3>
+  <p>Booking approvals expire if payment is not completed within 48 hours. Upon expiration, the date is released on the venue's calendar and the approval is void. Additionally, upon successful payment for a confirmed booking, any other pending requests submitted by the same Artist for the same date at other venues are automatically cancelled. Cancelled requests of this type are noted in the Artist's booking history.</p>
+
+  <hr/>
+
+  <h2>8. Deposit Release and Refund</h2>
+  <p>The 20% deposit held by GigNVenue is released or returned according to the following conditions:</p>
+  <ul>
+    <li><strong>Successful show:</strong> Upon the Host marking the booking as played off in the Platform, the deposit is released to the Host within 24 hours, net of the 5% venue booking fee retained by GigNVenue at that time</li>
+    <li><strong>Artist cancellation after payment:</strong> The deposit is handled according to the Host's cancellation policy, which was accepted by the Artist at payment</li>
+    <li><strong>Host cancellation of confirmed booking:</strong> The deposit is returned to the Artist in full</li>
+    <li><strong>Disputed outcome:</strong> If the status of a show is disputed — for example, if a Host does not mark a booking as played off and an Artist contends the show took place — GigNVenue will review available evidence and make a determination at its reasonable discretion. GigNVenue's determination in such disputes is final</li>
+  </ul>
+  <p>GigNVenue reserves the right to withhold deposit release pending investigation of any dispute, chargeback, or suspected fraudulent activity.</p>
+
+  <hr/>
+
+  <h2>9. Dispute Resolution</h2>
+  <p>In the event of a dispute between an Artist and a Host arising from a booking, both parties agree to first attempt to resolve the dispute directly through the GigNVenue messaging system. If direct resolution is not possible, either party may contact GigNVenue support to request assistance.</p>
+  <p>For disputes involving the deposit, GigNVenue will review the matter and issue a determination within a reasonable time. Evidence that may be considered includes platform records, message history, booking terms, and any documentation provided by either party.</p>
+  <p>GigNVenue's role in disputes is limited to determining the disposition of the held deposit. GigNVenue is not a mediator, arbitrator, or legal representative of either party and does not assume liability for losses beyond the held deposit amount.</p>
+  <p>Any legal dispute arising from these Terms or the use of the Platform that cannot be resolved through the above process shall be subject to binding arbitration under the rules of the American Arbitration Association, conducted in the state of <span class="placeholder">[STATE — to be confirmed by counsel]</span>, and governed by the laws of that state. Both parties waive the right to a jury trial and to participate in class action proceedings.</p>
+
+  <hr/>
+
+  <h2>10. Prohibited Uses</h2>
+  <p>You agree not to use the Platform to:</p>
+  <ul>
+    <li>Submit fraudulent, speculative, or bad-faith booking requests</li>
+    <li>List venues you do not have the legal authority to book</li>
+    <li>Arrange or solicit payments for bookings outside the GigNVenue platform in order to circumvent fees</li>
+    <li>Harass, threaten, or abuse other users through the messaging system</li>
+    <li>Post false, misleading, or defamatory content in listings, profiles, or messages</li>
+    <li>Attempt to gain unauthorized access to another user's account or to Platform systems</li>
+    <li>Scrape, copy, or redistribute Platform content without authorization</li>
+    <li>Submit false, bad-faith, or retaliatory reports against other users using the Platform's reporting feature</li>
+    <li>Use the Platform for any purpose that violates applicable federal, state, or local law</li>
+  </ul>
+  <p>GigNVenue reserves the right to remove content and suspend or terminate accounts that violate these prohibitions, without prior notice.</p>
+
+  <h3>User Reporting</h3>
+  <p>GigNVenue provides a reporting mechanism that allows users to flag content or conduct they believe violates these Terms. Users may report a concern about another user, a venue listing, or a message by contacting GigNVenue support through the contact page or by emailing legal@gignvenue.com. GigNVenue will review all reports in good faith and within a reasonable time. Upon completing a review, GigNVenue may take action including issuing a warning, restricting account features, suspending an account, permanently terminating an account, or removing content. GigNVenue retains full discretion over the appropriate response to any report.</p>
+  <p>GigNVenue is not obligated to investigate every report or to take any specific action in response to a report. Receipt of a report does not create any duty of care to the reporting user beyond what is described in these Terms. Misuse of the reporting system — including filing false or retaliatory reports — may itself result in account suspension or termination.</p>
+
+  <hr/>
+
+  <h2>11. Intellectual Property</h2>
+  <p>The GigNVenue name, logo, and all Platform content created by GigNVenue — including design, text, graphics, and software — are the property of GigNVenue and are protected by applicable intellectual property laws.</p>
+  <p>By submitting content to the Platform (including profile photos, venue photos, bio text, and messages), you grant GigNVenue a non-exclusive, royalty-free, worldwide license to use, display, and distribute that content solely for the purpose of operating and promoting the Platform. You represent that you have the right to grant this license. With respect to any images or photos submitted — including venue photos, artist promotional photos, and profile images — you represent and warrant that you own all necessary rights to those images or have obtained all required permissions and licenses from the rights holders. Submitting photos without proper authorization may constitute copyright infringement, and you agree to indemnify GigNVenue against any claims arising from unauthorized image submissions.</p>
+
+  <hr/>
+
+  <h2>12. Disclaimers</h2>
+  <p>The Platform is provided "as is" and "as available" without warranties of any kind, express or implied. GigNVenue does not warrant that the Platform will be uninterrupted, error-free, or free of harmful components.</p>
+  <p>GigNVenue does not endorse, guarantee, or assume responsibility for any listings, venues, artists, or bookings facilitated through the Platform. We are a marketplace — the quality, safety, and accuracy of listings and the performance of bookings is the responsibility of the respective Host or Artist.</p>
+
+  <hr/>
+
+  <h2>13. Limitation of Liability</h2>
+  <p>To the maximum extent permitted by applicable law, GigNVenue's total liability to you for any claim arising out of or relating to these Terms or the Platform shall not exceed the greater of (a) the amount of fees paid by you to GigNVenue in the twelve months prior to the claim, or (b) one hundred dollars ($100).</p>
+  <p>In no event shall GigNVenue be liable for any indirect, incidental, special, consequential, or punitive damages — including lost profits, lost revenue, or lost data — arising out of or relating to your use of the Platform, even if GigNVenue has been advised of the possibility of such damages.</p>
+
+  <hr/>
+
+  <h2>14. Indemnification</h2>
+  <p>You agree to indemnify, defend, and hold harmless GigNVenue and its officers, directors, employees, and agents from any claims, liabilities, damages, losses, and expenses — including reasonable legal fees — arising out of or in connection with your use of the Platform, your violation of these Terms, or your violation of any rights of another person or entity.</p>
+
+  <hr/>
+
+  <h2>15. Governing Law</h2>
+  <p>These Terms are governed by the laws of the State of <span class="placeholder">[STATE — to be confirmed by counsel]</span>, without regard to its conflict of law provisions. Any dispute not subject to arbitration under Section 9 shall be resolved exclusively in the state or federal courts located in <span class="placeholder">[STATE]</span>, and you consent to personal jurisdiction in those courts.</p>
+
+  <hr/>
+
+  <h2>16. Changes to These Terms</h2>
+  <p>GigNVenue may update these Terms from time to time. When we make material changes, we will notify users via email or a prominent notice on the Platform, and we will update the "Last updated" date at the top of this page. Your continued use of the Platform after changes take effect constitutes your acceptance of the revised Terms.</p>
+
+  <hr/>
+
+  <h2>17. Contact</h2>
+  <p>For questions about these Terms, please contact us:</p>
+  <ul>
+    <li><strong>Support page:</strong> gignvenue.com/contact</li>
+    <li><strong>Email:</strong> legal@gignvenue.com</li>
+  </ul>
+
+  <div class="draft-notice">
+    This document is a working draft prepared for legal review. It does not constitute legal advice and should be reviewed and finalized by qualified legal counsel before publication. Highlighted placeholders must be completed prior to publication.
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     DOCUMENT 2 — PRIVACY POLICY
+══════════════════════════════════════════════════════════════ -->
+<div class="page page-break">
+  <div class="doc-header">
+    <div class="doc-type">Document 2 of 2</div>
+    <h1>Privacy Policy</h1>
+    <div class="doc-meta">GigNVenue &nbsp;·&nbsp; Last updated: March 2026 &nbsp;·&nbsp; Effective: March 2026</div>
+  </div>
+
+  <p>GigNVenue ("GigNVenue," "we," "us," or "our") operates the GigNVenue platform, a live music venue booking marketplace connecting artists and bookers with venue owners across the United States. This Privacy Policy explains what personal information we collect, how we use it, with whom we share it, and the choices you have regarding your information.</p>
+  <p>By creating an account or using the GigNVenue platform, you agree to the collection and use of information as described in this Policy. If you do not agree, please do not use the platform.</p>
+
+  <div class="toc">
+    <p>Contents</p>
+    <ol>
+      <li>Information We Collect</li>
+      <li>How We Use Your Information</li>
+      <li>How We Share Your Information</li>
+      <li>Contact Detail Release Policy</li>
+      <li>Data Storage and Security</li>
+      <li>Data Retention</li>
+      <li>Your Rights</li>
+      <li>Cookies and Local Storage</li>
+      <li>Children's Privacy</li>
+      <li>Changes to This Policy</li>
+      <li>Contact Us</li>
+    </ol>
+  </div>
+
+  <hr/>
+
+  <h2>1. Information We Collect</h2>
+
+  <h3>Information you provide directly</h3>
+  <p>When you create an account or use the platform, we collect information you provide, which may include:</p>
+  <ul>
+    <li><strong>Account information:</strong> first and last name, email address, phone number, and password</li>
+    <li><strong>Profile information:</strong> artist or band name, profile photo, bio, genre, social media links, and other details you add to your public profile</li>
+    <li><strong>Venue information (hosts):</strong> venue name, address, capacity, photos, amenities, nightly rate, and cancellation policy</li>
+    <li><strong>Booking information:</strong> event type, expected attendance, event notes, requested dates, and related booking communications</li>
+    <li><strong>Messages:</strong> content of messages exchanged between artists and venue hosts through the GigNVenue messaging system, including pre-booking messages initiated before a formal booking request is submitted and booking messages associated with an active booking</li>
+    <li><strong>Report and flag submissions:</strong> when you submit a report or flag about another user, venue listing, or message, we collect the details of that report, including the reported content, your description of the concern, any supporting context you provide, and the date of submission</li>
+    <li><strong>Payment information:</strong> billing details submitted at payment. Card data is processed directly by Stripe and is never stored on GigNVenue servers</li>
+  </ul>
+
+  <h3>Information collected automatically</h3>
+  <p>When you use the platform, we may automatically collect:</p>
+  <ul>
+    <li>Device type, browser type, and operating system</li>
+    <li>IP address and approximate location</li>
+    <li>Pages visited, features used, and time spent on the platform</li>
+    <li>Referring URLs and session data</li>
+  </ul>
+
+  <hr/>
+
+  <h2>2. How We Use Your Information</h2>
+  <p>We use the information we collect to:</p>
+  <ul>
+    <li>Create and manage your account</li>
+    <li>Facilitate booking requests, confirmations, cancellations, and payments between artists and venue hosts</li>
+    <li>Release contact details between parties at the appropriate point in the booking process (see Section 4)</li>
+    <li>Send transactional communications: booking notifications, payment confirmations, reminders, and account alerts</li>
+    <li>Process payments and manage deposits held on behalf of users via Stripe</li>
+    <li>Resolve disputes between artists and venue hosts</li>
+    <li>Maintain the safety, security, and integrity of the platform</li>
+    <li>Improve platform features and user experience</li>
+    <li>Comply with applicable legal obligations</li>
+  </ul>
+  <p>We do not use your information to serve third-party advertising. We do not sell, rent, or trade your personal information to any third party for marketing purposes.</p>
+
+  <hr/>
+
+  <h2>3. How We Share Your Information</h2>
+
+  <h3>With other users</h3>
+  <p>Certain information is visible to other users of the platform as part of normal platform operation:</p>
+  <ul>
+    <li>Artist profile information (name, band name, photo, bio, genre) is visible to venue hosts from the moment a booking request is submitted</li>
+    <li>Venue listing information is publicly visible to all users</li>
+    <li>Contact details (email and phone number) are shared between an artist and a venue host only after payment has been completed for a confirmed booking (see Section 4)</li>
+  </ul>
+
+  <h3>With service providers</h3>
+  <p>We share information with trusted third-party service providers who assist us in operating the platform:</p>
+  <ul>
+    <li><strong>Stripe:</strong> payment processing and deposit management. Stripe processes payment information directly and maintains its own privacy policy at stripe.com/privacy</li>
+    <li><strong>Hosting and infrastructure providers:</strong> cloud services used to store and serve platform data</li>
+    <li><strong>Analytics providers:</strong> aggregated, non-personally identifiable usage data to improve the platform</li>
+  </ul>
+  <p>We do not authorize service providers to use your personal information for their own marketing purposes.</p>
+
+  <h3>For legal reasons</h3>
+  <p>We may disclose your information if required to do so by law, court order, or governmental authority, or when we believe in good faith that disclosure is necessary to protect the rights, property, or safety of GigNVenue, our users, or the public.</p>
+
+  <h3>Business transfers</h3>
+  <p>In the event of a merger, acquisition, or sale of all or substantially all of GigNVenue's assets, your information may be transferred as part of that transaction. We will notify users of any such change in ownership or control of personal information.</p>
+
+  <hr/>
+
+  <h2>4. Contact Detail Release Policy</h2>
+  <p>GigNVenue operates a deliberate, staged approach to contact detail sharing that protects both artists and venue hosts throughout the booking process.</p>
+  <ul>
+    <li>From the moment a booking request is received, venue hosts can see an artist's full name, profile photo, and band name, and can access the artist's full profile</li>
+    <li>An artist's personal contact details — email address and phone number — are shared with the venue host only after payment for a confirmed booking has been successfully completed via Stripe</li>
+    <li>Similarly, a venue host's direct contact details are shared with the artist only after payment has been completed</li>
+  </ul>
+  <p>This policy exists to protect personal information until both parties have made a financial commitment to the booking, and to ensure that the GigNVenue platform remains the secure channel for all pre-payment communications.</p>
+
+  <hr/>
+
+  <h2>5. Data Storage and Security</h2>
+  <p>Your data is stored on secure servers operated by GigNVenue and our infrastructure partners. We implement reasonable administrative, technical, and physical safeguards designed to protect your personal information against unauthorized access, alteration, disclosure, or destruction.</p>
+  <p>Payment card data is never stored on GigNVenue servers. All payment processing is handled by Stripe, which is PCI DSS compliant.</p>
+  <p>No method of transmission over the internet or method of electronic storage is completely secure. While we strive to protect your information, we cannot guarantee absolute security.</p>
+
+  <hr/>
+
+  <h2>6. Data Retention</h2>
+  <p>We retain your personal information for as long as your account is active or as needed to provide you with the platform services. Specifically:</p>
+  <ul>
+    <li><strong>Account data:</strong> retained for the life of your account. You may request deletion at any time (see Section 7)</li>
+    <li><strong>Booking history:</strong> retained for a minimum of three years after a booking's event date, to support dispute resolution and financial record-keeping</li>
+    <li><strong>Booking messages:</strong> retained for the life of the associated booking or account, whichever is longer</li>
+    <li><strong>Pre-booking messages:</strong> retained for a minimum of 12 months after the last message in the thread, or for the life of the associated artist or venue account, whichever is longer. Pre-booking message threads that lead to a confirmed booking are retained for the same period as booking messages</li>
+    <li><strong>Report data:</strong> records of submitted reports, including their content and any action taken in response, are retained for a minimum of three years to support ongoing moderation, dispute investigation, and compliance obligations</li>
+    <li><strong>Payment records:</strong> retained as required by applicable financial regulations, typically seven years</li>
+  </ul>
+  <p>Upon account deletion, we will remove or anonymize your personal information within 90 days, except where retention is required by law or legitimate business necessity.</p>
+
+  <hr/>
+
+  <h2>7. Your Rights</h2>
+  <p>Depending on your location, you may have rights regarding your personal information. Users in California have rights under the California Consumer Privacy Act (CCPA), including:</p>
+  <ul>
+    <li><strong>Right to know:</strong> the categories and specific pieces of personal information we have collected about you</li>
+    <li><strong>Right to delete:</strong> request deletion of your personal information, subject to certain exceptions</li>
+    <li><strong>Right to opt out of sale:</strong> GigNVenue does not sell personal information. This right is not applicable, but we state it plainly: we will never sell your data</li>
+    <li><strong>Right to non-discrimination:</strong> we will not discriminate against you for exercising your privacy rights</li>
+  </ul>
+  <p>To exercise any of these rights, please contact us at gignvenue.com/contact or email us directly. We will respond to verified requests within 45 days.</p>
+
+  <hr/>
+
+  <h2>8. Cookies and Local Storage</h2>
+  <p>GigNVenue uses browser local storage to maintain your session, remember your preferences, and support dashboard functionality (such as pending booking requests and notification state). We may also use standard cookies for session management and analytics.</p>
+  <p>You can clear local storage and cookies through your browser settings at any time. Doing so may affect your ability to use certain platform features, including staying logged in.</p>
+  <p>We do not use third-party advertising cookies or cross-site tracking technologies.</p>
+
+  <hr/>
+
+  <h2>9. Children's Privacy</h2>
+  <p>GigNVenue is not directed at children under the age of 18. We do not knowingly collect personal information from anyone under 18. If we become aware that we have collected personal information from a child under 18, we will take steps to delete that information promptly. If you believe a minor has provided us with personal information, please contact us.</p>
+
+  <hr/>
+
+  <h2>10. Changes to This Policy</h2>
+  <p>We may update this Privacy Policy from time to time to reflect changes in our practices, technology, legal requirements, or other factors. When we make material changes, we will notify users via email or a prominent notice on the platform prior to the change taking effect, and we will update the "Last updated" date at the top of this page.</p>
+  <p>Your continued use of GigNVenue after any changes to this Policy constitutes your acceptance of the updated terms.</p>
+
+  <hr/>
+
+  <h2>11. Contact Us</h2>
+  <p>If you have questions, concerns, or requests regarding this Privacy Policy or the handling of your personal information, please contact us:</p>
+  <ul>
+    <li><strong>Support page:</strong> gignvenue.com/contact</li>
+    <li><strong>Email:</strong> privacy@gignvenue.com</li>
+  </ul>
+
+  <div class="draft-notice">
+    This document is a working draft prepared for legal review. It does not constitute legal advice and should be reviewed and finalized by qualified legal counsel before publication.
+  </div>
+</div>
+
+</body>
+</html>
