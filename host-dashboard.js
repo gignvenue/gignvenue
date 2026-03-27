@@ -31,32 +31,44 @@ function renderReliabilityBadge(guestName) {
 
 // ─── SEED DATA ────────────────────────────────────────────────────────────────
 
+// Relative-date helpers — all show dates shift with today so the demo always
+// has bookings in the right state regardless of when it's viewed.
+const _D = 86400000; // ms per day
+function _d(n) { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().split('T')[0]; }
+// Self-managed offsets shared between RESERVATIONS and seedManualEarnings
+const _HG = { hg1:_d(-71), hg2:_d(-58), hg3:_d(-45), hg4:_d(-33), hg5:_d(-19), hg6:_d(-188), hg7:_d(-142) };
+
 const RESERVATIONS = [
-  { id:'r1', guest:'Emily Clarke',  bandName:'The Midnight Echoes', guestImg:'https://randomuser.me/api/portraits/women/12.jpg', property:'The Neon Stage',    propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:'2026-04-18', checkout:'2026-04-18', guests:320, total:8400, status:'confirmed', confirmedAt: Date.now() - 18 * 60 * 60 * 1000, submittedAt: Date.now() - 3 * 24 * 60 * 60 * 1000, eventType:'Concert / live show', notes:'Indie-folk headliner, 90-min set. Full backline needed — drums, bass amp, guitar cab. We travel with our own FOH engineer.', paymentStatus:'paid', paidAt: Date.now() - 12 * 60 * 60 * 1000 },
-  { id:'r2', guest:'Jake Morrison',  bandName:'Velvet Storm',        guestImg:'https://randomuser.me/api/portraits/men/35.jpg',  property:'Velvet Lounge',     propertyImg:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=120&q=60', checkin:'2026-05-10', checkout:'2026-05-10', guests:180, total:6500, status:'confirmed', confirmedAt: Date.now() - 5 * 24 * 60 * 60 * 1000, submittedAt: Date.now() - 8 * 24 * 60 * 60 * 1000, eventType:'Album launch', notes:'Album release show. Looking for an intimate vibe — seated or standing is fine. Will need a projector for visuals behind the stage.' },
-  { id:'r3', guest:'Priya Nair',                                     guestImg:'https://randomuser.me/api/portraits/women/54.jpg',property:'Rooftop Sessions',   propertyImg:'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=120&q=60', checkin:'2026-04-28', checkout:'2026-04-28', guests:100, total:3200, status:'pending',   submittedAt: Date.now() - 2 * 24 * 60 * 60 * 1000, eventType:'Acoustic set', notes:'Solo acoustic performance. Minimal setup — just a vocal mic and DI for guitar. Very low production requirements.' },
-  { id:'r7', guest:'Marcus Webb',                                    guestImg:'https://randomuser.me/api/portraits/men/44.jpg',  property:'The Neon Stage',    propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:'2026-06-05', checkout:'2026-06-05', guests:280, total:7200, status:'pending',   submittedAt: Date.now() - 1 * 24 * 60 * 60 * 1000, eventType:'Concert / live show', notes:'' },
-  { id:'r9', guest:'Leon Hayes',     bandName:'Static Frequency',   guestImg:'https://randomuser.me/api/portraits/men/52.jpg',  property:'The Neon Stage',    propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:'2026-06-05', checkout:'2026-06-05', guests:260, total:6800, status:'pending',   submittedAt: Date.now() - 1 * 24 * 60 * 60 * 1000, eventType:'Concert / live show', notes:'Electronic rock — we run backing tracks from Ableton. Need 2 IEM sends and a reliable monitor mix.' },
-  { id:'r8', guest:'Jade Rivera',    bandName:'Solar Drift',         guestImg:'https://randomuser.me/api/portraits/women/33.jpg', property:'The Neon Stage',   propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:'2026-06-06', checkout:'2026-06-06', guests:310, total:7800, status:'pending',   submittedAt: Date.now() - 3 * 24 * 60 * 60 * 1000, eventType:'Festival set', notes:'4-piece band, high energy. Full backline required. We have our own lighting director — will need a DMX port.' },
-  // ── Demo: resolution flow showcase ───────────────────────────────────────────
-  // r10: past confirmed, paid — shows "↪ Resolve booking" button
-  { id:'r10', guest:'Nadia Voss',    bandName:'Lunar Drift',         guestImg:'https://randomuser.me/api/portraits/women/26.jpg', property:'The Neon Stage',    propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:'2026-03-15', checkout:'2026-03-15', guests:290, total:7600, status:'confirmed',          paymentStatus:'paid', paidAt:new Date('2026-03-06').getTime(), confirmedAt:new Date('2026-03-05').getTime(), submittedAt:new Date('2026-02-28').getTime(), eventType:'Concert / live show', notes:'Alt-rock quartet. Full backline requested. Will bring own merch table setup.' },
-  // r11: pending_resolution (played) — blue badge + countdown; resolutionSetAt recalculates on each page load so countdown is always ~18h
-  { id:'r11', guest:'Felix Hart',    bandName:'Cassette Wolves',     guestImg:'https://randomuser.me/api/portraits/men/18.jpg',   property:'Velvet Lounge',     propertyImg:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=120&q=60', checkin:'2026-03-10', checkout:'2026-03-10', guests:170, total:5800, status:'pending_resolution', paymentStatus:'paid', paidAt:new Date('2026-02-26').getTime(), confirmedAt:new Date('2026-02-25').getTime(), submittedAt:new Date('2026-02-20').getTime(), eventType:'Album launch',         notes:'Indie pop duo. Minimal setup — 2 vocals, DI bass, loop pedal.', resolution:'played', resolutionSetAt: Date.now() - 6*3600000, resolutionLapseHours:24, venueRelease:Math.round(5800*0.15), artistRefund:0 },
+  // ── Pending requests ──────────────────────────────────────────────────────
+  { id:'r3',  guest:'Priya Nair',                                    guestImg:'https://randomuser.me/api/portraits/women/54.jpg', property:'Rooftop Sessions', propertyImg:'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=120&q=60',  checkin:_d(32), checkout:_d(32), guests:100, total:3200, status:'pending',   submittedAt:Date.now()-2*_D, eventType:'Acoustic set',         notes:'Solo acoustic performance. Minimal setup — just a vocal mic and DI for guitar. Very low production requirements.' },
+  // r7 + r9 same date — demonstrates hold-priority conflict UI
+  { id:'r7',  guest:'Marcus Webb',                                   guestImg:'https://randomuser.me/api/portraits/men/44.jpg',   property:'The Neon Stage',   propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:_d(70), checkout:_d(70), guests:280, total:7200, status:'pending',   submittedAt:Date.now()-1*_D, eventType:'Concert / live show', notes:'' },
+  { id:'r9',  guest:'Leon Hayes',   bandName:'Static Frequency',    guestImg:'https://randomuser.me/api/portraits/men/52.jpg',   property:'The Neon Stage',   propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:_d(70), checkout:_d(70), guests:260, total:6800, status:'pending',   submittedAt:Date.now()-1*_D, eventType:'Concert / live show', notes:'Electronic rock — we run backing tracks from Ableton. Need 2 IEM sends and a reliable monitor mix.' },
+  { id:'r8',  guest:'Jade Rivera',  bandName:'Solar Drift',         guestImg:'https://randomuser.me/api/portraits/women/33.jpg', property:'The Neon Stage',   propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:_d(71), checkout:_d(71), guests:310, total:7800, status:'pending',   submittedAt:Date.now()-3*_D, eventType:'Festival set',         notes:'4-piece band, high energy. Full backline required. We have our own lighting director — will need a DMX port.' },
+  // ── Approved — host said yes, awaiting artist payment ────────────────────
+  { id:'r13', guest:'Amara Osei',   bandName:'Velveteen',           guestImg:'https://randomuser.me/api/portraits/women/68.jpg', property:'Rooftop Sessions', propertyImg:'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=120&q=60',  checkin:_d(55), checkout:_d(55), guests:95,  total:3500, status:'approved',  submittedAt:Date.now()-5*_D, approvedAt:Date.now()-2*_D, eventType:'Acoustic set', notes:'Afrobeats-soul duo. Minimal setup — 2 vocals, acoustic guitar DI, light percussion.' },
+  // ── Confirmed upcoming (paid) ─────────────────────────────────────────────
+  { id:'r1',  guest:'Emily Clarke', bandName:'The Midnight Echoes', guestImg:'https://randomuser.me/api/portraits/women/12.jpg', property:'The Neon Stage',   propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:_d(22), checkout:_d(22), guests:320, total:8400, status:'confirmed', submittedAt:Date.now()-3*_D,  confirmedAt:Date.now()-18*3600000, paymentStatus:'paid', paidAt:Date.now()-12*3600000, eventType:'Concert / live show', notes:'Indie-folk headliner, 90-min set. Full backline needed — drums, bass amp, guitar cab. We travel with our own FOH engineer.' },
+  { id:'r2',  guest:'Jake Morrison',bandName:'Velvet Storm',        guestImg:'https://randomuser.me/api/portraits/men/35.jpg',   property:'Velvet Lounge',    propertyImg:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=120&q=60', checkin:_d(44), checkout:_d(44), guests:180, total:6500, status:'confirmed', submittedAt:Date.now()-8*_D,  confirmedAt:Date.now()-5*_D,       paymentStatus:'paid', paidAt:Date.now()-4*_D,          eventType:'Album launch',         notes:'Album release show. Looking for an intimate vibe — seated or standing is fine. Will need a projector for visuals behind the stage.' },
+  // ── Demo: resolution flow showcase ───────────────────────────────────────
+  // r10: past confirmed, paid — triggers "Confirm show played" action item → Completed tab
+  { id:'r10', guest:'Nadia Voss',   bandName:'Lunar Drift',         guestImg:'https://randomuser.me/api/portraits/women/26.jpg', property:'The Neon Stage',   propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:_d(-12), checkout:_d(-12), guests:290, total:7600, status:'confirmed',          paymentStatus:'paid', paidAt:Date.now()-15*_D, confirmedAt:Date.now()-19*_D, submittedAt:Date.now()-26*_D, eventType:'Concert / live show', notes:'Alt-rock quartet. Full backline requested. Will bring own merch table setup.' },
+  // r11: pending_resolution (played) — blue badge + countdown always ~6h from load
+  { id:'r11', guest:'Felix Hart',   bandName:'Cassette Wolves',     guestImg:'https://randomuser.me/api/portraits/men/18.jpg',   property:'Velvet Lounge',    propertyImg:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=120&q=60', checkin:_d(-17), checkout:_d(-17), guests:170, total:5800, status:'pending_resolution', paymentStatus:'paid', paidAt:Date.now()-26*_D, confirmedAt:Date.now()-32*_D, submittedAt:Date.now()-37*_D, eventType:'Album launch',         notes:'Indie pop duo. Minimal setup — 2 vocals, DI bass, loop pedal.',               resolution:'played', resolutionSetAt:Date.now()-6*3600000, resolutionLapseHours:24, venueRelease:Math.round(5800*0.15), artistRefund:0 },
   // r12: disputed — red badge with artist dispute note
-  { id:'r12', guest:'Tara Blaine',                                   guestImg:'https://randomuser.me/api/portraits/women/41.jpg', property:'Rooftop Sessions',  propertyImg:'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=120&q=60',  checkin:'2026-03-05', checkout:'2026-03-05', guests:90,  total:2800, status:'disputed',           paymentStatus:'paid', paidAt:new Date('2026-02-21').getTime(), confirmedAt:new Date('2026-02-20').getTime(), submittedAt:new Date('2026-02-15').getTime(), eventType:'Private showcase',     notes:'Solo artist. Acoustic setup only.', resolution:'artist-cancel', artistRefund:Math.round(2800*0.10), venueRelease:Math.max(0,Math.round(2800*0.10-2800*0.05)), resolutionSetAt:new Date('2026-03-17').getTime(), resolutionLapseHours:48, disputeNotes:'I never agreed to cancel — the venue told me the date was no longer available.', disputedAt:new Date('2026-03-18').getTime(), disputedBy:'artist' },
-  // ─────────────────────────────────────────────────────────────────────────────
-  { id:'r4', guest:'David Kim',      bandName:'Iron Circuit',        guestImg:'https://randomuser.me/api/portraits/men/21.jpg',  property:'The Neon Stage',    propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:'2025-11-10', checkout:'2025-11-10', guests:450, total:9800, status:'completed', submittedAt: new Date('2025-10-28').getTime() },
-  { id:'r5', guest:'Sofia Morales',                                  guestImg:'https://randomuser.me/api/portraits/women/77.jpg',property:'Velvet Lounge',     propertyImg:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=120&q=60', checkin:'2025-12-20', checkout:'2025-12-20', guests:200, total:5200, status:'completed', submittedAt: new Date('2025-12-05').getTime() },
-  { id:'r6',  guest:'Tom Bradley',          guestImg:'https://randomuser.me/api/portraits/men/68.jpg',   property:'Rooftop Sessions', propertyImg:'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=120&q=60', checkin:'2026-02-28', checkout:'2026-02-28', guests:80,  total:2400, status:'cancelled', submittedAt: new Date('2026-02-10').getTime() },
-  // Self-managed (host-generated) historical shows for earnings tracking
-  { id:'hg1', guest:'The Wailers Revival',  guestImg:'', property:'The Neon Stage',   propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:'2026-01-15', checkout:'2026-01-15', guests:0, total:0, status:'completed', hostGenerated:true },
-  { id:'hg2', guest:'Private Event',        guestImg:'', property:'Velvet Lounge',    propertyImg:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=120&q=60', checkin:'2026-01-28', checkout:'2026-01-28', guests:0, total:0, status:'completed', hostGenerated:true },
-  { id:'hg3', guest:'Stereo Jungle',        guestImg:'', property:'The Neon Stage',   propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:'2026-02-10', checkout:'2026-02-10', guests:0, total:0, status:'completed', hostGenerated:true },
-  { id:'hg4', guest:'Club Night',           guestImg:'', property:'The Neon Stage',   propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:'2026-02-22', checkout:'2026-02-22', guests:0, total:0, status:'completed', hostGenerated:true },
-  { id:'hg5', guest:'Jazz Night',           guestImg:'', property:'Velvet Lounge',    propertyImg:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=120&q=60', checkin:'2026-03-08', checkout:'2026-03-08', guests:0, total:0, status:'completed', hostGenerated:true },
-  { id:'hg6', guest:'DJ Catalyst',          guestImg:'', property:'The Neon Stage',   propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:'2025-09-20', checkout:'2025-09-20', guests:0, total:0, status:'completed', hostGenerated:true },
-  { id:'hg7', guest:'Acoustic Evening',     guestImg:'', property:'Velvet Lounge',    propertyImg:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=120&q=60', checkin:'2025-11-05', checkout:'2025-11-05', guests:0, total:0, status:'completed', hostGenerated:true },
+  { id:'r12', guest:'Tara Blaine',                                  guestImg:'https://randomuser.me/api/portraits/women/41.jpg', property:'Rooftop Sessions', propertyImg:'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=120&q=60',  checkin:_d(-22), checkout:_d(-22), guests:90,  total:2800, status:'disputed',           paymentStatus:'paid', paidAt:Date.now()-31*_D, confirmedAt:Date.now()-37*_D, submittedAt:Date.now()-42*_D, eventType:'Private showcase',     notes:'Solo artist. Acoustic setup only.',                                            resolution:'artist-cancel', artistRefund:Math.round(2800*0.10), venueRelease:Math.max(0,Math.round(2800*0.10-2800*0.05)), resolutionSetAt:Date.now()-15*_D, resolutionLapseHours:48, disputeNotes:"I never agreed to cancel — the venue told me the date was no longer available.", disputedAt:Date.now()-14*_D, disputedBy:'artist' },
+  // ── History ───────────────────────────────────────────────────────────────
+  { id:'r4',  guest:'David Kim',    bandName:'Iron Circuit',        guestImg:'https://randomuser.me/api/portraits/men/21.jpg',   property:'The Neon Stage',   propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:_d(-137), checkout:_d(-137), guests:450, total:9800, status:'completed', submittedAt:Date.now()-150*_D },
+  { id:'r5',  guest:'Sofia Morales',                                guestImg:'https://randomuser.me/api/portraits/women/77.jpg', property:'Velvet Lounge',    propertyImg:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=120&q=60', checkin:_d(-97),  checkout:_d(-97),  guests:200, total:5200, status:'completed', submittedAt:Date.now()-110*_D },
+  { id:'r6',  guest:'Tom Bradley',                                  guestImg:'https://randomuser.me/api/portraits/men/68.jpg',   property:'Rooftop Sessions', propertyImg:'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=120&q=60',  checkin:_d(-27),  checkout:_d(-27),  guests:80,  total:2400, status:'cancelled', submittedAt:Date.now()-40*_D },
+  // ── Self-managed (host-generated) — historical shows for earnings tracking ─
+  { id:'hg1', guest:'The Wailers Revival', guestImg:'', property:'The Neon Stage',  propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:_HG.hg1, checkout:_HG.hg1, guests:0, total:0, status:'completed', hostGenerated:true },
+  { id:'hg2', guest:'Private Event',       guestImg:'', property:'Velvet Lounge',   propertyImg:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=120&q=60', checkin:_HG.hg2, checkout:_HG.hg2, guests:0, total:0, status:'completed', hostGenerated:true },
+  { id:'hg3', guest:'Stereo Jungle',       guestImg:'', property:'The Neon Stage',  propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:_HG.hg3, checkout:_HG.hg3, guests:0, total:0, status:'completed', hostGenerated:true },
+  { id:'hg4', guest:'Club Night',          guestImg:'', property:'The Neon Stage',  propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:_HG.hg4, checkout:_HG.hg4, guests:0, total:0, status:'completed', hostGenerated:true },
+  { id:'hg5', guest:'Jazz Night',          guestImg:'', property:'Velvet Lounge',   propertyImg:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=120&q=60', checkin:_HG.hg5, checkout:_HG.hg5, guests:0, total:0, status:'completed', hostGenerated:true },
+  { id:'hg6', guest:'DJ Catalyst',         guestImg:'', property:'The Neon Stage',  propertyImg:'https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?w=120&q=60', checkin:_HG.hg6, checkout:_HG.hg6, guests:0, total:0, status:'completed', hostGenerated:true },
+  { id:'hg7', guest:'Acoustic Evening',    guestImg:'', property:'Velvet Lounge',   propertyImg:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=120&q=60', checkin:_HG.hg7, checkout:_HG.hg7, guests:0, total:0, status:'completed', hostGenerated:true },
 ];
 
 const HOST_LISTINGS = [
@@ -459,12 +471,14 @@ document.addEventListener('click', () => {
 
 function populateSidebarUser() {
   document.getElementById('sidebarUser').innerHTML = `
-    <img src="${user.avatar}" alt="${user.firstName}" class="sidebar-user-avatar"
-         onerror="this.src='https://api.dicebear.com/7.x/initials/svg?seed=${user.firstName}${user.lastName}'"/>
-    <div class="sidebar-user-info">
-      <div class="sidebar-user-name">${user.firstName} ${user.lastName}</div>
-      <div class="sidebar-user-email">${user.email}</div>
-    </div>
+    <a href="#" onclick="navigate(event,'profile')" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;flex:1;min-width:0">
+      <img src="${user.avatar}" alt="${user.firstName}" class="sidebar-user-avatar"
+           onerror="this.src='https://api.dicebear.com/7.x/initials/svg?seed=${user.firstName}${user.lastName}'"/>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name">${user.firstName} ${user.lastName}</div>
+        <div class="sidebar-user-email">${user.email}</div>
+      </div>
+    </a>
   `;
 }
 
@@ -609,7 +623,7 @@ function renderActionItems() {
       return { icon:'🔇', cls:'red', title:`${l.title} is unlisted`, sub: activeBookings ? `Hidden from new searches — ${activeBookings} active booking${activeBookings!==1?'s':''} unaffected` : 'Hidden from new searches — no active bookings', onclick:`navigate(null,'listings')` };
     }),
     ...(pendingCount > 0 ? [{ icon:'✅', cls:'blue', title:`${pendingCount} booking request${pendingCount !== 1 ? 's' : ''}`, sub:'Awaiting your approval in the Bookings tab', onclick:`goToBooking(null,'pending')` }] : []),
-    ...playedOffDue.map(r => ({ icon:'🎤', cls:'green', title:`Confirm show played: ${r.bandName || r.guest} at ${r.property}`, sub:`Tap to release your $${Math.round(r.total*0.20).toLocaleString()} deposit — funds transfer within 24 hours`, onclick:`markPlayedOff('${r.id}')` })),
+    ...playedOffDue.map(r => ({ icon:'🎤', cls:'green', title:`Confirm show played: ${r.bandName || r.guest} at ${r.property}`, sub:`Tap to go to this booking and confirm how the show went`, onclick:`goToBooking('${r.id}','completed')` })),
   ];
   document.getElementById('actionItems').innerHTML = items.map(a => `
     <div class="action-item" onclick="${a.onclick}">
@@ -3517,7 +3531,7 @@ function openCalDayPopup(iso) {
     ${(()=>{
       if (isFuture) return '';
       const r = RESERVATIONS.find(x => x.property === HOST_LISTINGS.find(l => l.id === calVenueId)?.title && x.checkin === iso && x.status === 'confirmed' && !x.hostGenerated);
-      return r ? `<div class="cdp-feature-section"><button class="cdp-feature-night-btn" style="background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.4);color:#34d399" onclick="closeCalDayPopup();markPlayedOff('${r.id}')">✓ Confirm show played · release deposit</button></div>` : '';
+      return r ? `<div class="cdp-feature-section"><button class="cdp-feature-night-btn" style="background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.4);color:#34d399" onclick="closeCalDayPopup();goToBooking('${r.id}','completed')">✓ Confirm show played · view booking</button></div>` : '';
     })()}`;
 
   document.body.appendChild(popup);
@@ -3974,13 +3988,13 @@ function seedDemoResolutions() {
 
 function seedManualEarnings() {
   const seeds = [
-    { venueId:'l1', iso:'2026-01-15', entry:{ status:'booked', bandName:'The Wailers Revival', reservationId:'hg1', earnings:4200 } },
-    { venueId:'l2', iso:'2026-01-28', entry:{ status:'booked', bandName:'Private Event',        reservationId:'hg2', earnings:2100 } },
-    { venueId:'l1', iso:'2026-02-10', entry:{ status:'booked', bandName:'Stereo Jungle',        reservationId:'hg3', earnings:5800 } },
-    { venueId:'l1', iso:'2026-02-22', entry:{ status:'booked', bandName:'Club Night',           reservationId:'hg4', earnings:3200 } },
-    { venueId:'l2', iso:'2026-03-08', entry:{ status:'booked', bandName:'Jazz Night',           reservationId:'hg5', earnings:1800 } },
-    { venueId:'l1', iso:'2025-09-20', entry:{ status:'booked', bandName:'DJ Catalyst',          reservationId:'hg6', earnings:4800 } },
-    { venueId:'l2', iso:'2025-11-05', entry:{ status:'booked', bandName:'Acoustic Evening',     reservationId:'hg7', earnings:3200 } },
+    { venueId:'l1', iso:_HG.hg1, entry:{ status:'booked', bandName:'The Wailers Revival', reservationId:'hg1', earnings:4200 } },
+    { venueId:'l2', iso:_HG.hg2, entry:{ status:'booked', bandName:'Private Event',        reservationId:'hg2', earnings:2100 } },
+    { venueId:'l1', iso:_HG.hg3, entry:{ status:'booked', bandName:'Stereo Jungle',        reservationId:'hg3', earnings:5800 } },
+    { venueId:'l1', iso:_HG.hg4, entry:{ status:'booked', bandName:'Club Night',           reservationId:'hg4', earnings:3200 } },
+    { venueId:'l2', iso:_HG.hg5, entry:{ status:'booked', bandName:'Jazz Night',           reservationId:'hg5', earnings:1800 } },
+    { venueId:'l1', iso:_HG.hg6, entry:{ status:'booked', bandName:'DJ Catalyst',          reservationId:'hg6', earnings:4800 } },
+    { venueId:'l2', iso:_HG.hg7, entry:{ status:'booked', bandName:'Acoustic Evening',     reservationId:'hg7', earnings:3200 } },
   ];
   let changed = false;
   seeds.forEach(({ venueId, iso, entry }) => {
