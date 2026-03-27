@@ -1272,7 +1272,7 @@ function toggleMap() {
   if (appState.mapOpen && appState.map) setTimeout(() => {
     appState.map.invalidateSize();
     if (!_mapUserMoved) {
-      appState.map.fitBounds(LOCALE_CONFIG.mapDefaultBounds, { padding: [0, 0] });
+      appState.map.fitBounds(LOCALE_CONFIG.mapDefaultBounds, { padding: [30, 30] });
     }
   }, 60);
 }
@@ -1284,10 +1284,11 @@ function initLeafletMap() {
     return;
   }
   appState.map = L.map('leafletMap', {
-    zoomControl: true,
+    zoomControl: false,
     maxBounds: [[-90, -180], [90, 180]],
     maxBoundsViscosity: 1.0
   });
+  L.control.zoom({ position: 'bottomright' }).addTo(appState.map);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '© OpenStreetMap © CARTO', subdomains:'abcd', maxZoom:19, noWrap: true
   }).addTo(appState.map);
