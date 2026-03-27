@@ -116,6 +116,7 @@ function mapVenueRow(row) {
     weekdayRates:       row.weekday_rates       || null,
     dateOverrides:      null,
     priceUnit:          'night',
+    dates:              'Available now',
     capacity:           row.capacity,
     category:           row.category,
     active:             row.active,
