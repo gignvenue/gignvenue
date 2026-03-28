@@ -133,6 +133,8 @@ function mapVenueRow(row) {
     timezone:           row.timezone            || 'UTC',
     lat:                row.lat,
     lng:                row.lng,
+    createdAt:          row.created_at || null,
+    activityBadge:      null,
     host: {
       name:      row.host_display_name || 'Venue Host',
       years:     row.host_years        || 1,
@@ -200,10 +202,42 @@ function venueHasFeaturedNight(venueId) {
   } catch(e) { return false; }
 }
 
+// Fetches recent booking activity and attaches activityBadge to each listing.
+// Thresholds are intentionally low for the startup phase.
+async function loadVenueActivity() {
+  const now = Date.now();
+  const cut30 = new Date(now - 30 * 86400000).toISOString();
+  const cut60 = new Date(now - 60 * 86400000).toISOString();
+  const cut45 = new Date(now - 45 * 86400000).toISOString();
+
+  const { data } = await gnvClient
+    .from('booking_requests')
+    .select('venue_id, status, created_at')
+    .gte('created_at', cut60);
+
+  const activity = {};
+  (data || []).forEach(r => {
+    if (!activity[r.venue_id]) activity[r.venue_id] = { hot: 0, booked: false };
+    if (r.created_at >= cut30 && ['pending','approved','confirmed'].includes(r.status)) activity[r.venue_id].hot++;
+    if (['confirmed','completed'].includes(r.status)) activity[r.venue_id].booked = true;
+  });
+
+  LISTINGS.forEach(l => {
+    const a = activity[l.id] || {};
+    const isNew = l.createdAt && l.createdAt >= cut45;
+    if (a.hot >= 2)      l.activityBadge = 'Hot right now';
+    else if (a.booked)   l.activityBadge = 'Recently booked';
+    else if (isNew)      l.activityBadge = 'New on GigNVenue';
+    else                 l.activityBadge = null;
+  });
+}
+
 // Returns the badge a listing should display.
-// Iconic = editorial only (hardcoded). Top venue = auto-awarded at 4.8+/50+.
+// Top venue = auto-awarded at 4.5+/10+ reviews (startup threshold).
+// Activity badges show when no rating badge applies.
 function getEffectiveBadge(l) {
   if ((l.rating >= 4.5 && (l.reviews || 0) >= 10) || l.badge === 'Top venue') return 'Top venue';
+  if (l.activityBadge) return l.activityBadge;
   return null;
 }
 
@@ -211,7 +245,7 @@ function recommendedScore(l) {
   const featured    = venueHasFeaturedNight(l.id) ? 10 : 0;
   const promoted    = l.promoted ? 8 : 0;
   const badge       = getEffectiveBadge(l);
-  const badgeBoost  = badge === 'Iconic' ? 3 : badge ? 2 : 0;
+  const badgeBoost  = badge === 'Top venue' ? 2 : badge ? 1 : 0;
   const reviews     = l.reviews || 0;
   const rating      = l.rating  || 0;
   const ratingScore = rating * Math.min(reviews, 100) / 100;
@@ -382,6 +416,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderSkeletons();
 
   await loadVenues();
+  await loadVenueActivity();
 
   applyFilters();
   renderCalendars();
