@@ -363,6 +363,7 @@ function mapVenueForHostDash(row) {
     type:         row.category || 'clubs',
     desc:         row.description || '',
     amenities:    row.amenities || [],
+    dates:        row.availability || 'Available now',
   };
 }
 
@@ -3238,6 +3239,24 @@ function saveEditedListing() {
 
   closeEditModal();
   saveHostListings();
+
+  // Persist availability (and other editable fields) to Supabase for real venues
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(l.id)) {
+    gnvClient.from('venues').update({
+      title:               l.title,
+      description:         l.desc,
+      base_price:          l.price,
+      capacity:            l.capacity,
+      category:            l.type,
+      weekday_rates:       l.weekdayRates || null,
+      availability:        l.dates,
+      amenities:           l.amenities,
+      cancellation_policy: l.cancellationPolicy || null,
+    }).eq('id', l.id).then(({ error }) => {
+      if (error) console.warn('venue save error:', error.message);
+    });
+  }
+
   renderListingsManager();
   showDash(`"${name}" updated! ✅`);
 }
@@ -3518,6 +3537,32 @@ function submitNewListing() {
   });
   closeNewListingModal();
   saveHostListings();
+
+  // Insert into Supabase and swap the temp ID for the real UUID
+  const _availability = modeToAvail('nl');
+  gnvClient.from('venues').insert({
+    host_id:             user.id,
+    title,
+    address:             location,
+    description:         desc,
+    base_price:          price,
+    capacity,
+    category:            type,
+    weekday_rates:       Object.keys(nlWr).length ? nlWr : null,
+    availability:        _availability,
+    amenities:           [...nlmAmenities],
+    cancellation_policy: document.getElementById('nlCancellationPolicy').value.trim() || null,
+    active:              true,
+  }).select('id').single().then(({ data, error }) => {
+    if (error) { console.warn('venue insert error:', error.message); return; }
+    // Replace the temp ID with the real UUID so edits/bookings link correctly
+    const listing = HOST_LISTINGS.find(l => l.title === title && l.price === price);
+    if (listing && data?.id) {
+      listing.id = data.id;
+      saveHostListings();
+    }
+  });
+
   renderListingsManager();
   showDash(`"${title}" published! 🎸`);
 }
