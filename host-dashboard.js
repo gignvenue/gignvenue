@@ -2352,7 +2352,7 @@ function submitHostRating() {
     booking_id:  _hostRatingBookingId,
     rater_type:  'host',
     rater_id:    user.id,
-    rater_name:  `${user.firstName || ''} ${user.lastName || ''}`.trim() || null,
+    rater_name:  r?.property || `${user.firstName || ''} ${user.lastName || ''}`.trim() || null,
     rated_id:    rating.ratedId,
     venue_id:    venueId,
     scores:      rating.scores,
