@@ -602,6 +602,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   populateProfile();
   renderAnalyticsPinSettings();
   checkPlayedOffNotifications();
+  if (!_firstLogin) buildHostRatingQueue();
 
   // On first login: land on profile tab with a welcome prompt
   if (_firstLogin) {
@@ -2247,7 +2248,42 @@ function saveRatings() {
   try { localStorage.setItem('bb_ratings', JSON.stringify(BB_RATINGS)); } catch(e) {}
 }
 
+// ─── RATING QUEUE ─────────────────────────────────────────────────────────────
+
+let _ratingQueue    = [];
+let _ratingQueueIdx = 0;
 let _hostRatingBookingId = null;
+
+async function buildHostRatingQueue() {
+  const { data: existing } = await gnvClient
+    .from('ratings')
+    .select('booking_id')
+    .eq('rater_type', 'host')
+    .eq('rater_id', user.id);
+  const ratedIds = new Set([
+    ...(existing || []).map(r => r.booking_id),
+    ...BB_RATINGS.filter(r => r.raterType === 'host').map(r => r.bookingId),
+  ]);
+  _ratingQueue = RESERVATIONS.filter(r =>
+    !r.hostGenerated &&
+    r.status === 'completed' &&
+    !ratedIds.has(r.id)
+  ).map(r => r.id);
+  _ratingQueueIdx = 0;
+  if (_ratingQueue.length > 0) setTimeout(() => openHostRatingModal(_ratingQueue[0]), 800);
+}
+
+function _advanceHostRatingQueue() {
+  _ratingQueueIdx++;
+  if (_ratingQueueIdx < _ratingQueue.length) {
+    setTimeout(() => openHostRatingModal(_ratingQueue[_ratingQueueIdx]), 300);
+  }
+}
+
+function rateLaterHost() {
+  closeHostRatingModal();
+  _advanceHostRatingQueue();
+}
 
 function openHostRatingModal(bookingId) {
   _hostRatingBookingId = bookingId;
@@ -2258,6 +2294,8 @@ function openHostRatingModal(bookingId) {
     document.querySelectorAll(`input[name="${n}"]`).forEach(i => i.checked = false);
   });
   document.getElementById('hrNote').value = '';
+  const qLabel = document.getElementById('hostRatingQueueLabel');
+  if (qLabel) qLabel.textContent = _ratingQueue.length > 1 ? `${_ratingQueueIdx + 1} of ${_ratingQueue.length} shows to rate` : '';
   document.getElementById('hostRatingOverlay').classList.add('open');
   document.getElementById('hostRatingModal').classList.add('open');
 }
@@ -2275,25 +2313,33 @@ function submitHostRating() {
   const q2  = parseInt(document.querySelector('input[name="hrQ2"]:checked')?.value || '0');
   const q3  = parseInt(document.querySelector('input[name="hrQ3"]:checked')?.value || '0');
   if (!q1 || !q2 || !q3) { showDash('Please answer all three questions.'); return; }
-  const note = document.getElementById('hrNote').value.trim().slice(0, 200);
+  const note    = document.getElementById('hrNote').value.trim().slice(0, 200);
+  const venueId = r ? (HOST_LISTINGS.find(l => l.title === r.property)?.id || null) : null;
   const rating = {
     id: 'rat_' + Date.now(),
     bookingId: _hostRatingBookingId,
     raterType: 'host',
     raterId: user?.id || 'host',
-    ratedId: r?.guest || '',
-    venueId: r ? HOST_LISTINGS.find(l => l.title === r.property)?.id || '' : '',
+    ratedId: r?.bookerId || r?.guest || '',
+    venueId,
     scores: { asDescribed: q1, professional: q2, wouldBookAgain: q3 },
     note,
     submittedAt: Date.now(),
-    response: null,
-    responseAt: null,
-    locked: false,
   };
   BB_RATINGS.push(rating);
   saveRatings();
+  gnvClient.from('ratings').insert({
+    booking_id: _hostRatingBookingId,
+    rater_type: 'host',
+    rater_id:   user.id,
+    rated_id:   rating.ratedId,
+    venue_id:   venueId,
+    scores:     rating.scores,
+    note:       note || null,
+  }).then(({ error }) => { if (error) console.warn('rating save:', error.message); });
   closeHostRatingModal();
   showDash('Rating submitted — thank you!');
+  _advanceHostRatingQueue();
 }
 
 function getArtistRatings(guestName) {

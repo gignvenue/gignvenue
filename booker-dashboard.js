@@ -498,6 +498,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   populateProfile();
   updateBadges();
   renderTourPlanner();
+  if (!_firstLogin) buildArtistRatingQueue();
 
   // On first login: land on profile tab with a welcome prompt
   if (_firstLogin) {
@@ -2791,7 +2792,42 @@ function saveRatings() {
   try { localStorage.setItem('bb_ratings', JSON.stringify(BB_RATINGS)); } catch(e) {}
 }
 
+// ─── RATING QUEUE ─────────────────────────────────────────────────────────────
+
+let _artistRatingQueue    = [];
+let _artistRatingQueueIdx = 0;
 let _artistRatingBookingId = null;
+
+async function buildArtistRatingQueue() {
+  const { data: existing } = await gnvClient
+    .from('ratings')
+    .select('booking_id')
+    .eq('rater_type', 'artist')
+    .eq('rater_id', user.id);
+  const ratedIds = new Set([
+    ...(existing || []).map(r => r.booking_id),
+    ...BB_RATINGS.filter(r => r.raterType === 'artist').map(r => r.bookingId),
+  ]);
+  _artistRatingQueue = ALL_REQUESTS.filter(r =>
+    r.bookerId === user.id &&
+    r.status === 'completed' &&
+    !ratedIds.has(r.id)
+  ).map(r => r.id);
+  _artistRatingQueueIdx = 0;
+  if (_artistRatingQueue.length > 0) setTimeout(() => openArtistRatingModal(_artistRatingQueue[0]), 800);
+}
+
+function _advanceArtistRatingQueue() {
+  _artistRatingQueueIdx++;
+  if (_artistRatingQueueIdx < _artistRatingQueue.length) {
+    setTimeout(() => openArtistRatingModal(_artistRatingQueue[_artistRatingQueueIdx]), 300);
+  }
+}
+
+function rateLaterArtist() {
+  closeArtistRatingModal();
+  _advanceArtistRatingQueue();
+}
 
 function openArtistRatingModal(bookingId) {
   _artistRatingBookingId = bookingId;
@@ -2804,6 +2840,8 @@ function openArtistRatingModal(bookingId) {
   });
   const noteEl = document.getElementById('arNote');
   if (noteEl) noteEl.value = '';
+  const qLabel = document.getElementById('artistRatingQueueLabel');
+  if (qLabel) qLabel.textContent = _artistRatingQueue.length > 1 ? `${_artistRatingQueueIdx + 1} of ${_artistRatingQueue.length} shows to rate` : '';
   document.getElementById('artistRatingOverlay').classList.add('open');
   document.getElementById('artistRatingModal').classList.add('open');
 }
@@ -2821,36 +2859,44 @@ function submitArtistRating() {
   const q2 = parseInt(document.querySelector('input[name="arQ2"]:checked')?.value || '0');
   const q3 = parseInt(document.querySelector('input[name="arQ3"]:checked')?.value || '0');
   if (!q1 || !q2 || !q3) { showDash('Please answer all three questions.'); return; }
-  const note = (document.getElementById('arNote')?.value || '').trim().slice(0, 200);
+  const note    = (document.getElementById('arNote')?.value || '').trim().slice(0, 200);
+  const venueId = r?.venueId || null;
   const rating = {
     id: 'rat_' + Date.now(),
     bookingId: _artistRatingBookingId,
     raterType: 'artist',
     raterId: user.id,
-    ratedId: r?.venueId || '',
-    venueId: r?.venueId || '',
+    ratedId: venueId || '',
+    venueId,
     scores: { asDescribed: q1, professional: q2, wouldBookAgain: q3 },
     note,
     submittedAt: Date.now(),
-    response: null,
-    responseAt: null,
-    locked: false,
   };
   BB_RATINGS.push(rating);
   saveRatings();
+  gnvClient.from('ratings').insert({
+    booking_id: _artistRatingBookingId,
+    rater_type: 'artist',
+    rater_id:   user.id,
+    rated_id:   venueId || '',
+    venue_id:   venueId,
+    scores:     rating.scores,
+    note:       note || null,
+  }).then(({ error }) => { if (error) console.warn('rating save:', error.message); });
   closeArtistRatingModal();
   renderOverview();
   showDash('Rating submitted — thank you!');
+  _advanceArtistRatingQueue();
 }
 
 function checkCompletedRatingPrompts() {
-  // Returns requests that are completed/approved+paid but not yet rated by this artist
-  const completed = ALL_REQUESTS.filter(r =>
+  // Returns completed bookings not yet rated — used for overview action items
+  const ratedIds = new Set(BB_RATINGS.filter(r => r.raterType === 'artist').map(r => r.bookingId));
+  return ALL_REQUESTS.filter(r =>
     r.bookerId === user.id &&
-    r.status === 'approved' &&
-    r.paymentStatus === 'paid'
+    r.status === 'completed' &&
+    !ratedIds.has(r.id)
   );
-  return completed.filter(r => !BB_RATINGS.some(rt => rt.raterType === 'artist' && rt.bookingId === r.id));
 }
 
 // ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
