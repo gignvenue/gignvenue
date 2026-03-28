@@ -90,7 +90,7 @@ const AMENITY_ICON_DEFAULT = 'M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3
 
 function amenityIcon(id) {
   const d = AMENITY_ICONS[id] || AMENITY_ICON_DEFAULT;
-  return `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#FF2D78" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+  return `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#EF60A3" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
 }
 
 // ─── LISTINGS / VENUES ────────────────────────────────────────────────────────
@@ -961,7 +961,7 @@ function renderCard(l) {
         ${l.promoted ? `<div class="listing-promoted">Promoted</div>` : ''}
         <button class="listing-wishlist${inWL?' active':''}" onclick="toggleWishlist(event,${l.id})" aria-label="Save venue">
           <svg viewBox="0 0 32 32" width="20" height="20"
-               fill="${inWL?'#FF2D78':'none'}" stroke="${inWL?'none':'white'}" stroke-width="2">
+               fill="${inWL?'#EF60A3':'none'}" stroke="${inWL?'none':'white'}" stroke-width="2">
             <path d="M16 28c7-4.733 14-10 14-17a6.98 6.98 0 0 0-7-7c-1.8 0-3.58.68-4.95 2.05L16 8.1l-2.05-2.05a6.98 6.98 0 0 0-9.9 0C2.61 7.42 2 9.21 2 11c0 7 7 12.267 14 17z"/>
           </svg>
         </button>
@@ -1042,7 +1042,7 @@ function toggleWishlist(e, id) {
   const btn = e.currentTarget;
   btn.classList.toggle('active', saved);
   const svg = btn.querySelector('svg');
-  svg.setAttribute('fill',   saved ? '#FF2D78' : 'none');
+  svg.setAttribute('fill',   saved ? '#EF60A3' : 'none');
   svg.setAttribute('stroke', saved ? 'none'    : (btn.id === 'modalSaveBtn' ? 'currentColor' : 'white'));
   const label = btn.querySelector('#modalSaveBtnLabel');
   if (label) label.textContent = saved ? 'Saved' : 'Save';
@@ -1052,14 +1052,14 @@ function toggleWishlist(e, id) {
   if (cardBtn && cardBtn !== btn) {
     cardBtn.classList.toggle('active', saved);
     const csvg = cardBtn.querySelector('svg');
-    csvg.setAttribute('fill',   saved ? '#FF2D78' : 'none');
+    csvg.setAttribute('fill',   saved ? '#EF60A3' : 'none');
     csvg.setAttribute('stroke', saved ? 'none'    : 'white');
   }
   const modalBtn = document.getElementById('modalSaveBtn');
   if (modalBtn && modalBtn !== btn && appState.selectedListing?.id === id) {
     modalBtn.classList.toggle('active', saved);
     const msv = modalBtn.querySelector('svg');
-    msv.setAttribute('fill',   saved ? '#FF2D78' : 'none');
+    msv.setAttribute('fill',   saved ? '#EF60A3' : 'none');
     msv.setAttribute('stroke', saved ? 'none'    : 'currentColor');
     const ml = modalBtn.querySelector('#modalSaveBtnLabel');
     if (ml) ml.textContent = saved ? 'Saved' : 'Save';
@@ -2098,7 +2098,7 @@ function openListing(id) {
     }).addTo(_venueMap);
     const dot = L.divIcon({
       className: '',
-      html: '<div style="width:14px;height:14px;border-radius:50%;background:#FF2D78;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.35)"></div>',
+      html: '<div style="width:14px;height:14px;border-radius:50%;background:#EF60A3;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.35)"></div>',
       iconSize: [14, 14], iconAnchor: [7, 7]
     });
     L.marker([l.lat, l.lng], { icon: dot }).addTo(_venueMap);
@@ -2134,7 +2134,7 @@ function openListing(id) {
     : l.highlights || [];
   document.getElementById('listingModalHighlights').innerHTML = highlightItems.map(h => `
     <div class="highlight-item">
-      ${h.id ? amenityIcon(h.id) : '<svg viewBox="0 0 24 24" width="24" height="24" fill="#FF2D78"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>'}
+      ${h.id ? amenityIcon(h.id) : '<svg viewBox="0 0 24 24" width="24" height="24" fill="#EF60A3"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>'}
       <div><strong>${h.title}</strong><span>${h.desc}</span></div>
     </div>`).join('');
 
@@ -2181,7 +2181,7 @@ function openListing(id) {
           <li>If the venue cancels a confirmed booking — your full deposit is returned.</li>
           <li>The 5% GigNVenue booking fee is non-refundable in all cases.</li>
         </ul>
-        <p style="margin:10px 0 0;font-size:13px"><a href="terms.html#cancellation" target="_blank" style="color:#FF2D78">Full cancellation terms ↗</a></p>
+        <p style="margin:10px 0 0;font-size:13px"><a href="terms.html#cancellation" target="_blank" style="color:#EF60A3">Full cancellation terms ↗</a></p>
       </div>`;
   }
 
@@ -2194,7 +2194,7 @@ function openListing(id) {
     <div class="amenities-list">
       ${venueAmenities.map(a => `
         <div class="amenity-row">
-          <svg viewBox="0 0 20 20" width="18" height="18" fill="#FF2D78" style="flex-shrink:0;margin-top:2px"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+          <svg viewBox="0 0 20 20" width="18" height="18" fill="#EF60A3" style="flex-shrink:0;margin-top:2px"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
           <div>
             <div class="amenity-label">${a.label}</div>
             ${descs[a.id] ? `<div class="amenity-desc">${descs[a.id]}</div>` : ''}
@@ -2339,7 +2339,7 @@ function openListing(id) {
     const modalSvg = modalBtn.querySelector('svg');
     modalBtn.onclick = (e) => toggleWishlist(e, l.id);
     modalBtn.classList.toggle('active', inWL);
-    modalSvg.setAttribute('fill',   inWL ? '#FF2D78' : 'none');
+    modalSvg.setAttribute('fill',   inWL ? '#EF60A3' : 'none');
     modalSvg.setAttribute('stroke', inWL ? 'none'    : 'currentColor');
     document.getElementById('modalSaveBtnLabel').textContent = inWL ? 'Saved' : 'Save';
   }
