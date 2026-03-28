@@ -203,8 +203,7 @@ function venueHasFeaturedNight(venueId) {
 // Returns the badge a listing should display.
 // Iconic = editorial only (hardcoded). Top venue = auto-awarded at 4.8+/50+.
 function getEffectiveBadge(l) {
-  if (l.badge === 'Iconic') return 'Iconic';
-  if ((l.rating >= 4.8 && (l.reviews || 0) >= 50) || l.badge === 'Top venue') return 'Top venue';
+  if ((l.rating >= 4.5 && (l.reviews || 0) >= 10) || l.badge === 'Top venue') return 'Top venue';
   return null;
 }
 
