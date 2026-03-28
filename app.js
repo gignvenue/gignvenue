@@ -942,7 +942,7 @@ function selectCity(cityStr, lat, lng) {
   searchData.lng  = lng  || null;
   document.getElementById('whereInput').value = cityStr;
   document.querySelector('.search-pill-location').textContent = cityStr;
-  if (searchData.radius === 0) setRadius(5);
+  if (searchData.radius === 0) setRadius(15);
   _mapUserMoved = false;
   document.getElementById('searchAreaWrap').style.display = 'none';
   if (!appState.mapOpen) toggleMap();
