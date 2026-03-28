@@ -258,7 +258,21 @@ const filterState = {
 
 // ─── DOM STATE ────────────────────────────────────────────────────────────────
 
-let _venueMap = null;
+let _venueMap    = null;
+let _sessionType = 'anon'; // 'anon' | 'artist' | 'host'
+
+// Detect session type on load — drives heart button behaviour
+(async function _detectSession() {
+  const { data: { session } } = await gnvClient.auth.getSession();
+  if (!session) { _sessionType = 'anon'; return; }
+  const { data: artist } = await gnvClient
+    .from('artists').select('id').eq('auth_id', session.user.id).maybeSingle();
+  _sessionType = artist ? 'artist' : 'host';
+  if (_sessionType !== 'artist') {
+    const tip = _sessionType === 'host' ? 'Save venues from your artist account' : 'Log in to save';
+    document.querySelectorAll('.listing-wishlist').forEach(btn => { btn.title = tip; });
+  }
+})();
 
 const appState = {
   wishlist        : new Set(),
@@ -656,6 +670,15 @@ function updateCardImage(id) {
 
 function toggleWishlist(e, id) {
   e.stopPropagation();
+  if (_sessionType === 'anon') {
+    showToast('Log in to save venues ♥');
+    setTimeout(() => { window.location.href = 'booker-login.html'; }, 1200);
+    return;
+  }
+  if (_sessionType === 'host') {
+    showToast('Save venues from your artist account');
+    return;
+  }
   const inList = appState.wishlist.has(id);
   try {
     const stored = JSON.parse(localStorage.getItem('bb_saved_venues') || '[]');
