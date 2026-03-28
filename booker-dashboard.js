@@ -498,7 +498,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   populateProfile();
   updateBadges();
   renderTourPlanner();
-  if (!_firstLogin) buildArtistRatingQueue();
+  if (!_firstLogin) {
+    // Load all ratings relevant to this artist from Supabase into BB_RATINGS
+    const uuidBookingIds = ALL_REQUESTS
+      .filter(r => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(r.id))
+      .map(r => r.id);
+    if (uuidBookingIds.length) {
+      gnvClient.from('ratings').select('*').in('booking_id', uuidBookingIds)
+        .then(({ data: ratingRows }) => {
+          (ratingRows || []).forEach(r => {
+            if (!BB_RATINGS.find(x => x.bookingId === r.booking_id && x.raterType === r.rater_type)) {
+              BB_RATINGS.push({
+                id: r.id, bookingId: r.booking_id, raterType: r.rater_type,
+                raterId: r.rater_id, ratedId: r.rated_id, venueId: r.venue_id,
+                scores: r.scores, note: r.note || '', submittedAt: new Date(r.submitted_at).getTime(),
+              });
+            }
+          });
+          saveRatings();
+          renderArtistScoreCard();
+        });
+    }
+    buildArtistRatingQueue();
+  }
 
   // On first login: land on profile tab with a welcome prompt
   if (_firstLogin) {
@@ -2047,6 +2069,7 @@ function populateProfile() {
   document.getElementById('pfSoundcloud').value     = profile.soundcloud   || '';
   document.getElementById('pfSpotifyEmbed').checked    = profile.spotifyEmbed    !== false;
   document.getElementById('pfSoundcloudEmbed').checked = profile.soundcloudEmbed !== false;
+  renderArtistScoreCard();
 }
 
 function saveProfile(e) {
@@ -2882,11 +2905,47 @@ function submitArtistRating() {
     venue_id:   venueId,
     scores:     rating.scores,
     note:       note || null,
-  }).then(({ error }) => { if (error) console.warn('rating save:', error.message); });
+  }).then(({ error }) => {
+    if (error) { console.warn('rating save:', error.message); return; }
+    // Recalculate venue aggregate rating
+    if (venueId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(venueId)) {
+      gnvClient.from('ratings').select('scores').eq('venue_id', venueId).eq('rater_type', 'artist')
+        .then(({ data: vr }) => {
+          if (!vr?.length) return;
+          const avg = vr.reduce((s, r) => s + (r.scores.asDescribed + r.scores.professional + r.scores.wouldBookAgain) / 3, 0) / vr.length;
+          gnvClient.from('venues').update({ rating: parseFloat(avg.toFixed(2)), review_count: vr.length }).eq('id', venueId);
+        });
+    }
+  });
   closeArtistRatingModal();
   renderOverview();
   showDash('Rating submitted — thank you!');
   _advanceArtistRatingQueue();
+}
+
+function renderArtistScoreCard() {
+  const el = document.getElementById('artistScoreCard');
+  if (!el) return;
+  const hostRatings = BB_RATINGS.filter(r => r.raterType === 'host');
+  if (hostRatings.length < 3) { el.style.display = 'none'; return; }
+  const avg = hostRatings.reduce((s, r) => s + (r.scores.asDescribed + r.scores.professional + r.scores.wouldBookAgain) / 3, 0) / hostRatings.length;
+  const filled = Math.round(avg);
+  const stars = [1,2,3,4,5].map(s =>
+    `<svg viewBox="0 0 32 32" width="16" height="16" fill="${s<=filled?'#F59E0B':'#444'}"><path d="M15.094 1.579l-4.124 8.885-9.86 1.27a1 1 0 0 0-.542 1.736l7.293 6.565-1.965 9.852a1 1 0 0 0 1.483 1.061L16 25.951l8.625 4.997a1 1 0 0 0 1.483-1.06l-1.965-9.853 7.293-6.565a1 1 0 0 0-.541-1.735l-9.86-1.271-4.124-8.885a1 1 0 0 0-1.817 0z"/></svg>`
+  ).join('');
+  el.style.display = '';
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px">Your GigNVenue score</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:28px;font-weight:800;color:#fff">${avg.toFixed(1)}</span>
+          <div style="display:flex;gap:2px">${stars}</div>
+          <span style="font-size:12px;color:var(--text-muted)">${hostRatings.length} show${hostRatings.length>1?'s':''}</span>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);max-width:220px;line-height:1.5">Visible to venues on your booking requests once you have 3+ shows on GigNVenue.</div>
+    </div>`;
 }
 
 function checkCompletedRatingPrompts() {

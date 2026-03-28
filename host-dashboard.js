@@ -602,7 +602,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   populateProfile();
   renderAnalyticsPinSettings();
   checkPlayedOffNotifications();
-  if (!_firstLogin) buildHostRatingQueue();
+  if (!_firstLogin) {
+    // Load all ratings for this host's venues from Supabase into BB_RATINGS
+    const uuidVenueIds = HOST_LISTINGS.map(l => l.id).filter(id => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id));
+    if (uuidVenueIds.length) {
+      gnvClient.from('ratings').select('*').in('venue_id', uuidVenueIds)
+        .then(({ data: ratingRows }) => {
+          (ratingRows || []).forEach(r => {
+            if (!BB_RATINGS.find(x => x.bookingId === r.booking_id && x.raterType === r.rater_type)) {
+              BB_RATINGS.push({
+                id: r.id, bookingId: r.booking_id, raterType: r.rater_type,
+                raterId: r.rater_id, ratedId: r.rated_id, venueId: r.venue_id,
+                scores: r.scores, note: r.note || '', submittedAt: new Date(r.submitted_at).getTime(),
+              });
+            }
+          });
+          saveRatings();
+          renderReviews(); // re-render with live data now loaded
+        });
+    }
+    buildHostRatingQueue();
+  }
 
   // On first login: land on profile tab with a welcome prompt
   if (_firstLogin) {
@@ -2342,8 +2362,12 @@ function submitHostRating() {
   _advanceHostRatingQueue();
 }
 
-function getArtistRatings(guestName) {
-  return BB_RATINGS.filter(rt => rt.raterType === 'host' && rt.ratedId === guestName);
+function getArtistRatings(r) {
+  const name = typeof r === 'string' ? r : (r.guest || '');
+  const id   = typeof r === 'object' ? (r.bookerId || '') : '';
+  return BB_RATINGS.filter(rt =>
+    rt.raterType === 'host' && (rt.ratedId === id || rt.ratedId === name)
+  );
 }
 
 function avgScore(ratings) {
@@ -2473,10 +2497,10 @@ function viewRes(id) {
        </div>`
     : '';
 
-  const pastArtistRatings = getArtistRatings(r.guest);
+  const pastArtistRatings = getArtistRatings(r);
   const artistAvg = avgScore(pastArtistRatings);
-  const artistRatingHtml = pastArtistRatings.length
-    ? `<div style="margin-top:6px;font-size:12px;color:var(--text-muted)">${starsHtml(artistAvg,13)} <span style="color:var(--text-sec)">${artistAvg.toFixed(1)} avg from ${pastArtistRatings.length} booking${pastArtistRatings.length>1?'s':''}</span></div>`
+  const artistRatingHtml = pastArtistRatings.length >= 3
+    ? `<div style="margin-top:6px;font-size:12px;color:var(--text-muted)">${starsHtml(artistAvg,13)} <span style="color:var(--text-sec)">${artistAvg.toFixed(1)} avg · ${pastArtistRatings.length} GigNVenue shows</span></div>`
     : '';
 
   const artistVenueRating = BB_RATINGS.find(rt => rt.raterType === 'artist' && rt.bookingId === r.id);
@@ -5115,10 +5139,55 @@ function renderEarnings() {
 
 // ─── REVIEWS ─────────────────────────────────────────────────────────────────
 
-function renderReviews() {
-  const avg = (REVIEWS_DATA.reduce((a,r)=>a+r.rating,0)/REVIEWS_DATA.length).toFixed(2);
-  const counts = [5,4,3,2,1].map(s => REVIEWS_DATA.filter(r=>r.rating===s).length);
-  const total  = REVIEWS_DATA.length;
+async function renderReviews() {
+  const uuidVenueIds = HOST_LISTINGS.map(l => l.id).filter(id => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id));
+  const hasRealVenues = uuidVenueIds.length > 0;
+
+  // Fetch live reviews for real Supabase venues
+  let liveReviews = [];
+  if (hasRealVenues) {
+    const { data } = await gnvClient
+      .from('ratings')
+      .select('*')
+      .in('venue_id', uuidVenueIds)
+      .eq('rater_type', 'artist')
+      .not('note', 'is', null)
+      .order('submitted_at', { ascending: false });
+    liveReviews = (data || []).filter(r => r.note?.trim());
+  }
+
+  // Build display data — live reviews for real venues, seed data for demo
+  let REVIEW_REPLIES = {};
+  try { REVIEW_REPLIES = JSON.parse(localStorage.getItem('gnv_review_replies') || '{}'); } catch(e) {}
+
+  const displayReviews = (hasRealVenues && liveReviews.length > 0)
+    ? liveReviews.map(r => {
+        const score = (r.scores.asDescribed + r.scores.professional + r.scores.wouldBookAgain) / 3;
+        const reply = REVIEW_REPLIES[r.id];
+        return {
+          id: r.id,
+          guest: r.rater_name || 'Artist',
+          guestImg: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(r.rater_name || r.rater_id)}&backgroundColor=555555&textColor=ffffff`,
+          rating: parseFloat(score.toFixed(1)),
+          date: new Date(r.submitted_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+          text: r.note,
+          property: HOST_LISTINGS.find(l => l.id === r.venue_id)?.title || 'Your venue',
+          replied: !!reply,
+          reply: reply || '',
+          isLive: true,
+        };
+      })
+    : REVIEWS_DATA.map(r => ({ ...r, isLive: false }));
+
+  if (!displayReviews.length) {
+    document.getElementById('reviewsSummary').innerHTML = '';
+    document.getElementById('reviewsList').innerHTML = `<div style="padding:32px 0;text-align:center;color:var(--text-muted);font-size:14px">Artist ratings will appear here after their shows play off.</div>`;
+    return;
+  }
+
+  const avg = (displayReviews.reduce((a, r) => a + r.rating, 0) / displayReviews.length).toFixed(2);
+  const counts = [5,4,3,2,1].map(s => displayReviews.filter(r => Math.round(r.rating) === s).length);
+  const total  = displayReviews.length;
 
   document.getElementById('reviewsSummary').innerHTML = `
     <div>
@@ -5126,7 +5195,7 @@ function renderReviews() {
       <div class="review-stars">
         ${[1,2,3,4,5].map(()=>`<svg viewBox="0 0 32 32" width="20" height="20"><path fill="#F59E0B" d="M15.094 1.579l-4.124 8.885-9.86 1.27a1 1 0 0 0-.542 1.736l7.293 6.565-1.965 9.852a1 1 0 0 0 1.483 1.061L16 25.951l8.625 4.997a1 1 0 0 0 1.483-1.06l-1.965-9.853 7.293-6.565a1 1 0 0 0-.541-1.735l-9.86-1.271-4.124-8.885a1 1 0 0 0-1.817 0z"/></svg>`).join('')}
       </div>
-      <div style="font-size:14px;color:var(--text-muted)">${total} reviews</div>
+      <div style="font-size:14px;color:var(--text-muted)">${total} review${total!==1?'s':''}</div>
     </div>
     <div class="review-bars">
       ${[5,4,3,2,1].map((s,i)=>`
@@ -5138,7 +5207,7 @@ function renderReviews() {
     </div>
   `;
 
-  document.getElementById('reviewsList').innerHTML = REVIEWS_DATA.map((r,i) => `
+  document.getElementById('reviewsList').innerHTML = displayReviews.map((r, i) => `
     <div class="review-card">
       <div class="review-card-top">
         <img src="${r.guestImg}" alt="${r.guest}" class="review-avatar" onerror="this.style.background='#1C1C1C'"/>
@@ -5147,24 +5216,32 @@ function renderReviews() {
           <div class="review-date">${r.date} · ${r.property}</div>
         </div>
         <div class="review-stars-sm" style="margin-left:auto">
-          ${[1,2,3,4,5].map(s=>`<svg viewBox="0 0 32 32" width="14" height="14" fill="${s<=r.rating?'#F59E0B':'#333'}"><path d="M15.094 1.579l-4.124 8.885-9.86 1.27a1 1 0 0 0-.542 1.736l7.293 6.565-1.965 9.852a1 1 0 0 0 1.483 1.061L16 25.951l8.625 4.997a1 1 0 0 0 1.483-1.06l-1.965-9.853 7.293-6.565a1 1 0 0 0-.541-1.735l-9.86-1.271-4.124-8.885a1 1 0 0 0-1.817 0z"/></svg>`).join('')}
+          ${[1,2,3,4,5].map(s=>`<svg viewBox="0 0 32 32" width="14" height="14" fill="${s<=Math.round(r.rating)?'#F59E0B':'#333'}"><path d="M15.094 1.579l-4.124 8.885-9.86 1.27a1 1 0 0 0-.542 1.736l7.293 6.565-1.965 9.852a1 1 0 0 0 1.483 1.061L16 25.951l8.625 4.997a1 1 0 0 0 1.483-1.06l-1.965-9.853 7.293-6.565a1 1 0 0 0-.541-1.735l-9.86-1.271-4.124-8.885a1 1 0 0 0-1.817 0z"/></svg>`).join('')}
         </div>
       </div>
-      <p class="review-text">"${r.text}"</p>
+      ${r.text ? `<p class="review-text">"${r.text}"</p>` : ''}
       ${r.replied
         ? `<div class="review-reply"><strong>Your response</strong>${r.reply}</div>`
-        : `<button class="review-reply-btn" onclick="replyToReview(${i})">Reply to ${r.guest.split(' ')[0]}</button>`}
+        : `<button class="review-reply-btn" onclick="replyToReview('${r.isLive ? r.id : i}')">${r.isLive ? `Reply to ${r.guest.split(' ')[0]}` : `Reply to ${r.guest.split(' ')[0]}`}</button>`}
     </div>`).join('');
 }
 
-function replyToReview(idx) {
-  const reply = prompt(`Reply to ${REVIEWS_DATA[idx].guest}:`);
-  if (reply && reply.trim()) {
-    REVIEWS_DATA[idx].replied = true;
-    REVIEWS_DATA[idx].reply   = reply.trim();
-    renderReviews();
-    showDash('Reply posted!');
+function replyToReview(idxOrId) {
+  const isLegacy = typeof idxOrId === 'number' || /^\d+$/.test(String(idxOrId));
+  const guestName = isLegacy ? (REVIEWS_DATA[idxOrId]?.guest || 'this artist') : 'this artist';
+  const reply = prompt(`Reply to ${guestName}:`);
+  if (!reply?.trim()) return;
+  if (isLegacy) {
+    REVIEWS_DATA[idxOrId].replied = true;
+    REVIEWS_DATA[idxOrId].reply   = reply.trim();
+  } else {
+    let REVIEW_REPLIES = {};
+    try { REVIEW_REPLIES = JSON.parse(localStorage.getItem('gnv_review_replies') || '{}'); } catch(e) {}
+    REVIEW_REPLIES[idxOrId] = reply.trim();
+    localStorage.setItem('gnv_review_replies', JSON.stringify(REVIEW_REPLIES));
   }
+  renderReviews();
+  showDash('Reply posted!');
 }
 
 // ─── PROFILE ─────────────────────────────────────────────────────────────────
