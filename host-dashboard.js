@@ -2349,13 +2349,14 @@ function submitHostRating() {
   BB_RATINGS.push(rating);
   saveRatings();
   gnvClient.from('ratings').insert({
-    booking_id: _hostRatingBookingId,
-    rater_type: 'host',
-    rater_id:   user.id,
-    rated_id:   rating.ratedId,
-    venue_id:   venueId,
-    scores:     rating.scores,
-    note:       note || null,
+    booking_id:  _hostRatingBookingId,
+    rater_type:  'host',
+    rater_id:    user.id,
+    rater_name:  `${user.firstName || ''} ${user.lastName || ''}`.trim() || null,
+    rated_id:    rating.ratedId,
+    venue_id:    venueId,
+    scores:      rating.scores,
+    note:        note || null,
   }).then(({ error }) => { if (error) console.warn('rating save:', error.message); });
   closeHostRatingModal();
   showDash('Rating submitted — thank you!');
