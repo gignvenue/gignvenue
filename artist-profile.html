@@ -84,7 +84,7 @@
 
     /* ── PREVIEW BANNER ── */
     .ap-preview-banner {
-      background: rgba(255,45,120,0.12); border: 1px solid rgba(255,45,120,0.3);
+      background: rgba(239,96,163,0.12); border: 1px solid rgba(239,96,163,0.3);
       border-radius: var(--r-sm); padding: 10px 16px; margin-bottom: 28px;
       font-size: 13px; color: var(--red); font-weight: 600; text-align: center;
     }
@@ -245,7 +245,7 @@ function render() {
   }
   function buildSoundCloudEmbed(url) {
     if (!url) return '';
-    return `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23FF2D78&auto_play=false&hide_related=false&show_comments=false&show_user=true&visual=true`;
+    return `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23EF60A3&auto_play=false&hide_related=false&show_comments=false&show_user=true&visual=true`;
   }
   const spotifyEmbedUrl    = buildSpotifyEmbed(profile?.spotify);
   const soundcloudEmbedUrl = buildSoundCloudEmbed(profile?.soundcloud);

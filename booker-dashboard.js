@@ -505,7 +505,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (profileSection && !document.getElementById('firstLoginBanner')) {
       const banner = document.createElement('div');
       banner.id = 'firstLoginBanner';
-      banner.style.cssText = 'background:#1A1A1A;border:1px solid #FF2D78;border-radius:12px;padding:18px 20px;margin-bottom:24px;display:flex;align-items:flex-start;gap:14px';
+      banner.style.cssText = 'background:#1A1A1A;border:1px solid #EF60A3;border-radius:12px;padding:18px 20px;margin-bottom:24px;display:flex;align-items:flex-start;gap:14px';
       banner.innerHTML = `
         <div style="flex:1">
           <div style="color:#fff;font-weight:600;font-size:15px;margin-bottom:4px">Welcome to GigNVenue!</div>
@@ -635,7 +635,7 @@ function populateSidebarUser() {
 function populateTopbarAvatar() {
   document.getElementById('topbarAvatar').innerHTML =
     `<img src="${profile.avatar || ''}" alt="${user.firstName}" style="width:100%;height:100%;object-fit:cover"
-      onerror="this.style.background='#FF2D78'"/>`;
+      onerror="this.style.background='#EF60A3'"/>`;
 }
 
 function updateBadges() {
@@ -742,7 +742,7 @@ function renderOverview() {
   }
 
   document.getElementById('statsGrid').innerHTML = [
-    { icon:'🎟️', label:'Requests sent',    value:activeMyReqs.length, delta:'upcoming',                                             deltaClass:'delta-neutral', color:'#FF2D78', section:'requests', filter:'all'      },
+    { icon:'🎟️', label:'Requests sent',    value:activeMyReqs.length, delta:'upcoming',                                             deltaClass:'delta-neutral', color:'#EF60A3', section:'requests', filter:'all'      },
     { icon:'✅', label:'Approved bookings', value:approved,            delta:approved?'▲ confirmed':'none yet',                      deltaClass:approved?'delta-up':'delta-neutral', color:'#10B981', section:'requests', filter:'approved' },
     { icon:'⏳', label:'Pending requests',  value:pending,             delta:pending?'awaiting reply':'all clear',                   deltaClass:pending?'delta-pending':'delta-neutral', color:'#F59E0B', section:'requests', filter:'pending'  },
     { icon:'❤️', label:'Saved venues',      value:SAVED_VENUES.length, delta:'bookmarked',                                           deltaClass:'delta-neutral', color:'#3B82F6', section:'saved',    filter:null       },
@@ -1094,7 +1094,7 @@ function _showReportModal(reportedType, reportedId, reportedName) {
     <div style="background:#1A1A1A;border:1px solid #2A2A2A;border-radius:16px;padding:28px;width:100%;max-width:400px">
       <h3 style="color:#fff;margin:0 0 6px;font-size:18px">Report ${reportedName}</h3>
       <p style="color:#888;font-size:13px;margin:0 0 20px">Reports are reviewed by GigNVenue staff. Please only report genuine issues.</p>
-      <label style="color:#aaa;font-size:12px;display:block;margin-bottom:6px">Reason <span style="color:#FF2D78">*</span></label>
+      <label style="color:#aaa;font-size:12px;display:block;margin-bottom:6px">Reason <span style="color:#EF60A3">*</span></label>
       <select id="reportReason" style="width:100%;background:#111;border:1px solid #333;border-radius:8px;padding:10px 12px;color:#fff;font-size:14px;margin-bottom:14px">
         <option value="">Select a reason…</option>
         <option value="spam">Spam or fake profile</option>
@@ -1163,7 +1163,7 @@ function _showProfileCompletion() {
           </div>
         </div>
         <div>
-          <label style="color:#aaa;font-size:12px;display:block;margin-bottom:5px">Artist / act name <span style="color:#FF2D78">*</span></label>
+          <label style="color:#aaa;font-size:12px;display:block;margin-bottom:5px">Artist / act name <span style="color:#EF60A3">*</span></label>
           <input id="pcArtist" type="text" placeholder="e.g. The Midnight, DJ Blaze, Solo Artist"
             style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:10px 12px;color:#fff;font-size:14px">
         </div>
@@ -1173,7 +1173,7 @@ function _showProfileCompletion() {
             style="width:100%;box-sizing:border-box;background:#111;border:1px solid #333;border-radius:8px;padding:10px 12px;color:#fff;font-size:14px">
         </div>
       </div>
-      <button id="pcSaveBtn" style="margin-top:22px;width:100%;padding:13px;background:#FF2D78;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer">
+      <button id="pcSaveBtn" style="margin-top:22px;width:100%;padding:13px;background:#EF60A3;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer">
         Save and continue →
       </button>
       <div id="pcError" style="color:#EF4444;font-size:13px;margin-top:8px;min-height:18px"></div>
@@ -1692,7 +1692,7 @@ function renderCalendar() {
     let demandHtml = '';
     if (booked) {
       bg = '';
-      demandHtml = `<span class="req-count-badge" style="background:rgba(255,45,120,0.3);color:#FF85C0">Unavailable</span>`;
+      demandHtml = `<span class="req-count-badge" style="background:rgba(239,96,163,0.3);color:#FF85C0">Unavailable</span>`;
     } else if (myReq) {
       // Artist has a request on this date — show their status + other count if any
       const st = myReqObj.status;
@@ -1724,7 +1724,7 @@ function renderCalendar() {
       demandHtml = `<span class="req-count-badge" style="background:${color}">${reqCount} request${reqCount>1?'s':''}</span>`;
     }
 
-    const myOutline = myReq ? 'outline:2px solid rgba(255,45,120,0.6);outline-offset:-2px;border-radius:2px' : '';
+    const myOutline = myReq ? 'outline:2px solid rgba(239,96,163,0.6);outline-offset:-2px;border-radius:2px' : '';
     const clickable = !booked && !isPast ? `onclick="calDayClick('${iso}')"` : '';
     const cursor    = (booked || isPast) ? 'cursor:not-allowed' : 'cursor:pointer';
     const pastOpacity = isPast ? 'opacity:0.35;' : '';
@@ -2242,7 +2242,7 @@ function openBookerAgreement(id) {
       <div class="subtitle">Booking ID: ${r.id} &nbsp;·&nbsp; Issued: ${issuedStr}</div>
     </div>
     <div style="text-align:right">
-      <div style="font-size:18px;font-weight:700;color:#FF2D78;letter-spacing:-0.5px">GigNVenue</div>
+      <div style="font-size:18px;font-weight:700;color:#EF60A3;letter-spacing:-0.5px">GigNVenue</div>
       <div style="font-size:11px;color:#999;margin-top:2px">gignvenue.com</div>
     </div>
   </div>
@@ -2306,7 +2306,7 @@ function openBookerAgreement(id) {
   <div class="watermark">Generated by GigNVenue · gignvenue.com · This document is for reference purposes only and does not constitute legal advice.</div>
 
   <div style="margin-top:32px;text-align:center;display:none" id="printBtnWrap">
-    <button onclick="window.print()" style="padding:10px 28px;font-size:14px;background:#FF2D78;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:sans-serif">🖨 Print / Save as PDF</button>
+    <button onclick="window.print()" style="padding:10px 28px;font-size:14px;background:#EF60A3;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:sans-serif">🖨 Print / Save as PDF</button>
   </div>
   <script>document.getElementById('printBtnWrap').style.display='block';<\/script>
 </body>
@@ -2483,7 +2483,7 @@ function updateTourMap(stops, venueGroups) {
   // Route polyline
   if (geocoded.length > 1) {
     const line = L.polyline(geocoded.map(s => [s.lat, s.lng]), {
-      color: '#FF2D78', weight: 2, opacity: 0.7, dashArray: '6 8'
+      color: '#EF60A3', weight: 2, opacity: 0.7, dashArray: '6 8'
     }).addTo(_tourMap);
     _tourMapLayers.push(line);
   }
@@ -2491,7 +2491,7 @@ function updateTourMap(stops, venueGroups) {
   // Numbered stop markers
   geocoded.forEach((stop, i) => {
     const el = document.createElement('div');
-    el.style.cssText = 'background:#FF2D78;color:#fff;font-size:12px;font-weight:700;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.6)';
+    el.style.cssText = 'background:#EF60A3;color:#fff;font-size:12px;font-weight:700;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.6)';
     el.textContent = i + 1;
     const marker = L.marker([stop.lat, stop.lng], {
       icon: L.divIcon({ className: '', html: el, iconSize: [28, 28], iconAnchor: [14, 14] })
@@ -2505,7 +2505,7 @@ function updateTourMap(stops, venueGroups) {
     venues.forEach(v => {
       if (!v.lat || !v.lng) return;
       const el = document.createElement('div');
-      el.style.cssText = 'background:#1a1a1a;color:#fff;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;border:1px solid rgba(255,45,120,0.5);white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.5)';
+      el.style.cssText = 'background:#1a1a1a;color:#fff;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;border:1px solid rgba(239,96,163,0.5);white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.5)';
       el.textContent = v.title;
       const marker = L.marker([v.lat, v.lng], {
         icon: L.divIcon({ className: '', html: el, iconSize: [null, null] })
