@@ -1,15 +1,2 @@
 User-agent: *
-Allow: /
-
-# Exclude app pages (not useful for search)
-Disallow: /booker-dashboard.html
-Disallow: /host-dashboard.html
-Disallow: /booker-login.html
-Disallow: /host-login.html
-Disallow: /artist-profile.html
-Disallow: /password.html
-Disallow: /legal-review.html
-Disallow: /og-image-template.html
-Disallow: /fee-model-comparison.html
-
-Sitemap: https://gignvenue.com/sitemap.xml
+Disallow: /

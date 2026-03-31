@@ -1,2 +1,8 @@
 [build]
   publish = "."
+
+# While site is parked: redirect all routes to the holding page
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
